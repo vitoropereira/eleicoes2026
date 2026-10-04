@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gera painel.html com apuração ao vivo do TSE (presidente, 1º turno 2026) + projeções.
 Uso: python3 gerar.py   (rode de novo para atualizar)"""
-import json, random, statistics, urllib.request, concurrent.futures as cf
+import json, time, random, statistics, urllib.request, concurrent.futures as cf
 from datetime import datetime
 from pathlib import Path
 
@@ -22,15 +22,23 @@ POLLS = [
 
 
 def get(u):
-    d = json.load(urllib.request.urlopen(B.format(e=ELE, u=u), timeout=25))
+    d = json.load(urllib.request.urlopen(B.format(e=ELE, u=u) + f"?t={int(time.time())}", timeout=25))
     c = {k["nmu"]: int(k["vap"]) for a in d["carg"][0]["agr"] for p in a["par"] for k in p["cand"]}
-    return dict(uf=u.upper(), ht=d["ht"], pst=num(d["s"]["pst"]), te=int(d["e"]["te"]),
+    return dict(uf=u.upper(), ht=d["ht"], pst=num(d["s"]["pst"]), ts=int(d["s"]["ts"]), st=int(d["s"]["st"]), te=int(d["e"]["te"]),
                 vv=int(d["v"]["vv"]), cand=c)
 
 
 def main():
-    nat = get("br")
     ufs = list(cf.ThreadPoolExecutor(10).map(get, UFS))
+    # nacional = soma das UFs. O arquivo "br" do TSE congelou às 19:14 em 04/10 enquanto as UFs seguiam atualizando.
+    # hora = UF mais recente que não esteja no futuro (o arquivo de PE vem ~50 min adiantado)
+    agora = datetime.now().strftime("%H:%M:%S")
+    nat = dict(ht=max((s["ht"] for s in ufs if s["uf"] != "ZZ" and s["ht"] <= agora), default=agora),
+               pst=round(100 * sum(s["st"] for s in ufs) / sum(s["ts"] for s in ufs), 2),
+               vv=sum(s["vv"] for s in ufs), cand={})
+    for s in ufs:
+        for k, v in s["cand"].items():
+            nat["cand"][k] = nat["cand"].get(k, 0) + v
 
     # projeção: restante de cada UF segue o % atual daquela UF (+ shift p/ Lula), com a taxa de válidos/eleitor da UF
     base = []
