@@ -24,6 +24,8 @@ gov2 = [g for g in rel["gov"] if g["status"] == "2turno"]; govIn = [g for g in r
 govEl = [g for g in rel["gov"] if g["status"] == "eleito"]
 plFed = dict(rel["depfed"]["por_partido"]).get("PL", 0); plSen = dict(rel["sen_part"]).get("PL", 0)
 ufF = [u for u in rel["pres_uf"] if u["uf"] != "ZZ" and u["saldo"] > 0]; ufL = [u for u in rel["pres_uf"] if u["uf"] != "ZZ" and u["saldo"] < 0]
+GOV_OFICIAL = all(g.get("oficial") for g in rel["gov"]); SEN_OFICIAL = all(s.get("oficial") for s in rel["sen"])
+DEP_PENDENTES = sorted(set(rel["depfed"].get("ufs_pendentes", []) + rel["depest"].get("ufs_pendentes", [])))
 apertado = min((u for u in rel["pres_uf"] if u["uf"] != "ZZ"), key=lambda u: abs(u["saldo"]))
 LEITURA = datetime.strptime(f'{N["dg"]} {N["ht"]}', "%d/%m/%Y %H:%M:%S")
 
@@ -169,9 +171,9 @@ def faq():
          f"Flávio venceu em {len(ufF)} unidades da federação ({', '.join(u['uf'] for u in sorted(ufF, key=lambda u: u['uf']))}). Lula venceu em {len(ufL)} ({', '.join(u['uf'] for u in sorted(ufL, key=lambda u: u['uf']))}). A disputa mais apertada foi no {apertado['uf']}, decidida por {fmt(abs(apertado['saldo']), 0)} votos."),
         ("Quais estados terão 2º turno para governador?",
          f"{', '.join(g['uf'] for g in gov2)}" + (f". No {', '.join(g['uf'] for g in govIn)}, o resultado depende do julgamento de uma candidatura sub judice" if govIn else "") +
-         f". Os outros {len(govEl)} estados elegeram o governador no 1º turno (cálculo pelas regras eleitorais, antes da proclamação oficial)."),
+         f". Os outros {len(govEl)} estados elegeram o governador no 1º turno" + (" (situação oficial do TSE)." if GOV_OFICIAL else " (cálculo pelas regras eleitorais, antes da proclamação oficial).")),
         ("Qual partido elegeu mais deputados federais em 2026?",
-         f"O PL, com {plFed} das 513 cadeiras da Câmara, segundo a distribuição de vagas publicada pelo TSE. Em 2022, o PL tinha eleito 99 deputados."),
+         f"O PL, com {plFed} das 513 cadeiras da Câmara, segundo os eleitos marcados pelo TSE" + (f" ({', '.join(rel['depfed']['ufs_pendentes'])} ainda em totalização)" if rel["depfed"].get("ufs_pendentes") else "") + ". Em 2022, o PL tinha eleito 99 deputados."),
         ("Quantas vagas do Senado o PL conquistou em 2026?",
          f"{plSen} das {sum(n for _, n in rel['sen_part'])} vagas em disputa (dois terços do Senado, duas por estado)."),
         ("Qual foi a abstenção no 1º turno de 2026?",
@@ -380,7 +382,7 @@ def main():
     gl = "\n".join(f"- {g['uf']}: {g['a']['nome']} ({g['a']['sg']}) × {g['b']['nome']} ({g['b']['sg']})" for g in gov2 + govIn)
     (OUT / "llms.txt").write_text(f"""# Eleições 2026 · Resultado do 1º turno (Brasil, 04/10/2026)
 
-> Análise independente de {AUTOR['nome']} com dados públicos do TSE ({fmt(N['pst'], 2)}% das seções apuradas, leitura de {N['dg']} {N['ht']}). Os eleitos ainda não tinham sido proclamados oficialmente; governador e Senado foram calculados pelas regras eleitorais.
+> Análise independente de {AUTOR['nome']} com dados públicos do TSE ({fmt(N['pst'], 2)}% das seções apuradas, leitura de {N['dg']} {N['ht']}). {"Governadores e Senado: situação oficial do TSE." if GOV_OFICIAL and SEN_OFICIAL else "Os eleitos ainda não tinham sido proclamados oficialmente; governador e Senado foram calculados pelas regras eleitorais."}{" Deputados ainda em totalização em: " + ", ".join(DEP_PENDENTES) + "." if DEP_PENDENTES else ""}
 
 ## Presidente
 - 2º turno em 25/10/2026: Flávio Bolsonaro (PL) {fmt(cF['p'], 2)}% × Lula (PT) {fmt(cL['p'], 2)}% dos votos válidos.

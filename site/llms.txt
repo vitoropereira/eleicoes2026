@@ -1,10 +1,10 @@
 # Eleições 2026 · Resultado do 1º turno (Brasil, 04/10/2026)
 
-> Análise independente de Vitor Onofre Pereira com dados públicos do TSE (99,95% das seções apuradas, leitura de 04/10/2026 22:49:30). Os eleitos ainda não tinham sido proclamados oficialmente; governador e Senado foram calculados pelas regras eleitorais.
+> Análise independente de Vitor Onofre Pereira com dados públicos do TSE (100,00% das seções apuradas, leitura de 05/10/2026 02:58:39). Governadores e Senado: situação oficial do TSE. Deputados ainda em totalização em: BA, MG, PR, SP.
 
 ## Presidente
-- 2º turno em 25/10/2026: Flávio Bolsonaro (PL) 47,04% × Lula (PT) 45,15% dos votos válidos.
-- Votos: Flávio 56,095,358 · Lula 53,837,560.
+- 2º turno em 25/10/2026: Flávio Bolsonaro (PL) 47,03% × Lula (PT) 45,16% dos votos válidos.
+- Votos: Flávio 56,104,503 · Lula 53,879,538.
 - Flávio venceu em 15 UFs, Lula em 12. Disputa mais apertada: AP (225 votos).
 - Abstenção 21,08% · brancos 1,84% · nulos 2,93%.
 - Comparação com o 1º turno de 2022: Lula 48,43% × Jair Bolsonaro 43,20%.
@@ -15,9 +15,9 @@
 - AM: Omar Aziz (PSD) × Professora Maria do Carmo (PL)
 - DF: Celina Leão (PP) × Leandro Grass (PT)
 - ES: Lorenzo Pazolini (REPUBLICANOS) × Ricardo Ferraço (MDB)
+- RJ: Douglas Ruas (PL) × Eduardo Paes (PSD)
 - RN: Allyson (UNIÃO) × Cadu de Lula (PT)
 - TO: Professora Dorinha (UNIÃO) × Vicentinho Júnior (PSDB)
-- RJ: Douglas Ruas (PL) × Eduardo Paes (PSD)
 
 ## Congresso
 - Câmara (513): PL 121 cadeiras (99 em 2022). Distribuição de vagas publicada pelo TSE.
