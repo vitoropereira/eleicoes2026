@@ -54,8 +54,10 @@ footer.site a{color:var(--ink2)}
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 8px}
 .faq summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:15px}
 .faq p{margin:8px 0 0;color:var(--ink2)}
+header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
 .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:50;background:var(--card);padding:6px 10px;border-radius:8px}
 a:focus-visible,summary:focus-visible{outline:2px solid var(--flavio);outline-offset:2px;border-radius:4px}
+.grid>*{min-width:0}.ch canvas{max-width:100%}
 </style><style>
 :root{
   --bg:#f7f6f3;--card:#fff;--ink:#1b1c1e;--ink2:#55595f;--muted:#8a8f98;--line:#e6e5e1;--soft:#f1f0ec;
@@ -129,4 +131,36 @@ details{margin-top:12px}details summary{cursor:pointer;color:var(--ink2);font-si
 main a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}nav a{text-decoration:none}
 svg.parl circle{stroke:none}
 @media (max-width:820px){.g2,.g3,.hero,ul.hl{grid-template-columns:1fr}header h1{font-size:24px}.hero .pc{font-size:36px}}
-</style></head><body><a class="skip" href="#conteudo">Pular para o conteúdo</a><header class="sitebar"><div class="in"><a class="brand" href="/"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1b1c1e"></rect><rect x="12" y="34" width="11" height="18" rx="3" fill="#5b8def"></rect><rect x="27" y="22" width="11" height="30" rx="3" fill="#e35a4f"></rect><rect x="42" y="12" width="11" height="40" rx="3" fill="#a3a7ad"></rect></svg><span>Eleições 2026</span></a><nav class="top" aria-label="Principal"><a href="/">Resultado final</a><a href="/ao-vivo/">Ao vivo</a><a href="/apuracao/">Histórico da apuração</a><a href="/#metodo">Método e fontes</a></nav></div></header><main id="conteudo"><header><h1>Página não encontrada</h1><p><a href="/">Voltar ao resultado do 1º turno</a> · <a href="/apuracao/">Ver a apuração</a></p></header></main><footer class="site"><div class="in"><span>Análise independente de <a href="https://vitorpereira.ia.br" rel="author">Vitor Onofre Pereira</a> com dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a>. Não é um site oficial da Justiça Eleitoral.</span><span><a href="/dados/relatorio.json">Baixar dados (JSON)</a> · <a href="/sitemap.xml">Sitemap</a> · <a href="/llms.txt">llms.txt</a></span></div></footer></body></html>
+</style></head><body><a class="skip" href="#conteudo">Pular para o conteúdo</a><header class="sitebar"><div class="in"><a class="brand" href="/"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1b1c1e"></rect><rect x="12" y="34" width="11" height="18" rx="3" fill="#5b8def"></rect><rect x="27" y="22" width="11" height="30" rx="3" fill="#e35a4f"></rect><rect x="42" y="12" width="11" height="40" rx="3" fill="#a3a7ad"></rect></svg><span>Eleições 2026</span></a><nav class="top" aria-label="Principal"><a href="/">Resultado final</a><a href="/ao-vivo/">Ao vivo</a><a href="/apuracao/">Histórico da apuração</a><a href="/#metodo">Método e fontes</a></nav></div></header><main id="conteudo"><header><h1>Página não encontrada</h1><p><a href="/">Voltar ao resultado do 1º turno</a> · <a href="/apuracao/">Ver a apuração</a></p></header></main><footer class="site"><div class="in"><span>Análise independente de <a href="https://vitorpereira.ia.br" rel="author">Vitor Onofre Pereira</a> com dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a>. Não é um site oficial da Justiça Eleitoral.</span><span><a href="/dados/relatorio.json">Baixar dados (JSON)</a> · <a href="/sitemap.xml">Sitemap</a> · <a href="/llms.txt">llms.txt</a></span></div></footer><style id="consent-css">
+.consent{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--card,#fff);color:var(--ink,#1b1c1e);border-top:1px solid var(--line,#e6e5e1);box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+.consent .in{max-width:1160px;margin:0 auto;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.consent p{margin:0;font-size:14px;color:var(--ink2,#55595f);flex:1 1 320px}
+.consent p a{color:var(--ink,#1b1c1e)}
+.consent .bt{display:flex;gap:8px}
+.consent button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line,#e6e5e1);background:var(--card,#fff);color:var(--ink,#1b1c1e)}
+.consent button.ok{background:var(--ink,#1b1c1e);color:var(--card,#fff);border-color:var(--ink,#1b1c1e)}
+.consent button:focus-visible{outline:2px solid var(--flavio,#2563c9);outline-offset:2px}
+@media (max-width:520px){.consent .bt{width:100%}.consent button{flex:1}}
+</style>
+<script id="consent-js">
+(function(){
+  var GA="G-N6J962GXT3",CL="tp8n6kanob",C="consent";
+  function ler(){var m=document.cookie.match(/(?:^|;\s*)consent=(accepted|rejected)/);return m?m[1]:null}
+  function gravar(v){document.cookie=C+"="+v+"; path=/; max-age=31536000; SameSite=Lax"}
+  function carregar(){
+    if(window.__medindo)return;window.__medindo=true;
+    var g=document.createElement("script");g.async=true;g.src="https://www.googletagmanager.com/gtag/js?id="+GA;document.head.appendChild(g);
+    window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config",GA,{anonymize_ip:true});
+    window.clarity=window.clarity||function(){(window.clarity.q=window.clarity.q||[]).push(arguments)};
+    var c=document.createElement("script");c.async=true;c.src="https://www.clarity.ms/tag/"+CL;document.head.appendChild(c);
+  }
+  var v=ler();
+  if(v==="accepted"){carregar();return}
+  if(v==="rejected")return;
+  var b=document.createElement("div");b.className="consent";b.setAttribute("role","dialog");b.setAttribute("aria-live","polite");b.setAttribute("aria-label","Cookies");
+  b.innerHTML='<div class="in"><p>Usamos cookies pra entender como o site é usado e melhorar sua experiência. Você pode aceitar ou recusar. <a href="https://vitorpereira.ia.br/privacidade" rel="noopener">Política de privacidade</a></p><div class="bt"><button type="button" data-v="rejected">Recusar</button><button type="button" class="ok" data-v="accepted">Aceitar</button></div></div>';
+  b.addEventListener("click",function(e){var x=e.target.getAttribute&&e.target.getAttribute("data-v");if(!x)return;gravar(x);b.remove();if(x==="accepted")carregar()});
+  document.body.appendChild(b);
+})();
+</script>
+</body></html>

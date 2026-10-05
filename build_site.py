@@ -10,6 +10,14 @@ from pathlib import Path
 BASE = "https://eleicoes2026.vitorpereira.ia.br"
 SITE_NAME = "Eleições 2026 · Apuração e resultados"
 AUTOR = dict(nome="Vitor Onofre Pereira", url="https://vitorpereira.ia.br")
+AUTOR_PERFIS = ["https://vitorpereira.ia.br", "https://www.linkedin.com/in/vitor-onofre-pereira/", "https://github.com/vitoropereira",
+                "https://x.com/VITORONOFRE", "https://www.instagram.com/vitorpereirasaas/", "https://www.tabnews.com.br/vitorpereirasaas",
+                "https://www.youtube.com/@vitoropereira"]
+# medições: GA4 e Clarity, as mesmas do vitorpereira.ia.br, só depois do consentimento de cookies
+GA_ID = "G-N6J962GXT3"
+CLARITY_ID = "tp8n6kanob"
+PRIVACIDADE = "https://vitorpereira.ia.br/privacidade"
+NOME_EXIBICAO = {"Flavio Bolsonaro": "Flávio Bolsonaro"}  # o TSE publica sem acento
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 R = Path(__file__).parent
 OUT = R / "site"
@@ -76,12 +84,55 @@ footer.site a{color:var(--ink2)}
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 8px}
 .faq summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:15px}
 .faq p{margin:8px 0 0;color:var(--ink2)}
+header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
 .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:50;background:var(--card);padding:6px 10px;border-radius:8px}
 a:focus-visible,summary:focus-visible{outline:2px solid var(--flavio);outline-offset:2px;border-radius:4px}
+.grid>*{min-width:0}.ch canvas{max-width:100%}
 </style>"""
 
 
 FAVICON_INLINE = FAVICON.replace("<svg ", '<svg aria-hidden="true" ')
+
+# ---------------- medições (entram depois do pré-render, para o banner não ficar congelado no HTML)
+# Vercel Web Analytics/Speed Insights ficam de fora: não estão ativados no projeto, e os scripts dariam 404.
+MEDICAO_BODY = """<style id="consent-css">
+.consent{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--card,#fff);color:var(--ink,#1b1c1e);border-top:1px solid var(--line,#e6e5e1);box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+.consent .in{max-width:1160px;margin:0 auto;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.consent p{margin:0;font-size:14px;color:var(--ink2,#55595f);flex:1 1 320px}
+.consent p a{color:var(--ink,#1b1c1e)}
+.consent .bt{display:flex;gap:8px}
+.consent button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line,#e6e5e1);background:var(--card,#fff);color:var(--ink,#1b1c1e)}
+.consent button.ok{background:var(--ink,#1b1c1e);color:var(--card,#fff);border-color:var(--ink,#1b1c1e)}
+.consent button:focus-visible{outline:2px solid var(--flavio,#2563c9);outline-offset:2px}
+@media (max-width:520px){.consent .bt{width:100%}.consent button{flex:1}}
+</style>
+<script id="consent-js">
+(function(){
+  var GA="__GA__",CL="__CLARITY__",C="consent";
+  function ler(){var m=document.cookie.match(/(?:^|;\\s*)consent=(accepted|rejected)/);return m?m[1]:null}
+  function gravar(v){document.cookie=C+"="+v+"; path=/; max-age=31536000; SameSite=Lax"}
+  function carregar(){
+    if(window.__medindo)return;window.__medindo=true;
+    var g=document.createElement("script");g.async=true;g.src="https://www.googletagmanager.com/gtag/js?id="+GA;document.head.appendChild(g);
+    window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config",GA,{anonymize_ip:true});
+    window.clarity=window.clarity||function(){(window.clarity.q=window.clarity.q||[]).push(arguments)};
+    var c=document.createElement("script");c.async=true;c.src="https://www.clarity.ms/tag/"+CL;document.head.appendChild(c);
+  }
+  var v=ler();
+  if(v==="accepted"){carregar();return}
+  if(v==="rejected")return;
+  var b=document.createElement("div");b.className="consent";b.setAttribute("role","dialog");b.setAttribute("aria-live","polite");b.setAttribute("aria-label","Cookies");
+  b.innerHTML='<div class="in"><p>Usamos cookies pra entender como o site é usado e melhorar sua experiência. Você pode aceitar ou recusar. <a href="__PRIV__" rel="noopener">Política de privacidade</a></p><div class="bt"><button type="button" data-v="rejected">Recusar</button><button type="button" class="ok" data-v="accepted">Aceitar</button></div></div>';
+  b.addEventListener("click",function(e){var x=e.target.getAttribute&&e.target.getAttribute("data-v");if(!x)return;gravar(x);b.remove();if(x==="accepted")carregar()});
+  document.body.appendChild(b);
+})();
+</script>
+""".replace("__GA__", GA_ID).replace("__CLARITY__", CLARITY_ID).replace("__PRIV__", PRIVACIDADE)
+
+
+def com_medicao(dom):
+    assert "consent-js" not in dom, "medição já presente no HTML pré-renderizado"
+    return dom.replace("</body>", MEDICAO_BODY + "</body>", 1)
 
 
 def sitebar(atual):
@@ -135,7 +186,7 @@ def head(title, desc, path, og_img, extra_ld, published, modified):
 {SITE_CSS}"""
 
 
-PESSOA = {"@type": "Person", "name": AUTOR["nome"], "url": AUTOR["url"]}
+PESSOA = {"@type": "Person", "name": AUTOR["nome"], "url": AUTOR["url"], "sameAs": AUTOR_PERFIS}
 FONTE_TSE = {"@type": "Organization", "name": "Tribunal Superior Eleitoral", "url": "https://www.tse.jus.br"}
 ELEICAO = {"@type": "Event", "name": "Eleições Gerais 2026 no Brasil — 1º turno", "startDate": "2026-10-04",
            "eventStatus": "https://schema.org/EventScheduled", "location": {"@type": "Country", "name": "Brasil"},
@@ -251,6 +302,13 @@ def main():
     raw = (R / "relatorio" / "relatorio_final.html").read_text()
     raw = raw.replace('<section id="metodo">', faq_vis + '\n<section id="metodo">', 1)
     raw = raw.replace('<a href="#metodo">Método e fontes</a>', '<a href="#perguntas">Perguntas</a><a href="#metodo">Método e fontes</a>', 1)
+    # H1 com a resposta (AEO); o título antigo vira subtítulo
+    c1, c2 = sorted(N["cand"], key=lambda c: -c["p"])[:2]
+    nome = lambda c: NOME_EXIBICAO.get(c["nome"], c["nome"])
+    h1 = (f"Eleições 2026: {nome(c1)} e {nome(c2)} vão ao 2º turno" if c1["p"] < 50 else f"Eleições 2026: {nome(c1)} é eleito no 1º turno")
+    antigo = "<h1>Eleições 2026 · Relatório final do 1º turno</h1>"
+    assert antigo in raw, "H1 do relatório mudou: ajuste build_site.py"
+    raw = raw.replace(antigo, f'<p class="kicker">Relatório final do 1º turno</p>\n  <h1>{html.escape(h1)}</h1>', 1)
     titulo = f"Eleições 2026: Flávio {fmt(cF['p'], 1)}% × Lula {fmt(cL['p'], 1)}% no 1º turno"
     desc = (f"Flávio Bolsonaro e Lula vão ao 2º turno em 25/10. Mapa por estado, governadores, Senado, Câmara e Assembleias "
             f"com {fmt(N['pst'], 2)}% das urnas apuradas pelo TSE.")
@@ -358,7 +416,7 @@ def main():
         if m and '"mapa"' in m.group(1):
             d = json.loads(m.group(1)); d.pop("mapa", None)
             dom = dom[:m.start(1)] + json.dumps(d, ensure_ascii=False) + dom[m.end(1):]
-        dest = OUT / p; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_text(dom)
+        dest = OUT / p; dest.parent.mkdir(parents=True, exist_ok=True); dest.write_text(com_medicao(dom))
     (OUT / "404.html").write_text((OUT / "404.html").read_text().replace('<meta name="robots" content="index,follow', '<meta name="robots" content="noindex,follow', 1))
 
     # ---- imagens OG
@@ -386,7 +444,7 @@ def main():
 
 ## Presidente
 - 2º turno em 25/10/2026: Flávio Bolsonaro (PL) {fmt(cF['p'], 2)}% × Lula (PT) {fmt(cL['p'], 2)}% dos votos válidos.
-- Votos: Flávio {cF['votos']:,} · Lula {cL['votos']:,}.
+- Votos: Flávio {fmt(cF['votos'], 0)} · Lula {fmt(cL['votos'], 0)}.
 - Flávio venceu em {len(ufF)} UFs, Lula em {len(ufL)}. Disputa mais apertada: {apertado['uf']} ({fmt(abs(apertado['saldo']), 0)} votos).
 - Abstenção {fmt(N['pa'], 2)}% · brancos {fmt(N['pb'], 2)}% · nulos {fmt(N['pn'], 2)}%.
 - Comparação com o 1º turno de 2022: Lula 48,43% × Jair Bolsonaro 43,20%.
