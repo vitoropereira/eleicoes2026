@@ -1,6 +1,6 @@
 # Eleições 2026 · Resultado do 1º turno (Brasil, 04/10/2026)
 
-> Análise independente de Vitor Onofre Pereira com dados públicos do TSE (100,00% das seções apuradas, leitura de 05/10/2026 02:58:39). Governadores e Senado: situação oficial do TSE. Deputados ainda em totalização em: BA, MG, PR, SP.
+> Análise independente de Vitor Onofre Pereira com dados públicos do TSE (100,00% das seções apuradas, leitura de 05/10/2026 12:51:05). Governadores e Senado: situação oficial do TSE.
 
 ## Presidente
 - 2º turno em 25/10/2026: Flávio Bolsonaro (PL) 47,03% × Lula (PT) 45,16% dos votos válidos.

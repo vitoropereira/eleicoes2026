@@ -1,7 +1,7 @@
 {
- "gerado": "05/10/2026 15:18",
+ "gerado": "05/10/2026 15:41",
  "nac": {
-  "ht": "02:58:39",
+  "ht": "12:51:05",
   "dg": "05/10/2026",
   "pst": 100.0,
   "eleitores": 158745502,
@@ -2007,6 +2007,7 @@
    "MA",
    "MT",
    "MS",
+   "MG",
    "PA",
    "PB",
    "PR",
@@ -2018,13 +2019,11 @@
    "RO",
    "RR",
    "SC",
+   "SP",
    "SE",
    "TO"
   ],
-  "ufs_pendentes": [
-   "MG",
-   "SP"
-  ],
+  "ufs_pendentes": [],
   "top": [
    {
     "nome": "Nikolas Ferreira",
@@ -2320,7 +2319,7 @@
      "PSB": 1,
      "PSOL / REDE": 2
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "PA",
@@ -2359,11 +2358,11 @@
      "PODE": 2,
      "PL": 5,
      "REPUBLICANOS": 2,
-     "NOVO": 4,
      "PCDOB / PT / PV": 6,
+     "NOVO": 4,
      "PP / UNIÃO": 6,
-     "PSD": 4,
-     "MDB": 1
+     "MDB": 1,
+     "PSD": 4
     },
     "oficial": true
    },
@@ -2506,7 +2505,7 @@
      "PCDOB / PT / PV": 11,
      "PSOL / REDE": 6
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "SE",
@@ -2723,6 +2722,7 @@
    "AL",
    "AP",
    "AM",
+   "BA",
    "CE",
    "DF",
    "ES",
@@ -2730,8 +2730,10 @@
    "MA",
    "MT",
    "MS",
+   "MG",
    "PA",
    "PB",
+   "PR",
    "PE",
    "PI",
    "RJ",
@@ -2740,15 +2742,11 @@
    "RO",
    "RR",
    "SC",
+   "SP",
    "SE",
    "TO"
   ],
-  "ufs_pendentes": [
-   "BA",
-   "MG",
-   "PR",
-   "SP"
-  ],
+  "ufs_pendentes": [],
   "top": [
    {
     "nome": "Eduarda Campopiano",
@@ -2937,7 +2935,7 @@
      "CIDADANIA / PSDB": 2,
      "PL": 7
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "CE",
@@ -3080,20 +3078,20 @@
      "CIDADANIA / PSDB": 3,
      "NOVO": 2
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "PA",
     "vagas": 41,
     "pst": 100.0,
     "agr": {
-     "PL": 7,
      "PCDOB / PT / PV": 4,
+     "PL": 7,
      "REPUBLICANOS": 2,
      "MDB": 13,
      "PSD": 3,
-     "PODE": 3,
      "PP / UNIÃO": 5,
+     "PODE": 3,
      "AVANTE": 2,
      "PDT": 1,
      "PSOL / REDE": 1
@@ -3129,7 +3127,7 @@
      "PDT": 1,
      "PSD": 14
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "PE",
@@ -3284,7 +3282,7 @@
      "CIDADANIA / PSDB": 1,
      "REPUBLICANOS": 6
     },
-    "oficial": false
+    "oficial": true
    },
    {
     "uf": "SE",
@@ -3365,7 +3363,7 @@
    "l": 45.09
   },
   {
-   "ht": "02:58:39",
+   "ht": "12:51:05",
    "pst": 100.0,
    "f": 47.03,
    "l": 45.16

@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "ba", "dg" : "05/10/2026", "hg" : "00:51:54", "idg" : "2657466", "dt" : "05/10/2026", "ht" : "00:50:30", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "ba", "dg" : "05/10/2026", "hg" : "11:41:49", "idg" : "2809804", "dt" : "05/10/2026", "ht" : "00:50:30", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "3", "nmn" : "Governador", "nmm" : "Governador", "nmf" : "Governadora", "nv" : "1", "fed" : [ 
 { "n" : "104", "sg" : "UNIÃO/PP", "nm" : "FEDERAÇÃO UNIÃO PROGRESSISTA", "com" : "UNIÃO/PP", "npar" : [ "11", "44" ] }, 
 { "n" : "102", "sg" : "PSOL/REDE", "nm" : "FEDERAÇÃO PSOL REDE", "com" : "PSOL/REDE", "npar" : [ "18", "50" ] }, 
@@ -16,14 +16,14 @@
 { "n" : "29", "sg" : "PCO", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "nfed" : "", "tvtn" : "4028", "tvan" : "4028", "cand" : [ 
 { "n" : "29", "sqcand" : "50002552489", "nm" : "MARIA BONA CARRARA DE SUMBUY", "nmu" : "MARIA BONA", "dt" : "10/05/1953", "dvt" : "Válido", "seq" : "5", "e" : "n", "st" : "Não eleito", "vap" : "4028", "pvap" : "0,05", "pvapn" : "0,048582273", "vs" : [ 
 { "tp" : "v", "sqcand" : "50002552488", "nm" : "JOSÉ RICARDO DE LIMA CHAVES", "nmu" : "ZÉ RICARDO", "sgp" : "PCO" } ] } ] } ] }, 
-{ "n" : "50001799963", "nm" : "FEDERAÇÃO PSOL REDE", "tp" : "f", "com" : "PSOL / REDE", "tvtn" : "27243", "tvan" : "27243", "vag" : "0", "par" : [ 
-{ "n" : "50", "sg" : "PSOL", "nm" : "PARTIDO SOCIALISMO E LIBERDADE", "nfed" : "102", "tvtn" : "27243", "tvan" : "27243", "cand" : [ 
-{ "n" : "50", "sqcand" : "50002532269", "nm" : "RONALDO MANSUR SANTOS SILVA", "nmu" : "RONALDO MANSUR", "dt" : "25/09/1979", "dvt" : "Válido", "seq" : "3", "e" : "n", "st" : "Não eleito", "vap" : "27243", "pvap" : "0,33", "pvapn" : "0,328581646", "vs" : [ 
-{ "tp" : "v", "sqcand" : "50002532270", "nm" : "MEIRE LUCIA ALVES DOS REIS", "nmu" : "PROFª MEIRE REIS", "sgp" : "PSOL" } ] } ] } ] }, 
 { "n" : "50001800741", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
 { "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "5238", "tvan" : "5238", "cand" : [ 
 { "n" : "80", "sqcand" : "50002544692", "nm" : "AROLDO FELIX DE AZEVEDO JUNIOR", "nmu" : "AROLDO FELIX", "dt" : "16/12/1982", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "5238", "pvap" : "0,06", "pvapn" : "0,063176253", "vs" : [ 
 { "tp" : "v", "sqcand" : "50002544693", "nm" : "MARILIA REGINA SANTANA DOS SANTOS", "nmu" : "MARILIA DO MLB", "sgp" : "UP" } ] } ] } ] }, 
+{ "n" : "50001799963", "nm" : "FEDERAÇÃO PSOL REDE", "tp" : "f", "com" : "PSOL / REDE", "tvtn" : "27243", "tvan" : "27243", "vag" : "0", "par" : [ 
+{ "n" : "50", "sg" : "PSOL", "nm" : "PARTIDO SOCIALISMO E LIBERDADE", "nfed" : "102", "tvtn" : "27243", "tvan" : "27243", "cand" : [ 
+{ "n" : "50", "sqcand" : "50002532269", "nm" : "RONALDO MANSUR SANTOS SILVA", "nmu" : "RONALDO MANSUR", "dt" : "25/09/1979", "dvt" : "Válido", "seq" : "3", "e" : "n", "st" : "Não eleito", "vap" : "27243", "pvap" : "0,33", "pvapn" : "0,328581646", "vs" : [ 
+{ "tp" : "v", "sqcand" : "50002532270", "nm" : "MEIRE LUCIA ALVES DOS REIS", "nmu" : "PROFª MEIRE REIS", "sgp" : "PSOL" } ] } ] } ] }, 
 { "n" : "50001800154", "nm" : "UNIDOS PARA MUDAR A BAHIA", "tp" : "c", "com" : "REPUBLICANOS / PODE / PL / CIDADANIA / PSDB / PRD / SOLIDARIEDADE / PP / UNIÃO / NOVO", "tvtn" : "3625227", "tvan" : "3625227", "par" : [ 
 { "n" : "44", "sg" : "UNIÃO", "nm" : "UNIÃO BRASIL", "nfed" : "104", "tvtn" : "3625227", "tvan" : "3625227", "cand" : [ 
 { "n" : "44", "sqcand" : "50002533190", "nm" : "ANTONIO CARLOS PEIXOTO DE MAGALHÃES NETO", "nmu" : "ACM NETO", "dt" : "26/01/1979", "dvt" : "Válido", "seq" : "2", "e" : "n", "st" : "Não eleito", "vap" : "3625227", "pvap" : "43,72", "pvapn" : "43,724371584", "vs" : [ 

@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "mg", "dg" : "05/10/2026", "hg" : "00:51:57", "idg" : "2661978", "dt" : "05/10/2026", "ht" : "00:50:04", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "mg", "dg" : "05/10/2026", "hg" : "11:45:42", "idg" : "2822186", "dt" : "05/10/2026", "ht" : "00:50:04", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "3", "nmn" : "Governador", "nmm" : "Governador", "nmf" : "Governadora", "nv" : "1", "fed" : [ 
 { "n" : "101", "sg" : "PT/PC do B/PV", "nm" : "FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL", "com" : "PT/PC do B/PV", "npar" : [ "13", "43", "65" ] } ], "agr" : [ 
 { "n" : "130001800843", "nm" : "PARTIDO SOCIALISTA  DOS TRABALHADORES UNIFICADO", "tp" : "i", "com" : "PSTU", "vag" : "0", "par" : [ 
@@ -22,26 +22,26 @@
 { "n" : "29", "sg" : "PCO", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "nfed" : "", "tvtn" : "0", "tvan" : "1464", "cand" : [ 
 { "n" : "29", "sqcand" : "130002552308", "nm" : "HENRIQUE AREAS DE ARAUJO", "nmu" : "HENRIQUE ÁREAS", "dt" : "18/05/1985", "dvt" : "Anulado sub judice", "seq" : "11", "e" : "n", "st" : "Não eleito", "vap" : "1464", "pvap" : "0,01", "pvapn" : "0,012828787", "vs" : [ 
 { "tp" : "v", "sqcand" : "130002552309", "nm" : "ESTEVÃO FRANCISCO GOMES DA SILVA", "nmu" : "ESTEVÃO GOMES", "sgp" : "PCO" } ] } ] } ] }, 
-{ "n" : "130001801053", "nm" : "MOVIMENTO DEMOCRÁTICO BRASILEIRO", "tp" : "i", "com" : "MDB", "vag" : "0", "par" : [ 
-{ "n" : "15", "sg" : "MDB", "nm" : "MOVIMENTO DEMOCRÁTICO BRASILEIRO", "nfed" : "", "tvtn" : "237051", "tvan" : "237051", "cand" : [ 
-{ "n" : "15", "sqcand" : "130002549557", "nm" : "GABRIEL SOUSA MARQUES DE AZEVEDO", "nmu" : "GABRIEL", "dt" : "12/03/1986", "dvt" : "Válido", "seq" : "6", "e" : "n", "st" : "Não eleito", "vap" : "237051", "pvap" : "2,08", "pvapn" : "2,077238236", "vs" : [ 
-{ "tp" : "v", "sqcand" : "130002549558", "nm" : "MARIA HELENA DE QUADROS LOPES", "nmu" : "MARIA HELENA", "sgp" : "MDB" } ] } ] } ] }, 
 { "n" : "130001800588", "nm" : "MINAS NO CAMINHO CERTO ", "tp" : "c", "com" : "PSD / PP / UNIÃO / NOVO / AVANTE / PRD / SOLIDARIEDADE / MOBILIZA / DC / AGIR", "tvtn" : "530292", "tvan" : "530292", "par" : [ 
 { "n" : "55", "sg" : "PSD", "nm" : "PARTIDO SOCIAL DEMOCRÁTICO", "nfed" : "", "tvtn" : "530292", "tvan" : "530292", "cand" : [ 
 { "n" : "55", "sqcand" : "130002541911", "nm" : "MATEUS SIMÕES DE ALMEIDA", "nmu" : "MATEUS SIMÕES", "dt" : "09/03/1981", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "530292", "pvap" : "4,65", "pvapn" : "4,646860036", "vs" : [ 
 { "tp" : "v", "sqcand" : "130002541912", "nm" : "DANILO DE CASTRO", "nmu" : "DANILO DE CASTRO", "sgp" : "UNIÃO" } ] } ] } ] }, 
+{ "n" : "130001801053", "nm" : "MOVIMENTO DEMOCRÁTICO BRASILEIRO", "tp" : "i", "com" : "MDB", "vag" : "0", "par" : [ 
+{ "n" : "15", "sg" : "MDB", "nm" : "MOVIMENTO DEMOCRÁTICO BRASILEIRO", "nfed" : "", "tvtn" : "237051", "tvan" : "237051", "cand" : [ 
+{ "n" : "15", "sqcand" : "130002549557", "nm" : "GABRIEL SOUSA MARQUES DE AZEVEDO", "nmu" : "GABRIEL", "dt" : "12/03/1986", "dvt" : "Válido", "seq" : "6", "e" : "n", "st" : "Não eleito", "vap" : "237051", "pvap" : "2,08", "pvapn" : "2,077238236", "vs" : [ 
+{ "tp" : "v", "sqcand" : "130002549558", "nm" : "MARIA HELENA DE QUADROS LOPES", "nmu" : "MARIA HELENA", "sgp" : "MDB" } ] } ] } ] }, 
 { "n" : "130001800385", "nm" : "CUIDAR DE MINAS", "tp" : "c", "com" : "PDT / CIDADANIA / PSDB", "tvtn" : "403466", "tvan" : "403466", "par" : [ 
 { "n" : "12", "sg" : "PDT", "nm" : "PARTIDO DEMOCRÁTICO TRABALHISTA", "nfed" : "", "tvtn" : "403466", "tvan" : "403466", "cand" : [ 
 { "n" : "12", "sqcand" : "130002539775", "nm" : "ALEXANDRE KALIL", "nmu" : "ALEXANDRE KALIL", "dt" : "25/03/1959", "dvt" : "Válido", "seq" : "5", "e" : "n", "st" : "Não eleito", "vap" : "403466", "pvap" : "3,54", "pvapn" : "3,535505026", "vs" : [ 
 { "tp" : "v", "sqcand" : "130002539774", "nm" : "CARLOS EDUARDO VENTURELLI MOSCONI", "nmu" : "CARLOS MOSCONI", "sgp" : "PSDB" } ] } ] } ] }, 
-{ "n" : "130001800712", "nm" : "PARTIDO MISSÃO", "tp" : "i", "com" : "MISSÃO", "vag" : "0", "par" : [ 
-{ "n" : "14", "sg" : "MISSÃO", "nm" : "PARTIDO MISSÃO", "nfed" : "", "tvtn" : "80308", "tvan" : "80308", "cand" : [ 
-{ "n" : "14", "sqcand" : "130002544411", "nm" : "BENONI BENJAMIN CARDOSO MENDES", "nmu" : "BEN MENDES", "dt" : "08/05/1988", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "Não eleito", "vap" : "80308", "pvap" : "0,70", "pvapn" : "0,703725562", "vs" : [ 
-{ "tp" : "v", "sqcand" : "130002544410", "nm" : "DEIVID FERNANDES DE SOUZA", "nmu" : "CABO DAVID SOUZA", "sgp" : "MISSÃO" } ] } ] } ] }, 
 { "n" : "130001801139", "nm" : "PARTIDO LIBERAL", "tp" : "i", "com" : "PL", "vag" : "0", "par" : [ 
 { "n" : "22", "sg" : "PL", "nm" : "PARTIDO LIBERAL", "nfed" : "", "tvtn" : "795193", "tvan" : "795193", "cand" : [ 
 { "n" : "22", "sqcand" : "130002550834", "nm" : "FLAVIO ROSCOE NOGUEIRA", "nmu" : "FLÁVIO ROSCOE", "dt" : "12/10/1971", "dvt" : "Válido", "seq" : "3", "e" : "n", "st" : "Não eleito", "vap" : "795193", "pvap" : "6,97", "pvapn" : "6,968143160", "vs" : [ 
 { "tp" : "v", "sqcand" : "130002550835", "nm" : "ELLEN MIZIARA SOUSA FERREIRA", "nmu" : "ELLEN MIZIARA", "sgp" : "PL" } ] } ] } ] }, 
+{ "n" : "130001800712", "nm" : "PARTIDO MISSÃO", "tp" : "i", "com" : "MISSÃO", "vag" : "0", "par" : [ 
+{ "n" : "14", "sg" : "MISSÃO", "nm" : "PARTIDO MISSÃO", "nfed" : "", "tvtn" : "80308", "tvan" : "80308", "cand" : [ 
+{ "n" : "14", "sqcand" : "130002544411", "nm" : "BENONI BENJAMIN CARDOSO MENDES", "nmu" : "BEN MENDES", "dt" : "08/05/1988", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "Não eleito", "vap" : "80308", "pvap" : "0,70", "pvapn" : "0,703725562", "vs" : [ 
+{ "tp" : "v", "sqcand" : "130002544410", "nm" : "DEIVID FERNANDES DE SOUZA", "nmu" : "CABO DAVID SOUZA", "sgp" : "MISSÃO" } ] } ] } ] }, 
 { "n" : "130001800956", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
 { "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "20662", "tvan" : "20662", "cand" : [ 
 { "n" : "80", "sqcand" : "130002547874", "nm" : "INDIRA IVANISE XAVIER", "nmu" : "INDIRA XAVIER", "dt" : "04/10/1984", "dvt" : "Válido", "seq" : "8", "e" : "n", "st" : "Não eleito", "vap" : "20662", "pvap" : "0,18", "pvapn" : "0,181057648", "vs" : [ 

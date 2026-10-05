@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "pr", "dg" : "04/10/2026", "hg" : "22:44:22", "idg" : "2224845", "dt" : "04/10/2026", "ht" : "22:43:11", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "pr", "dg" : "05/10/2026", "hg" : "11:46:40", "idg" : "2824877", "dt" : "04/10/2026", "ht" : "22:43:11", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "5", "nmn" : "Senador", "nmm" : "Senador", "nmf" : "Senadora", "nv" : "2", "fed" : [ 
 { "n" : "101", "sg" : "PT/PC do B/PV", "nm" : "FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL", "com" : "PT/PC do B/PV", "npar" : [ "13", "43", "65" ] } ], "agr" : [ 
 { "n" : "160001801325", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "tp" : "i", "com" : "PCO", "vag" : "0", "par" : [ 
@@ -16,16 +16,16 @@
 { "n" : "100", "sqcand" : "160002547963", "nm" : "ALEXANDRE MARANHAO KHURY", "nmu" : "ALEXANDRE CURI", "dt" : "09/04/1979", "dvt" : "Válido", "seq" : "3", "e" : "n", "st" : "Não eleito", "vap" : "1947135", "pvap" : "16,85", "pvapn" : "16,854177672", "vs" : [ 
 { "tp" : "s1", "sqcand" : "160002547962", "nm" : "CARLOS EDUARDO HAMMERSCHMIDT", "nmu" : "DUDU POTENCIAL", "sgp" : "REPUBLICANOS" }, 
 { "tp" : "s2", "sqcand" : "160002547964", "nm" : "NELSON FERNANDO PADOVANI", "nmu" : "NELSON PADOVANI", "sgp" : "PP" } ] } ] } ] }, 
-{ "n" : "160001801168", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
-{ "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "15457", "tvan" : "15457", "cand" : [ 
-{ "n" : "800", "sqcand" : "160002551043", "nm" : "JOAQUIM SILVA MACIEL", "nmu" : "JOAQUIM DO MLB", "dt" : "12/02/1948", "dvt" : "Válido", "seq" : "8", "e" : "n", "st" : "Não eleito", "vap" : "15457", "pvap" : "0,13", "pvapn" : "0,133794023", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "160002551044", "nm" : "PATRICIA COTA", "nmu" : "PATY COTA", "sgp" : "UP" }, 
-{ "tp" : "s2", "sqcand" : "160002551045", "nm" : "JOÃO FERNANDO DORNELLAS DE OLIVEIRA", "nmu" : "FERNANDO DORNELLAS", "sgp" : "UP" } ] } ] } ] }, 
 { "n" : "160001801171", "nm" : "PARTIDO MISSÃO", "tp" : "i", "com" : "MISSÃO", "vag" : "0", "par" : [ 
 { "n" : "14", "sg" : "MISSÃO", "nm" : "PARTIDO MISSÃO", "nfed" : "", "tvtn" : "93198", "tvan" : "93198", "cand" : [ 
 { "n" : "144", "sqcand" : "160002551121", "nm" : "KAREN CORREIA GUERREIRO", "nmu" : "KAREN GUERREIRO", "dt" : "31/10/1980", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "Não eleito", "vap" : "93198", "pvap" : "0,81", "pvapn" : "0,806711220", "vs" : [ 
 { "tp" : "s1", "sqcand" : "160002551119", "nm" : "SONNI JAIR RICARDO COLOMBO REZINI", "nmu" : "SONNI REZINI", "sgp" : "MISSÃO" }, 
 { "tp" : "s2", "sqcand" : "160002551120", "nm" : "RENATO SCARANTE", "nmu" : "RENATO SCARANTE", "sgp" : "MISSÃO" } ] } ] } ] }, 
+{ "n" : "160001801168", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
+{ "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "15457", "tvan" : "15457", "cand" : [ 
+{ "n" : "800", "sqcand" : "160002551043", "nm" : "JOAQUIM SILVA MACIEL", "nmu" : "JOAQUIM DO MLB", "dt" : "12/02/1948", "dvt" : "Válido", "seq" : "8", "e" : "n", "st" : "Não eleito", "vap" : "15457", "pvap" : "0,13", "pvapn" : "0,133794023", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "160002551044", "nm" : "PATRICIA COTA", "nmu" : "PATY COTA", "sgp" : "UP" }, 
+{ "tp" : "s2", "sqcand" : "160002551045", "nm" : "JOÃO FERNANDO DORNELLAS DE OLIVEIRA", "nmu" : "FERNANDO DORNELLAS", "sgp" : "UP" } ] } ] } ] }, 
 { "n" : "160001800894", "nm" : "PARANÁ PARA TODOS", "tp" : "c", "com" : "PDT / PCDOB / PT / PV / PSOL / REDE / PRD / SOLIDARIEDADE", "tvtn" : "2696779", "tvan" : "2696779", "par" : [ 
 { "n" : "13", "sg" : "PT", "nm" : "PARTIDO DOS TRABALHADORES", "nfed" : "101", "tvtn" : "2696779", "tvan" : "2696779", "cand" : [ 
 { "n" : "131", "sqcand" : "160002547656", "nm" : "GLEISI HELENA HOFFMANN", "nmu" : "GLEISI", "dt" : "06/09/1965", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "1542636", "pvap" : "13,35", "pvapn" : "13,352880631", "vs" : [ 

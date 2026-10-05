@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "ba", "dg" : "05/10/2026", "hg" : "00:51:54", "idg" : "2663613", "dt" : "05/10/2026", "ht" : "00:50:30", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "ba", "dg" : "05/10/2026", "hg" : "11:41:50", "idg" : "2811736", "dt" : "05/10/2026", "ht" : "00:50:30", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "5", "nmn" : "Senador", "nmm" : "Senador", "nmf" : "Senadora", "nv" : "2", "fed" : [ 
 { "n" : "101", "sg" : "PT/PC do B/PV", "nm" : "FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL", "com" : "PT/PC do B/PV", "npar" : [ "13", "43", "65" ] }, 
 { "n" : "102", "sg" : "PSOL/REDE", "nm" : "FEDERAÇÃO PSOL REDE", "com" : "PSOL/REDE", "npar" : [ "18", "50" ] } ], "agr" : [ 
@@ -20,16 +20,16 @@
 { "n" : "180", "sqcand" : "50002534774", "nm" : "MARCELO CARVALHO LAVIGNE", "nmu" : "MARCELO CARVALHO", "dt" : "14/10/1980", "dvt" : "Válido", "seq" : "6", "e" : "n", "st" : "Não eleito", "vap" : "50929", "pvap" : "0,35", "pvapn" : "0,353222051", "vs" : [ 
 { "tp" : "s1", "sqcand" : "50002534773", "nm" : "HERZEM COSTA RODRIGUES", "nmu" : "ZEM COSTA", "sgp" : "PSOL" }, 
 { "tp" : "s2", "sqcand" : "50002534770", "nm" : "CRISTINA MARQUES DA SILVA", "nmu" : "CRIS MARQUES", "sgp" : "PSOL" } ] } ] } ] }, 
-{ "n" : "50001801427", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "tp" : "i", "com" : "PCO", "vag" : "0", "par" : [ 
-{ "n" : "29", "sg" : "PCO", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "nfed" : "", "tvtn" : "4920", "tvan" : "4920", "cand" : [ 
-{ "n" : "290", "sqcand" : "50002553643", "nm" : "MARCELO MILLET OLIVEIRA", "nmu" : "MARCELO MILLET", "dt" : "04/02/1986", "dvt" : "Válido", "seq" : "10", "e" : "n", "st" : "Não eleito", "vap" : "4920", "pvap" : "0,03", "pvapn" : "0,034123044", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "50002554411", "nm" : "ROBSON JOSE LEAL LYRA", "nmu" : "ROBSON JOSÉ LEAL LYRA", "sgp" : "PCO" }, 
-{ "tp" : "s2", "sqcand" : "50002553644", "nm" : "MARIA DO CARMO OLIVEIRA REIS", "nmu" : "MARIA DO CARMO", "sgp" : "PCO" } ] } ] } ] }, 
 { "n" : "50001800244", "nm" : "DEMOCRACIA CRISTÃ", "tp" : "i", "com" : "DC", "vag" : "0", "par" : [ 
 { "n" : "27", "sg" : "DC", "nm" : "DEMOCRACIA CRISTÃ", "nfed" : "", "tvtn" : "13173", "tvan" : "13173", "cand" : [ 
 { "n" : "277", "sqcand" : "50002536577", "nm" : "MARCELINO JOSE GUIMARAES SANTANA", "nmu" : "MARCELO SANTTANA", "dt" : "08/04/1958", "dvt" : "Válido", "seq" : "8", "e" : "n", "st" : "Não eleito", "vap" : "13173", "pvap" : "0,09", "pvapn" : "0,091362369", "vs" : [ 
 { "tp" : "s1", "sqcand" : "50002536578", "nm" : "CINDE FATIMA DE MORAIS SANTOS", "nmu" : "CINDE FATIMA", "sgp" : "DC" }, 
 { "tp" : "s2", "sqcand" : "50002552958", "nm" : "LÁZARO SOUZA LEITE", "nmu" : "LAZARO LEITE", "sgp" : "DC" } ] } ] } ] }, 
+{ "n" : "50001801427", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "tp" : "i", "com" : "PCO", "vag" : "0", "par" : [ 
+{ "n" : "29", "sg" : "PCO", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "nfed" : "", "tvtn" : "4920", "tvan" : "4920", "cand" : [ 
+{ "n" : "290", "sqcand" : "50002553643", "nm" : "MARCELO MILLET OLIVEIRA", "nmu" : "MARCELO MILLET", "dt" : "04/02/1986", "dvt" : "Válido", "seq" : "10", "e" : "n", "st" : "Não eleito", "vap" : "4920", "pvap" : "0,03", "pvapn" : "0,034123044", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "50002554411", "nm" : "ROBSON JOSE LEAL LYRA", "nmu" : "ROBSON JOSÉ LEAL LYRA", "sgp" : "PCO" }, 
+{ "tp" : "s2", "sqcand" : "50002553644", "nm" : "MARIA DO CARMO OLIVEIRA REIS", "nmu" : "MARIA DO CARMO", "sgp" : "PCO" } ] } ] } ] }, 
 { "n" : "50001801073", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
 { "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "12609", "tvan" : "12609", "cand" : [ 
 { "n" : "800", "sqcand" : "50002550314", "nm" : "GREGORIO MOTTA GOULD", "nmu" : "GREGORIO GOULD", "dt" : "30/05/1986", "dvt" : "Válido", "seq" : "9", "e" : "n", "st" : "Não eleito", "vap" : "12609", "pvap" : "0,09", "pvapn" : "0,087450703", "vs" : [ 
