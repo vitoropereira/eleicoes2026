@@ -40,7 +40,7 @@ python3 build_site.py                  # gera o site estático em site/
 | `gerar.py` + `template.html` | painel da apuração (Chart.js) |
 | `relatorio/montar.py` + `relatorio/template_relatorio.html` | relatório final (HTML e SVG, sem bibliotecas) |
 | `template_aovivo.html` | página ao vivo, que busca o TSE no navegador |
-| `build_site.py` | junta tudo, pré-renderiza com Chrome headless e gera SEO (JSON-LD, sitemap, `llms.txt`, imagens Open Graph) |
+| `build_site.py` | junta tudo, pré-renderiza com Chrome headless e gera SEO (JSON-LD, sitemap, `llms.txt`, imagens Open Graph) e as medições (Vercel Analytics e Speed Insights; GA4 e Clarity só com consentimento de cookies) |
 | `site/` | o site pronto, publicado na Vercel (`site/vercel.json` repassa `/tse/*` para o TSE) |
 
 ## Como os números são calculados
