@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Apuração 2026 — Projeções</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#fcfcfb;--card:#ffffff;--ink:#1b1c1e;--ink2:#55595f;--muted:#8a8f98;--line:#e6e6e3;
@@ -85,8 +85,8 @@ details summary{cursor:pointer;color:var(--ink2);font-size:13.5px}
       <div class="ch"><canvas id="cPolls"></canvas></div>
     </div>
     <div class="card">
-      <h2>Por que o número de agora está inflado</h2>
-      <p class="cap">Cada bolha é uma UF (tamanho = eleitorado). Estados pró-Flávio estão mais apurados; os grandes do Nordeste, SP e RJ, menos.</p>
+      <h2 id="biasT"></h2>
+      <p class="cap" id="biasC"></p>
       <div class="ch"><canvas id="cBias"></canvas></div>
     </div>
   </div>
@@ -143,7 +143,9 @@ document.getElementById('prob').innerHTML=[
 ].map(([k,v,c])=>`<div class="tile"><div class="k"><span class="sw" style="background:${c}"></span>${k}</div><div class="v">${fmt(v,0)}%</div></div>`).join('');
 document.getElementById('mcrange').textContent=`Vantagem final de Flávio sobre Lula: mediana ${fmt(mc.p50)} pt · intervalo 80% de ${fmt(mc.p10)} a ${fmt(mc.p90)} pt.`;
 
-// trajetória
+// trajetória (snapshots antigos não têm hist/traj)
+if(!(D.traj&&D.hist))cTraj.closest('.card').style.display='none';
+if(D.traj&&D.hist){
 const T=D.traj,xy=(a,k)=>a.map(p=>({x:p.x??p.pst,y:p[k]}));
 const band=(k,c)=>[{label:'_lo'+k,data:xy(T.lo,k),borderWidth:0,pointRadius:0,fill:false},
  {label:'_hi'+k,data:xy(T.hi,k),borderWidth:0,pointRadius:0,fill:'-1',backgroundColor:c+'26'}];
@@ -163,8 +165,9 @@ new Chart(cTraj,{type:'line',data:{datasets:[
   plugins:{legend:{display:false},tooltip:{filter:i=>!i.dataset.label.startsWith('_'),callbacks:{title:i=>`${fmt(i[0].parsed.x)}% apurado`,label:c=>`${c.dataset.label}: ${fmt(c.parsed.y,2)}%`}}}},
  plugins:[{id:'endlbl',afterDatasetsDraw(ch){const ctx=ch.ctx,xs=ch.scales.x,ys=ch.scales.y;ctx.save();ctx.font='600 12px sans-serif';ctx.textAlign='right';
   const e=T.mc50[T.mc50.length-1];[[e.f,C.f,'Flávio'],[e.l,C.l,'Lula']].forEach(([v,c,n])=>{ctx.fillStyle=C.ink;ctx.fillText(`${n} ${fmt(v)}%`,xs.getPixelForValue(100)-4,ys.getPixelForValue(v)-8)});
-  ctx.fillStyle=C.ink2;ctx.font='11px sans-serif';ctx.textAlign='left';ctx.fillText('agora',xs.getPixelForValue(last.pst)+6,ch.chartArea.top+12);ctx.restore();
+  ctx.fillStyle=C.ink2;ctx.font='11px sans-serif';const nr=last.pst>92;ctx.textAlign=nr?'right':'left';ctx.fillText('agora',xs.getPixelForValue(last.pst)+(nr?-6:6),ch.chartArea.top+12);ctx.restore();
   ctx.save();ctx.strokeStyle=C.mut;ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(xs.getPixelForValue(last.pst),ch.chartArea.top);ctx.lineTo(xs.getPixelForValue(last.pst),ch.chartArea.bottom);ctx.stroke();ctx.restore();}}]});
+}
 
 // cenários
 new Chart(cScen,{type:'line',data:{labels:D.scen.map(s=>'+'+fmt(s.shift,1)),datasets:[
@@ -184,13 +187,30 @@ new Chart(cPolls,{type:'bar',data:{labels:pr.map(p=>p.n),datasets:[{data:pr.map(
  options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.parsed.x>=0?'Flávio +':'Lula +')+fmt(Math.abs(c.parsed.x))+' pt'}}},
   scales:{x:{ticks:{callback:v=>(v>0?'+':'')+v}},y:{grid:{display:false},ticks:{color:ctx=>pr[ctx.index]?.k==='p'?C.ink2:C.ink,font:ctx=>({weight:pr[ctx.index]?.k==='p'?'normal':'bold'})}}}}});
 
-// viés: % apurado × % Flávio
-new Chart(cBias,{type:'bubble',data:{datasets:[{data:D.states.filter(s=>s.uf!=='ZZ').map(s=>({x:s.pst,y:s.f,r:Math.max(4,Math.sqrt(s.te/1e6)*5),uf:s.uf})),
- backgroundColor:D.states.filter(s=>s.uf!=='ZZ').map(s=>(s.f>=s.l?C.f:C.l)+'b3'),borderColor:C.card,borderWidth:2}]},
- options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const r=c.raw;const s=D.states.find(x=>x.uf===r.uf);return `${r.uf}: ${fmt(r.x)}% apurado · Flávio ${fmt(s.f)}% × Lula ${fmt(s.l)}% · ${fmt(s.te/1e6,1)} mi eleitores`}}}},
-  scales:{x:{title:{display:true,text:'% das seções apuradas'},min:0,max:100},y:{title:{display:true,text:'% Flávio (válidos)'},min:20,max:75}}},
- plugins:[{id:'lbl',afterDatasetsDraw(ch){const ctx=ch.ctx;ctx.save();ctx.font='11px sans-serif';ctx.fillStyle=C.ink2;ctx.textAlign='center';
-  ch.getDatasetMeta(0).data.forEach((el,i)=>{const d=ch.data.datasets[0].data[i];if(d.r>7||['DF','PR','MS','PB'].includes(d.uf))ctx.fillText(d.uf,el.x,el.y-d.r-3)});ctx.restore();}}]});
+// viés: % apurado × % Flávio — título, legenda e eixo calculados a partir da rodada
+const bs=D.states.filter(s=>s.uf!=='ZZ');
+const infl=D.f-base.f;
+const falta=bs.filter(s=>s.te>=2e6&&s.pst<99).sort((a,b)=>a.pst-b.pst).slice(0,3);
+biasT.textContent=infl>=1?'Por que o número de agora está inflado':infl>=0.3?'O número de agora ainda está levemente inflado':'A distorção da ordem de apuração acabou';
+biasC.textContent=`Cada bolha é uma UF (tamanho = eleitorado). Flávio tem ${fmt(D.f,2)}% agora e ${fmt(base.f,1)}% projetado: o número de agora está ${fmt(Math.abs(infl))} pt ${infl>=0?'acima':'abaixo'} do final esperado.`+
+ (falta.length?` Grandes UFs que mais faltam: ${falta.map(s=>`${s.uf} (${fmt(s.pst,0)}%)`).join(', ')}.`:'');
+const bxMin=Math.max(0,Math.floor((Math.min(...bs.map(s=>s.pst))-4)/10)*10);
+new Chart(cBias,{type:'bubble',data:{datasets:[{data:bs.map(s=>({x:s.pst,y:s.f,r:Math.max(3.5,Math.sqrt(s.te/1e6)*4.2),uf:s.uf})),
+ backgroundColor:bs.map(s=>(s.f>=s.l?C.f:C.l)+'a6'),borderColor:C.card,borderWidth:1.5,clip:false}]},
+ options:{maintainAspectRatio:false,layout:{padding:{right:14,top:6}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const r=c.raw;const s=D.states.find(x=>x.uf===r.uf);return `${r.uf}: ${fmt(r.x)}% apurado · Flávio ${fmt(s.f)}% × Lula ${fmt(s.l)}% · ${fmt(s.te/1e6,1)} mi eleitores`}}}},
+  scales:{x:{title:{display:true,text:'% das seções apuradas'},min:bxMin,max:100,ticks:{callback:v=>v+'%'}},y:{title:{display:true,text:'% Flávio (válidos)'},min:20,max:75,ticks:{callback:v=>v+'%'}}}},
+ plugins:[{id:'lbl',afterDatasetsDraw(ch){const ctx=ch.ctx,xs=ch.scales.x,ys=ch.scales.y,a=ch.chartArea;ctx.save();
+  // linha de referência: Flávio projetado no Brasil
+  const yb=ys.getPixelForValue(base.f);ctx.strokeStyle=C.mut;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(a.left,yb);ctx.lineTo(a.right,yb);ctx.stroke();ctx.setLineDash([]);
+  ctx.font='11px sans-serif';ctx.fillStyle=C.ink2;ctx.textAlign='left';ctx.fillText(`Brasil projetado ${fmt(base.f)}%`,a.left+6,yb-5);
+  // rótulos sem colisão: maiores primeiro; tenta acima, depois abaixo; senão omite (tooltip cobre)
+  const placed=[{x0:a.left,x1:a.left+140,y0:yb-17,y1:yb-2}],hit=b=>placed.some(p=>b.x0<p.x1&&b.x1>p.x0&&b.y0<p.y1&&b.y1>p.y0);
+  ctx.textAlign='center';ctx.fillStyle=C.ink;
+  const els=ch.getDatasetMeta(0).data.map((el,i)=>({el,d:ch.data.datasets[0].data[i]})).sort((p,q)=>q.d.r-p.d.r);
+  for(const {el,d} of els){const w=ctx.measureText(d.uf).width;
+   for(const ty of [el.y-d.r-4,el.y+d.r+12]){const b={x0:el.x-w/2-2,x1:el.x+w/2+2,y0:ty-10,y1:ty+2};
+    if(b.y0>a.top-4&&b.y1<a.bottom&&!hit(b)){placed.push(b);ctx.fillText(d.uf,el.x,ty);break;}}}
+  ctx.restore();}}]});
 
 // estados
 const st=[...D.states].sort((a,b)=>(b.marg+b.rem_net)-(a.marg+a.rem_net));
