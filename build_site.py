@@ -405,13 +405,16 @@ def main():
 - [Apuração leitura a leitura]({BASE}/apuracao/)
 """ + "".join(f"- [Apuração com {fmt(r['d']['pst'], 1)}% das urnas]({BASE}{r['url']})\n" for r in rodadas) +
 f"- [Dados consolidados em JSON]({BASE}/dados/relatorio.json)\n", encoding="utf-8")
-    (OUT / "vercel.json").write_text(json.dumps({
+    vercel = {
         "cleanUrls": True, "trailingSlash": True,
         "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"}],
         "headers": [{"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
                     {"source": "/og/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=86400"}]},
                     {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
-                    {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]}]}, indent=1))
+                    {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]}]}
+    (OUT / "vercel.json").write_text(json.dumps(vercel, indent=1))  # deploy pela CLI, de dentro de site/
+    # deploy pelo git (integração GitHub) parte da raiz do repo: sem isto a Vercel publica a raiz e o site dá 404
+    (R / "vercel.json").write_text(json.dumps({"outputDirectory": "site", **vercel}, indent=1))
     shutil.rmtree(BUILD)
     tot = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     print(f"site/ ok · {len(list(OUT.rglob('*.html')))} páginas · {len(list((OUT / 'og').glob('*.png')))} imagens OG · {tot // 1024} KB")
