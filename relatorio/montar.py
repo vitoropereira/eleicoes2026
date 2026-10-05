@@ -22,7 +22,7 @@ def load(uf, c):
     d = json.load(open(D / f"{uf}-c{c:04d}.json"))
     k = d["carg"][0]
     cands = [dict(nmu=x["nmu"], n=x["n"], sg=p["sg"], agr=a["nm"], agr_com=a.get("com") or p["sg"],
-                  vap=int(x["vap"]), pvapn=num(x["pvapn"]), dvt=x["dvt"])
+                  vap=int(x["vap"]), pvapn=num(x["pvapn"]), dvt=x["dvt"], e=x["e"], st=x["st"])
              for a in k["agr"] for p in a["par"] for x in p["cand"]]
     return d, k, cands
 
@@ -67,7 +67,9 @@ for uf in UFS + ["zz"]:
 reg = [dict(regiao=k, f=rnd(100 * v["f"] / v["vv"]), l=rnd(100 * v["l"] / v["vv"]), saldo=v["f"] - v["l"], vv=v["vv"])
        for k, v in regioes.items()]
 
-# ---------------- Governador: denominador sem e com votos sub judice
+# ---------------- Governador
+# Totalizado pelo TSE (tf == "s"): situação oficial (campo st), % sobre os válidos + votos sub judice, como o TSE.
+# Antes disso: cálculo pela regra dos 50%, com e sem os votos sub judice ("indefinido" quando as contas divergem).
 gov = []
 for uf in UFS:
     d, _, c = load(uf, 3)
@@ -75,14 +77,18 @@ for uf in UFS:
     val = sorted([x for x in c if x["dvt"] == "Válido"], key=lambda x: -x["vap"])
     a, b = val[0], val[1]
     p_sem, p_com = 100 * a["vap"] / vv, 100 * a["vap"] / (vv + sj)
-    if p_sem > 50 and p_com > 50: st = "eleito"
-    elif p_sem <= 50 and p_com <= 50: st = "2turno"
-    else: st = "indefinido"
+    oficial = d.get("tf") == "s"
+    if oficial:
+        st = "eleito" if any(x["st"] == "Eleito" for x in c) else "2turno"
+        den = vv + sj
+    else:
+        st = "eleito" if p_sem > 50 and p_com > 50 else "2turno" if p_sem <= 50 and p_com <= 50 else "indefinido"
+        den = vv
     sjc = sorted([x for x in c if x["dvt"] != "Válido"], key=lambda x: -x["vap"])
-    gov.append(dict(uf=uf.upper(), pst=num(d["s"]["pst"]), status=st,
-                    a=dict(nome=nome(a["nmu"]), sg=a["sg"], p=rnd(p_sem), p_tse=rnd(p_com), votos=a["vap"]),
-                    b=dict(nome=nome(b["nmu"]), sg=b["sg"], p=rnd(100 * b["vap"] / vv), votos=b["vap"]),
-                    falta_50=vv // 2 + 1 - a["vap"],
+    gov.append(dict(uf=uf.upper(), pst=num(d["s"]["pst"]), status=st, oficial=oficial,
+                    a=dict(nome=nome(a["nmu"]), sg=a["sg"], p=rnd(100 * a["vap"] / den), p_sem_sj=rnd(p_sem), p_tse=rnd(p_com), votos=a["vap"]),
+                    b=dict(nome=nome(b["nmu"]), sg=b["sg"], p=rnd(100 * b["vap"] / den), votos=b["vap"]),
+                    falta_50=den // 2 + 1 - a["vap"],
                     subjudice=dict(nome=nome(sjc[0]["nmu"]), sg=sjc[0]["sg"], votos=sjc[0]["vap"],
                                    p=rnd(100 * sjc[0]["vap"] / (vv + sj))) if sjc and sjc[0]["vap"] > 10000 else None))
 
@@ -92,11 +98,14 @@ for uf in UFS:
     d, k, c = load(uf, 5)
     vv = int(d["v"]["vv"]); n = int(k["nv"])
     val = sorted([x for x in c if x["dvt"] == "Válido"], key=lambda x: -x["vap"])
+    if d.get("tf") == "s":  # eleitos oficiais primeiro, na ordem de votos
+        el = [x for x in val if x["e"] == "s"]
+        val = el + [x for x in val if x["e"] != "s"]
     for x in val[:n]: sen_part[x["sg"]] += 1
     sen.append(dict(uf=uf.upper(), pst=num(d["s"]["pst"]), vagas=n,
                     eleitos=[dict(nome=nome(x["nmu"]), sg=x["sg"], p=rnd(100 * x["vap"] / vv), votos=x["vap"]) for x in val[:n]],
                     proximo=dict(nome=nome(val[n]["nmu"]), sg=val[n]["sg"], p=rnd(100 * val[n]["vap"] / vv), votos=val[n]["vap"]),
-                    dif_corte=val[n - 1]["vap"] - val[n]["vap"]))
+                    dif_corte=val[n - 1]["vap"] - val[n]["vap"], oficial=d.get("tf") == "s"))
 
 
 # ---------------- Deputados: vagas por agremiação publicadas pelo TSE ("vag"); partido dentro da federação = mais votados
@@ -105,12 +114,17 @@ def proporcional(cargos):
     for uf, c in cargos:
         d, k, cands = load(uf, c)
         vv = int(d["v"]["vv"])
-        linha = dict(uf=uf.upper(), vagas=int(k["nv"]), pst=num(d["s"]["pst"]), agr={})
+        oficial = d.get("tf") == "s"
+        linha = dict(uf=uf.upper(), vagas=int(k["nv"]), pst=num(d["s"]["pst"]), agr={}, oficial=oficial)
+        if oficial:  # eleitos marcados pelo TSE (QP e média)
+            for x in cands:
+                if x["e"] == "s": por_part[x["sg"]] += 1
         for a in k["agr"]:
             vag = int(a.get("vag") or 0)
             if not vag: continue
             com = a.get("com") or a["par"][0]["sg"]
             por_agr[com] += vag; linha["agr"][com] = vag
+            if oficial: continue
             el = sorted([x for x in cands if x["agr"] == a["nm"] and x["dvt"] == "Válido"], key=lambda x: -x["vap"])[:vag]
             for x in el: por_part[x["sg"]] += 1
         ufs.append(linha)
@@ -118,6 +132,7 @@ def proporcional(cargos):
                 for x in cands if x["dvt"] == "Válido"]
     top.sort(key=lambda x: -x["votos"])
     return dict(total=sum(por_agr.values()), por_agr=por_agr.most_common(), por_partido=por_part.most_common(),
+                ufs_oficiais=[l["uf"] for l in ufs if l["oficial"]], ufs_pendentes=[l["uf"] for l in ufs if not l["oficial"]],
                 top=top[:15], ufs=ufs)
 
 

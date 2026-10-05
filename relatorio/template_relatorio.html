@@ -114,9 +114,9 @@ svg.parl circle{stroke:none}
 <section id="governadores">
   <h2>Governadores</h2><p class="lead" id="govLead"></p>
   <div class="g2">
-    <div class="card"><h3>Situação em cada estado</h3><p class="cap">Resultado calculado pelas regras (mais de 50% dos válidos elege). O TSE ainda não proclamou os eleitos.</p>
+    <div class="card"><h3>Situação em cada estado</h3><p class="cap" id="govCap">Resultado calculado pelas regras (mais de 50% dos válidos elege). O TSE ainda não proclamou os eleitos.</p>
       <div class="mapwrap"><svg class="map" id="mapGov" role="img" aria-label="Mapa do Brasil com a situação da eleição para governador em cada estado"></svg></div>
-      <div class="legend"><span><span class="sw" style="background:var(--neutral)"></span>Eleito no 1º turno</span><span><span class="sw" style="background:var(--amber)"></span>2º turno em 25/10</span><span><span class="sw" style="background:repeating-linear-gradient(135deg,var(--amber) 0 3px,transparent 3px 6px);border:1px solid var(--amber)"></span>Indefinido (sub judice)</span></div>
+      <div class="legend"><span><span class="sw" style="background:var(--neutral)"></span>Eleito no 1º turno</span><span><span class="sw" style="background:var(--amber)"></span>2º turno em 25/10</span><span id="legIn"><span class="sw" style="background:repeating-linear-gradient(135deg,var(--amber) 0 3px,transparent 3px 6px);border:1px solid var(--amber)"></span>Indefinido (sub judice)</span></div>
     </div>
     <div class="stack">
       <div class="card"><h3>Governadores eleitos por partido</h3><p class="cap">Só os decididos no 1º turno.</p><div class="bars" id="govPart"></div></div>
@@ -141,7 +141,7 @@ svg.parl circle{stroke:none}
     <svg class="parl" id="parl" role="img" aria-label="Composição da Câmara dos Deputados eleita em 2026, 513 cadeiras por partido" viewBox="0 0 620 330" style="width:100%;max-width:760px;display:block;margin:0 auto"></svg>
     <div class="legend" id="parlLeg"></div></div>
   <div class="g2">
-    <div class="card"><h3>Cadeiras por partido</h3><p class="cap">Em federações, cada partido recebe as cadeiras dos seus candidatos mais votados (estimativa).</p><div class="bars" id="camPart"></div></div>
+    <div class="card"><h3>Cadeiras por partido</h3><p class="cap" id="camCap">Em federações, cada partido recebe as cadeiras dos seus candidatos mais votados (estimativa).</p><div class="bars" id="camPart"></div></div>
     <div class="stack">
       <div class="card"><h3>Variação das maiores bancadas desde 2022</h3><p class="cap">Federações comparadas com a soma dos partidos em 2022.</p><div class="tw"><table id="tCam22"></table></div></div>
       <div class="card"><h3>Deputados federais mais votados</h3><div class="tw"><table id="tTopFed"></table></div></div>
@@ -189,7 +189,9 @@ const tip=$('tip');
 function showTip(e,html){tip.innerHTML=html;tip.style.opacity=1;const w=tip.offsetWidth,h=tip.offsetHeight;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;if(y+h>innerHeight-8)y=e.clientY-h-14;tip.style.left=x+'px';tip.style.top=y+'px'}
 const hideTip=()=>tip.style.opacity=0;
 
-$('sub').textContent=`TSE · ${fmt(N.pst,2)}% das seções apuradas (dados de ${N.dg} ${N.ht}) · relatório gerado em ${D.gerado}. Resultados ainda não proclamados oficialmente.`;
+const OF={gov:D.gov.every(g=>g.oficial),sen:D.sen.every(s=>s.oficial),fed:D.depfed.ufs_pendentes||[],est:D.depest.ufs_pendentes||[]};
+const ofTxt=OF.gov&&OF.sen?`Governadores e Senado: situação oficial do TSE.${OF.fed.length||OF.est.length?` Deputados: oficial exceto ${[...new Set([...OF.fed,...OF.est])].join(', ')}, ainda em totalização.`:' Deputados: oficial.'}`:'Resultados ainda não proclamados oficialmente.';
+$('sub').textContent=`TSE · ${fmt(N.pst,2)}% das seções apuradas (dados de ${N.dg} ${N.ht}) · relatório gerado em ${D.gerado}. ${ofTxt}`;
 
 // ---------- números derivados
 const govEl=D.gov.filter(g=>g.status==='eleito'), gov2=D.gov.filter(g=>g.status==='2turno'), govIn=D.gov.filter(g=>g.status==='indefinido');
@@ -209,6 +211,7 @@ const HL=[
    return [`<b>${c.uf} decidido por ${fi(Math.abs(c.saldo))} votos.</b> ${c.saldo<0?'Lula':'Flávio'} venceu com ${fmt(Math.max(c.f,c.l),2)}% contra ${fmt(Math.min(c.f,c.l),2)}%, a disputa mais apertada entre os estados. ${ufL.filter(u=>['AM','PA','AP'].includes(u.uf)).length>1?'No Norte, Lula também levou AM e PA.':''}`,'var(--lula)']})(),
  [`<b>PL faz a maior bancada da Câmara: ${plFed} deputados</b> (eram 99 em 2022). Os partidos da coligação de Lula somam ${coalFed} das 513 cadeiras.`,'var(--flavio)'],
  [`<b>${govEl.length} governadores definidos no 1º turno</b>, ${gov2.length} estados vão ao 2º turno (${gov2.map(g=>g.uf).join(', ')})${govIn.length?` e o ${govIn.map(g=>g.uf).join(', ')} está indefinido`:''}.`,'var(--amber)'],
+ ...D.gov.filter(g=>g.status==='2turno'&&g.subjudice&&g.a.p_sem_sj>50).map(g=>[`<b>${g.uf} vai ao 2º turno por causa de votos sub judice.</b> ${esc(g.a.nome)} (${g.a.sg}) teria ${fmt(g.a.p_sem_sj,2)}% sem os votos de ${esc(g.subjudice.nome)}, candidato com registro anulado sub judice. O TSE conta esses votos no total, e ${esc(g.a.nome)} fica com ${fmt(g.a.p,2)}%. Disputa com ${esc(g.b.nome)} (${g.b.sg}) em 25/10.`,'var(--amber)']),
  ...govIn.map(g=>[`<b>${g.uf} depende da Justiça Eleitoral.</b> ${esc(g.a.nome)} (${g.a.sg}) tem ${fmt(g.a.p,2)}% dos válidos. Se os votos de ${esc(g.subjudice.nome)}, candidato com registro anulado sub judice, forem validados, a fatia de ${esc(g.a.nome)} cai para ${fmt(g.a.p_tse,2)}% e o estado vai ao 2º turno.`,'var(--amber)']),
  ...D.gov.filter(g=>g.status==='2turno'&&g.falta_50>0&&g.falta_50<5000).map(g=>[`<b>${g.uf} por um fio.</b> ${esc(g.a.nome)} (${g.a.sg}) ficou a <b>${fi(g.falta_50)} votos</b> de vencer no 1º turno (${fmt(g.a.p,2)}%).`,'var(--amber)']),
  [`<b>PL leva ${plSen} das ${sen54} vagas do Senado.</b> O partido teve o candidato mais votado ao Senado em ${D.sen.filter(s=>s.eleitos[0].sg==='PL').length} estados.`,'var(--flavio)'],
@@ -260,6 +263,9 @@ $('tPres').innerHTML='<tr><th>UF</th><th class="n">Eleitores</th><th class="n">C
 
 // ---------- governadores
 const gmap=Object.fromEntries(D.gov.map(g=>[g.uf,g]));
+if(!govIn.length)$('legIn').remove();
+$('govCap').textContent=OF.gov?'Situação oficial do TSE (totalização concluída nos 27 estados).':'Resultado calculado pelas regras (mais de 50% dos válidos elege). O TSE ainda não proclamou os eleitos.';
+$('camCap').textContent=OF.fed.length?`Cadeiras dos eleitos marcados pelo TSE. Em ${OF.fed.join(' e ')}, ainda em totalização, as vagas de cada federação foram divididas pelos mais votados (estimativa).`:'Cadeiras dos eleitos marcados pelo TSE.';
 $('govLead').textContent=`${govEl.length} estados já têm governador eleito, ${gov2.length} terão 2º turno e ${govIn.length?govIn.length+' está indefinido por causa de uma candidatura sub judice':'nenhum está indefinido'}.`;
 const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
 drawMap($('mapGov'),k=>{const s=gmap[k].status;return s==='eleito'?'var(--neutral)':s==='2turno'?'var(--amber)':'url(#hatch)'},
@@ -330,8 +336,8 @@ $('tProj').innerHTML='<tr><th class="n">Com</th><th class="n">Projeção Flávio
 // ---------- método
 $('foot').innerHTML=[
  `Resultados: arquivos públicos de divulgação do TSE (eleição 6257, Presidente; eleição 6259, Governador, Senador e Deputados), lidos em ${D.gerado}, com ${fmt(N.pst,2)}% das seções apuradas para presidente. Alguns estados não estavam com 100% apurado; a coluna "Apurado" mostra o percentual de cada um.`,
- `Os eleitos <b>ainda não foram proclamados</b> pelo TSE. Governador: eleito quem tem mais de 50% dos votos válidos. Quando há candidato com registro anulado sub judice, mostramos as duas contas (com e sem os votos dele). Senado: os 2 mais votados em cada UF.`,
- `Câmara e Assembleias: as vagas por partido ou federação são as publicadas pelo TSE (campo de vagas da divulgação). A divisão dentro das federações é uma estimativa, que dá as cadeiras aos candidatos mais votados de cada federação e ignora a cláusula de desempenho individual.`,
+ OF.gov&&OF.sen?`Governadores e Senado: situação oficial do TSE (eleito, 2º turno), com os percentuais calculados como o TSE calcula, incluindo os votos de candidatos sub judice no total. Presidente: 2º turno entre os dois mais votados.`:`Os eleitos <b>ainda não foram proclamados</b> pelo TSE. Governador: eleito quem tem mais de 50% dos votos válidos. Quando há candidato com registro anulado sub judice, mostramos as duas contas (com e sem os votos dele). Senado: os 2 mais votados em cada UF.`,
+ `Câmara e Assembleias: nas UFs já totalizadas, contamos os eleitos marcados pelo TSE (por quociente partidário e por média). ${OF.fed.length||OF.est.length?`Nas UFs ainda em totalização (${[...new Set([...OF.fed,...OF.est])].join(', ')}), usamos as vagas por partido/federação publicadas pelo TSE e dividimos as das federações entre os candidatos mais votados (estimativa).`:''}`,
  `Cores: azul = PL (partido de Flávio Bolsonaro); vermelho = partidos da coligação de Lula registrada no TSE (${D.nac.coalizao_lula.join(', ')}); cinza = demais. A cor indica a relação com a disputa presidencial e não classifica ideologia.`,
  `2022: <a href="https://agenciabrasil.ebc.com.br/politica/noticia/2022-10/tse-conclui-apuracao-dos-votos-do-primeiro-turno-para-presidente">Agência Brasil/TSE</a> (Lula 48,43%, Bolsonaro 43,20%, abstenção 20,95%) e <a href="https://www.camara.leg.br/noticias/911504-pl-sai-na-frente-na-eleicao-da-camara-seguido-pela-federacao-liderada-pelo-pt/">Agência Câmara</a> (bancadas). 2º turno em 25/10: <a href="https://www.tre-sp.jus.br/comunicacao/noticias/2026/Maio/eleicoes-2026-outubro-tem-datas-do-1o-e-do-2o-turnos-definidas-pela-constituicao">TRE-SP</a>.`,
  `Pesquisas: tabela agregada da <a href="https://en.wikipedia.org/wiki/Opinion_polling_for_the_2026_Brazilian_presidential_election">Wikipedia</a>, convertida para votos válidos; os números não foram conferidos um a um nos institutos. Mapa: contornos estaduais de click_that_hood (Code for Germany), simplificados.`,
