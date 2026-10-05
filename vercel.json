@@ -1,0 +1,53 @@
+{
+ "outputDirectory": "site",
+ "cleanUrls": true,
+ "trailingSlash": true,
+ "rewrites": [
+  {
+   "source": "/tse/:path*",
+   "destination": "https://resultados.tse.jus.br/oficial/:path*"
+  }
+ ],
+ "headers": [
+  {
+   "source": "/(.*)",
+   "headers": [
+    {
+     "key": "X-Content-Type-Options",
+     "value": "nosniff"
+    },
+    {
+     "key": "Referrer-Policy",
+     "value": "strict-origin-when-cross-origin"
+    }
+   ]
+  },
+  {
+   "source": "/og/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=86400"
+    }
+   ]
+  },
+  {
+   "source": "/tse/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, s-maxage=20, stale-while-revalidate=40"
+    }
+   ]
+  },
+  {
+   "source": "/ao-vivo/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=0, must-revalidate"
+    }
+   ]
+  }
+ ]
+}
