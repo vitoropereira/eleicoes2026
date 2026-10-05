@@ -1,0 +1,50 @@
+
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "pi", "dg" : "04/10/2026", "hg" : "22:39:10", "idg" : "2181318", "dt" : "04/10/2026", "ht" : "22:38:17", "dv" : "s", "tf" : "n", "and" : "p", "md" : "e", "carg" : [ 
+{ "cd" : "3", "nmn" : "Governador", "nmm" : "Governador", "nmf" : "Governadora", "nv" : "1", "fed" : [ 
+{ "n" : "101", "sg" : "PT/PC do B/PV", "nm" : "FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL", "com" : "PT/PC do B/PV", "npar" : [ "13", "43", "65" ] }, 
+{ "n" : "100", "sg" : "PSDB/CIDADANIA", "nm" : "FEDERAÇÃO PSDB CIDADANIA", "com" : "PSDB/CIDADANIA", "npar" : [ "23", "45" ] }, 
+{ "n" : "102", "sg" : "PSOL/REDE", "nm" : "FEDERAÇÃO PSOL REDE", "com" : "PSOL/REDE", "npar" : [ "18", "50" ] }, 
+{ "n" : "104", "sg" : "UNIÃO/PP", "nm" : "FEDERAÇÃO UNIÃO PROGRESSISTA", "com" : "UNIÃO/PP", "npar" : [ "11", "44" ] } ], "agr" : [ 
+{ "n" : "180001800923", "nm" : "DEMOCRACIA CRISTÃ", "tp" : "i", "com" : "DC", "vag" : "0", "par" : [ 
+{ "n" : "27", "sg" : "DC", "nm" : "DEMOCRACIA CRISTÃ", "nfed" : "", "tvtn" : "0", "tvan" : "1101", "cand" : [ 
+{ "n" : "27", "sqcand" : "180002548565", "nm" : "FRANCISCO JOSÉ MARTINS JURITY", "nmu" : "PROFESSOR JURITY", "dt" : "18/04/1955", "dvt" : "Anulado sub judice", "seq" : "9", "e" : "n", "st" : "", "vap" : "1101", "pvap" : "0,05", "pvapn" : "0,054420572", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002548566", "nm" : "PEDRO PEREIRA DOS SANTOS FILHO", "nmu" : "PEDRO PEREIRA", "sgp" : "DC" } ] } ] } ] }, 
+{ "n" : "180001801041", "nm" : "A FORÇA DA FÉ", "tp" : "c", "com" : "NOVO / AVANTE", "tvtn" : "5141", "tvan" : "5141", "par" : [ 
+{ "n" : "30", "sg" : "NOVO", "nm" : "PARTIDO NOVO", "nfed" : "", "tvtn" : "5141", "tvan" : "5141", "cand" : [ 
+{ "n" : "30", "sqcand" : "180002549920", "nm" : "ELIZEU MORAIS DE AGUIAR", "nmu" : "ELIZEU AGUIAR", "dt" : "28/05/1966", "dvt" : "Válido", "seq" : "5", "e" : "n", "st" : "", "vap" : "5141", "pvap" : "0,25", "pvapn" : "0,254110953", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002549919", "nm" : "ISMAR AGUIAR MARQUES", "nmu" : "ISMAR MARQUES", "sgp" : "NOVO" } ] } ] } ] }, 
+{ "n" : "180001800937", "nm" : "DEMOCRATA", "tp" : "i", "com" : "DEMOCRATA", "vag" : "0", "par" : [ 
+{ "n" : "35", "sg" : "DEMOCRATA", "nm" : "DEMOCRATA", "nfed" : "", "tvtn" : "0", "tvan" : "818", "cand" : [ 
+{ "n" : "35", "sqcand" : "180002548388", "nm" : "RAVENNA DE CASTRO LIMA AZEVEDO", "nmu" : "RAVENNA DA INCLUSÃO", "dt" : "15/05/1986", "dvt" : "Anulado sub judice", "seq" : "10", "e" : "n", "st" : "", "vap" : "818", "pvap" : "0,04", "pvapn" : "0,040432359", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002548389", "nm" : "JOÃO RICARDO SOARES DA SILVA", "nmu" : "JOÃO RICARDO", "sgp" : "DEMOCRATA" } ] } ] } ] }, 
+{ "n" : "180001800751", "nm" : "FEDERAÇÃO PSDB CIDADANIA", "tp" : "f", "com" : "CIDADANIA / PSDB", "tvtn" : "9602", "tvan" : "9602", "vag" : "0", "par" : [ 
+{ "n" : "45", "sg" : "PSDB", "nm" : "PARTIDO DA SOCIAL DEMOCRACIA BRASILEIRA", "nfed" : "100", "tvtn" : "9602", "tvan" : "9602", "cand" : [ 
+{ "n" : "45", "sqcand" : "180002544216", "nm" : "LÚCIA MARIA DE SOUSA AGUIAR DOS SANTOS", "nmu" : "DRA. LÚCIA SANTOS", "dt" : "03/11/1964", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "", "vap" : "9602", "pvap" : "0,47", "pvapn" : "0,474610653", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002544215", "nm" : "PAULO EUDES CARNEIRO", "nmu" : "DR. PAULO EUDES", "sgp" : "PSDB" } ] } ] } ] }, 
+{ "n" : "180001801067", "nm" : "FEDERAÇÃO PSOL REDE", "tp" : "f", "com" : "PSOL / REDE", "tvtn" : "10000", "tvan" : "10000", "vag" : "0", "par" : [ 
+{ "n" : "50", "sg" : "PSOL", "nm" : "PARTIDO SOCIALISMO E LIBERDADE", "nfed" : "102", "tvtn" : "10000", "tvan" : "10000", "cand" : [ 
+{ "n" : "50", "sqcand" : "180002549970", "nm" : "GISVALDO OLIVEIRA DA SILVA", "nmu" : "PROFESSOR GISVALDO", "dt" : "10/06/1978", "dvt" : "Válido", "seq" : "3", "e" : "n", "st" : "", "vap" : "10000", "pvap" : "0,49", "pvapn" : "0,494283121", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002549969", "nm" : "FRANCISCA EDILENE PINHO GOMES BARBOSA", "nmu" : "EDILENE PINHO", "sgp" : "PSOL" } ] } ] } ] }, 
+{ "n" : "180001801070", "nm" : "UNIDADE POPULAR", "tp" : "i", "com" : "UP", "vag" : "0", "par" : [ 
+{ "n" : "80", "sg" : "UP", "nm" : "UNIDADE POPULAR", "nfed" : "", "tvtn" : "1777", "tvan" : "1777", "cand" : [ 
+{ "n" : "80", "sqcand" : "180002549995", "nm" : "JOSÉ SANTIAGO BELIZÁRIO", "nmu" : "SANTIAGO BELIZÁRIO", "dt" : "11/06/1993", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "", "vap" : "1777", "pvap" : "0,09", "pvapn" : "0,087834111", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002549996", "nm" : "THAYS DIAS DE MORAIS", "nmu" : "THAYS DIAS", "sgp" : "UP" } ] } ] } ] }, 
+{ "n" : "180001800360", "nm" : "PARTIDO SOCIALISTA  DOS TRABALHADORES UNIFICADO", "tp" : "i", "com" : "PSTU", "vag" : "0", "par" : [ 
+{ "n" : "16", "sg" : "PSTU", "nm" : "PARTIDO SOCIALISTA  DOS TRABALHADORES UNIFICADO", "nfed" : "", "tvtn" : "0", "tvan" : "1858", "cand" : [ 
+{ "n" : "16", "sqcand" : "180002537422", "nm" : "GERALDO DO NASCIMENTO CARVALHO", "nmu" : "GERALDO CARVALHO", "dt" : "16/07/1958", "dvt" : "Anulado sub judice", "seq" : "6", "e" : "n", "st" : "", "vap" : "1858", "pvap" : "0,09", "pvapn" : "0,091837804", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002537421", "nm" : "JOÃO GERVÁSIO DOS SANTOS NETO", "nmu" : "GERVÁSIO SANTOS", "sgp" : "PSTU" } ] } ] } ] }, 
+{ "n" : "180001800399", "nm" : "JUNTOS PELO PIAUÍ", "tp" : "c", "com" : "PODE / PP / UNIÃO / PL", "tvtn" : "556999", "tvan" : "556999", "par" : [ 
+{ "n" : "11", "sg" : "PP", "nm" : "PROGRESSISTAS", "nfed" : "104", "tvtn" : "556999", "tvan" : "556999", "cand" : [ 
+{ "n" : "11", "sqcand" : "180002538530", "nm" : "JOEL RODRIGUES DA SILVA", "nmu" : "JOEL RODRIGUES", "dt" : "09/12/1969", "dvt" : "Válido", "seq" : "2", "e" : "n", "st" : "", "vap" : "556999", "pvap" : "27,53", "pvapn" : "27,531520435", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002538529", "nm" : "JEOVA BARBOSA DE CARVALHO ALENCAR", "nmu" : "JEOVÁ ALENCAR", "sgp" : "UNIÃO" } ] } ] } ] }, 
+{ "n" : "180001800103", "nm" : "A FORÇA DO POVO", "tp" : "c", "com" : "REPUBLICANOS / PDT / MDB / PSD / PCDOB / PT / PV", "tvtn" : "1434543", "tvan" : "1434543", "par" : [ 
+{ "n" : "13", "sg" : "PT", "nm" : "PARTIDO DOS TRABALHADORES", "nfed" : "101", "tvtn" : "1434543", "tvan" : "1434543", "cand" : [ 
+{ "n" : "13", "sqcand" : "180002532987", "nm" : "RAFAEL TAJRA FONTELES", "nmu" : "RAFAEL FONTELES", "dt" : "06/05/1985", "dvt" : "Válido", "seq" : "1", "e" : "n", "st" : "", "vap" : "1434543", "pvap" : "70,91", "pvapn" : "70,907039185", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002532986", "nm" : "FRANCISCO WASHINGTON BANDEIRA SANTOS FILHO", "nmu" : "WASHINGTON BANDEIRA", "sgp" : "PT" } ] } ] } ] }, 
+{ "n" : "180001801440", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "tp" : "i", "com" : "PCO", "vag" : "0", "par" : [ 
+{ "n" : "29", "sg" : "PCO", "nm" : "PARTIDO DA CAUSA OPERÁRIA", "nfed" : "", "tvtn" : "0", "tvan" : "1293", "cand" : [ 
+{ "n" : "29", "sqcand" : "180002553722", "nm" : "MARIA DE LOURDES SOARES MELO", "nmu" : "LOURDES MELO", "dt" : "12/06/1953", "dvt" : "Anulado sub judice", "seq" : "8", "e" : "n", "st" : "", "vap" : "1293", "pvap" : "0,06", "pvapn" : "0,063910808", "vs" : [ 
+{ "tp" : "v", "sqcand" : "180002553723", "nm" : "ZEFERINO DA SILVA BRASIL", "nmu" : "ZEFERINO DA SILVA BRASIL", "sgp" : "PCO" } ] } ] } ] } ] } ], "s" : 
+{ "ts" : "10225", "st" : "10208", "pst" : "99,83", "pstn" : "99,833740831", "snt" : "17", "psnt" : "0,17", "psntn" : "0,166259169", "si" : "10208", "psi" : "100,00", "psin" : "100", "sni" : "0", "psni" : "0,00", "psnin" : "0", "sa" : "10208", "psa" : "100,00", "psan" : "100", "sna" : "0", "psna" : "0,00", "psnan" : "0" }, "e" : 
+{ "te" : "2703064", "est" : "2699015", "pest" : "99,85", "pestn" : "99,850207024", "esnt" : "4049", "pesnt" : "0,15", "pesntn" : "0,149792976", "esi" : "2699015", "pesi" : "100,00", "pesin" : "100", "esni" : "0", "pesni" : "0,00", "pesnin" : "0", "esa" : "2699015", "pesa" : "100,00", "pesan" : "100", "esna" : "0", "pesna" : "0,00", "pesnan" : "0", "c" : "2235944", "pc" : "82,84", "pcn" : "82,842963081", "a" : "463071", "pa" : "17,16", "pan" : "17,157036919" }, "v" : 
+{ "tv" : "2235944", "vvc" : "2023132", "pvvc" : "90,48", "pvvcn" : "90,482230324", "vv" : "2018062", "pvv" : "99,75", "pvvn" : "99,749398457", "vnom" : "2018062", "pvnom" : "100,00", "pvnomn" : "100", "van" : "0", "pvan" : "0,00", "pvann" : "0", "vansj" : "5070", "pvansj" : "0,25", "pvansjn" : "0,250601543", "vb" : "76511", "pvb" : "3,42", "pvbn" : "3,421865664", "tvn" : "136301", "ptvn" : "6,10", "ptvnn" : "6,095904012", "vn" : "136301", "pvn" : "100,00", "pvnn" : "100", "vnt" : "0", "pvnt" : "0,00", "pvntn" : "0", "vsan" : "0", "vscv" : "0" } }
