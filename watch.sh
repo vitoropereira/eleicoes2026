@@ -2,12 +2,19 @@
 # Vigia o % apurado no TSE; ao cruzar cada marco gera o painel, salva em marcos/<N>pct/ e abre no browser.
 # Estado em .marcos_feitos (um marco por linha) — re-armar não refaz marco já salvo.
 cd "$(dirname "$0")"
-URL=https://resultados.tse.jus.br/oficial/ele2026/6257/dados/br/br-c0001-e006257-u.json
 MARCOS="50 75"
 touch .marcos_feitos
 fails=0
 while true; do
-  pst=$(curl -s -m 20 "$URL" | python3 -c "import json,sys;print(json.load(sys.stdin)['s']['pst'].replace(',','.'))" 2>/dev/null)
+  # % nacional = soma das seções das UFs (o arquivo "br" do TSE congelou em 04/10 19:14)
+  pst=$(python3 - <<'PY' 2>/dev/null
+import json,urllib.request,time,concurrent.futures as cf
+U="ac al ap am ba ce df es go ma mt ms mg pa pb pr pe pi rj rn rs ro rr sc sp se to zz".split()
+f=lambda u:json.load(urllib.request.urlopen(f"https://resultados.tse.jus.br/oficial/ele2026/6257/dados/{u}/{u}-c0001-e006257-u.json?t={int(time.time())}",timeout=20))["s"]
+r=list(cf.ThreadPoolExecutor(10).map(f,U))
+print(round(100*sum(int(x["st"]) for x in r)/sum(int(x["ts"]) for x in r),2))
+PY
+)
   if [ -z "$pst" ]; then
     fails=$((fails+1)); [ $fails -eq 5 ] && echo "ERRO: TSE sem resposta há 5 tentativas"
     sleep 60; continue
