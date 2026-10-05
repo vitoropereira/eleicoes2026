@@ -263,7 +263,7 @@ $('tPres').innerHTML='<tr><th>UF</th><th class="n">Eleitores</th><th class="n">C
 
 // ---------- governadores
 const gmap=Object.fromEntries(D.gov.map(g=>[g.uf,g]));
-if(!govIn.length)$('legIn').remove();
+if(!govIn.length)$('legIn')?.remove();
 $('govCap').textContent=OF.gov?'Situação oficial do TSE (totalização concluída nos 27 estados).':'Resultado calculado pelas regras (mais de 50% dos válidos elege). O TSE ainda não proclamou os eleitos.';
 $('camCap').textContent=OF.fed.length?`Cadeiras dos eleitos marcados pelo TSE. Em ${OF.fed.join(' e ')}, ainda em totalização, as vagas de cada federação foram divididas pelos mais votados (estimativa).`:'Cadeiras dos eleitos marcados pelo TSE.';
 $('govLead').textContent=`${govEl.length} estados já têm governador eleito, ${gov2.length} terão 2º turno e ${govIn.length?govIn.length+' está indefinido por causa de uma candidatura sub judice':'nenhum está indefinido'}.`;
