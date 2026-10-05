@@ -13,7 +13,7 @@ AUTOR = dict(nome="Vitor Onofre Pereira", url="https://vitorpereira.ia.br")
 AUTOR_PERFIS = ["https://vitorpereira.ia.br", "https://www.linkedin.com/in/vitor-onofre-pereira/", "https://github.com/vitoropereira",
                 "https://x.com/VITORONOFRE", "https://www.instagram.com/vitorpereirasaas/", "https://www.tabnews.com.br/vitorpereirasaas",
                 "https://www.youtube.com/@vitoropereira"]
-# medições: as mesmas do vitorpereira.ia.br. GA4 e Clarity só depois do consentimento; Vercel Analytics/Speed Insights são cookieless
+# medições: GA4 e Clarity, as mesmas do vitorpereira.ia.br, só depois do consentimento de cookies
 GA_ID = "G-N6J962GXT3"
 CLARITY_ID = "tp8n6kanob"
 PRIVACIDADE = "https://vitorpereira.ia.br/privacidade"
@@ -87,16 +87,14 @@ footer.site a{color:var(--ink2)}
 header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
 .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:50;background:var(--card);padding:6px 10px;border-radius:8px}
 a:focus-visible,summary:focus-visible{outline:2px solid var(--flavio);outline-offset:2px;border-radius:4px}
+.grid>*{min-width:0}.ch canvas{max-width:100%}
 </style>"""
 
 
 FAVICON_INLINE = FAVICON.replace("<svg ", '<svg aria-hidden="true" ')
 
 # ---------------- medições (entram depois do pré-render, para o banner não ficar congelado no HTML)
-MEDICAO_HEAD = """<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments)};</script>
-<script defer src="/_vercel/insights/script.js"></script>
-<script defer src="/_vercel/speed-insights/script.js"></script>
-"""
+# Vercel Web Analytics/Speed Insights ficam de fora: não estão ativados no projeto, e os scripts dariam 404.
 MEDICAO_BODY = """<style id="consent-css">
 .consent{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--card,#fff);color:var(--ink,#1b1c1e);border-top:1px solid var(--line,#e6e5e1);box-shadow:0 -6px 24px rgba(0,0,0,.12)}
 .consent .in{max-width:1160px;margin:0 auto;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -134,7 +132,6 @@ MEDICAO_BODY = """<style id="consent-css">
 
 def com_medicao(dom):
     assert "consent-js" not in dom, "medição já presente no HTML pré-renderizado"
-    dom = dom.replace("</head>", MEDICAO_HEAD + "</head>", 1)
     return dom.replace("</body>", MEDICAO_BODY + "</body>", 1)
 
 
