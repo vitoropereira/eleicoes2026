@@ -1,0 +1,35 @@
+# Eleições 2026 · Resultado do 1º turno (Brasil, 04/10/2026)
+
+> Análise independente de Vitor Onofre Pereira com dados públicos do TSE (99,95% das seções apuradas, leitura de 04/10/2026 22:49:30). Os eleitos ainda não tinham sido proclamados oficialmente; governador e Senado foram calculados pelas regras eleitorais.
+
+## Presidente
+- 2º turno em 25/10/2026: Flávio Bolsonaro (PL) 47,04% × Lula (PT) 45,15% dos votos válidos.
+- Votos: Flávio 56,095,358 · Lula 53,837,560.
+- Flávio venceu em 15 UFs, Lula em 12. Disputa mais apertada: AP (225 votos).
+- Abstenção 21,08% · brancos 1,84% · nulos 2,93%.
+- Comparação com o 1º turno de 2022: Lula 48,43% × Jair Bolsonaro 43,20%.
+
+## Governadores
+- 20 eleitos no 1º turno; 2º turno ou indefinido em:
+- AC: Mailza Assis (PP) × Alan Rick (REPUBLICANOS)
+- AM: Omar Aziz (PSD) × Professora Maria do Carmo (PL)
+- DF: Celina Leão (PP) × Leandro Grass (PT)
+- ES: Lorenzo Pazolini (REPUBLICANOS) × Ricardo Ferraço (MDB)
+- RN: Allyson (UNIÃO) × Cadu de Lula (PT)
+- TO: Professora Dorinha (UNIÃO) × Vicentinho Júnior (PSDB)
+- RJ: Douglas Ruas (PL) × Eduardo Paes (PSD)
+
+## Congresso
+- Câmara (513): PL 121 cadeiras (99 em 2022). Distribuição de vagas publicada pelo TSE.
+- Senado (54 vagas): PL 19.
+
+## Páginas
+- [Resultado final completo](https://eleicoes2026.vitorpereira.ia.br/): mapa por estado, governadores, Senado, Câmara, Assembleias, perguntas frequentes
+- [Apuração ao vivo](https://eleicoes2026.vitorpereira.ia.br/ao-vivo/): presidente e governadores, lidos do TSE a cada minuto
+- [Apuração leitura a leitura](https://eleicoes2026.vitorpereira.ia.br/apuracao/)
+- [Apuração com 36,6% das urnas](https://eleicoes2026.vitorpereira.ia.br/apuracao/36-6/)
+- [Apuração com 64,8% das urnas](https://eleicoes2026.vitorpereira.ia.br/apuracao/64-8/)
+- [Apuração com 84,9% das urnas](https://eleicoes2026.vitorpereira.ia.br/apuracao/84-9/)
+- [Apuração com 93,2% das urnas](https://eleicoes2026.vitorpereira.ia.br/apuracao/93-2/)
+- [Apuração com 99,7% das urnas](https://eleicoes2026.vitorpereira.ia.br/apuracao/99-7/)
+- [Dados consolidados em JSON](https://eleicoes2026.vitorpereira.ia.br/dados/relatorio.json)

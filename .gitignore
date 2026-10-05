@@ -1,3 +1,5 @@
 .marcos_feitos
 .DS_Store
 __pycache__/
+.build/
+.vercel/

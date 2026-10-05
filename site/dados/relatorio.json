@@ -1,0 +1,3177 @@
+{
+ "gerado": "04/10/2026 23:00",
+ "nac": {
+  "ht": "22:49:30",
+  "dg": "04/10/2026",
+  "pst": 99.95,
+  "eleitores": 158745502,
+  "comparecimento": 125220146,
+  "pc": 78.92,
+  "abstencao": 33444455,
+  "pa": 21.08,
+  "validos": 119247726,
+  "brancos": 2300108,
+  "pb": 1.84,
+  "nulos": 3672312,
+  "pn": 2.93,
+  "cand": [
+   {
+    "nome": "Flavio Bolsonaro",
+    "sg": "PL",
+    "votos": 56095358,
+    "p": 47.04
+   },
+   {
+    "nome": "Lula",
+    "sg": "PT",
+    "votos": 53837560,
+    "p": 45.15
+   },
+   {
+    "nome": "Escritor Augusto Cury",
+    "sg": "AVANTE",
+    "votos": 3447681,
+    "p": 2.89
+   },
+   {
+    "nome": "Renan Santos",
+    "sg": "MISSÃO",
+    "votos": 2675432,
+    "p": 2.24
+   },
+   {
+    "nome": "Ronaldo Caiado",
+    "sg": "PSD",
+    "votos": 2604661,
+    "p": 2.18
+   },
+   {
+    "nome": "Zema",
+    "sg": "NOVO",
+    "votos": 326432,
+    "p": 0.27
+   },
+   {
+    "nome": "Samara",
+    "sg": "UP",
+    "votos": 122899,
+    "p": 0.1
+   },
+   {
+    "nome": "Hertz Dias",
+    "sg": "PSTU",
+    "votos": 43098,
+    "p": 0.04
+   },
+   {
+    "nome": "Clariana Barao",
+    "sg": "DC",
+    "votos": 40030,
+    "p": 0.03
+   },
+   {
+    "nome": "Edmilson Costa",
+    "sg": "PCB",
+    "votos": 22684,
+    "p": 0.02
+   },
+   {
+    "nome": "Veterinário Wilson Grassi",
+    "sg": "DEMOCRATA",
+    "votos": 16871,
+    "p": 0.01
+   },
+   {
+    "nome": "Rui Costa Pimenta",
+    "sg": "PCO",
+    "votos": 15020,
+    "p": 0.01
+   }
+  ],
+  "coalizao_lula": [
+   "PSB",
+   "PDT",
+   "PCDOB",
+   "PT",
+   "PV",
+   "PSOL",
+   "REDE"
+  ]
+ },
+ "pres_uf": [
+  {
+   "uf": "AC",
+   "pst": 100.0,
+   "eleitores": 613742,
+   "pc": 79.57,
+   "f": 64.56,
+   "l": 28.73,
+   "fv": 302807,
+   "lv": 134770,
+   "saldo": 168037
+  },
+  {
+   "uf": "AL",
+   "pst": 99.99,
+   "eleitores": 2442126,
+   "pc": 79.38,
+   "f": 40.45,
+   "l": 54.73,
+   "fv": 735548,
+   "lv": 995310,
+   "saldo": -259762
+  },
+  {
+   "uf": "AP",
+   "pst": 100.0,
+   "eleitores": 576988,
+   "pc": 82.59,
+   "f": 45.67,
+   "l": 45.71,
+   "fv": 212278,
+   "lv": 212503,
+   "saldo": -225
+  },
+  {
+   "uf": "AM",
+   "pst": 99.79,
+   "eleitores": 2798611,
+   "pc": 79.83,
+   "f": 45.08,
+   "l": 48.13,
+   "fv": 976222,
+   "lv": 1042340,
+   "saldo": -66118
+  },
+  {
+   "uf": "BA",
+   "pst": 99.67,
+   "eleitores": 11312752,
+   "pc": 80.03,
+   "f": 28.58,
+   "l": 66.12,
+   "fv": 2438241,
+   "lv": 5641207,
+   "saldo": -3202966
+  },
+  {
+   "uf": "CE",
+   "pst": 99.95,
+   "eleitores": 6996545,
+   "pc": 84.48,
+   "f": 31.28,
+   "l": 63.28,
+   "fv": 1756339,
+   "lv": 3552743,
+   "saldo": -1796404
+  },
+  {
+   "uf": "DF",
+   "pst": 100.0,
+   "eleitores": 2258320,
+   "pc": 81.1,
+   "f": 51.31,
+   "l": 38.11,
+   "fv": 909616,
+   "lv": 675627,
+   "saldo": 233989
+  },
+  {
+   "uf": "ES",
+   "pst": 100.0,
+   "eleitores": 2991650,
+   "pc": 78.63,
+   "f": 54.78,
+   "l": 37.76,
+   "fv": 1233194,
+   "lv": 850028,
+   "saldo": 383166
+  },
+  {
+   "uf": "GO",
+   "pst": 100.0,
+   "eleitores": 5080590,
+   "pc": 78.17,
+   "f": 53.6,
+   "l": 31.06,
+   "fv": 2051888,
+   "lv": 1188880,
+   "saldo": 863008
+  },
+  {
+   "uf": "MA",
+   "pst": 99.83,
+   "eleitores": 5183115,
+   "pc": 80.27,
+   "f": 30.93,
+   "l": 63.95,
+   "fv": 1238495,
+   "lv": 2561100,
+   "saldo": -1322605
+  },
+  {
+   "uf": "MT",
+   "pst": 100.0,
+   "eleitores": 2637801,
+   "pc": 77.8,
+   "f": 65.15,
+   "l": 29.18,
+   "fv": 1298581,
+   "lv": 581681,
+   "saldo": 716900
+  },
+  {
+   "uf": "MS",
+   "pst": 100.0,
+   "eleitores": 2024430,
+   "pc": 76.13,
+   "f": 58.6,
+   "l": 34.68,
+   "fv": 873351,
+   "lv": 516855,
+   "saldo": 356496
+  },
+  {
+   "uf": "MG",
+   "pst": 99.98,
+   "eleitores": 16372372,
+   "pc": 77.19,
+   "f": 48.24,
+   "l": 43.32,
+   "fv": 5776681,
+   "lv": 5187293,
+   "saldo": 589388
+  },
+  {
+   "uf": "PA",
+   "pst": 99.96,
+   "eleitores": 6262397,
+   "pc": 80.9,
+   "f": 44.51,
+   "l": 49.9,
+   "fv": 2163557,
+   "lv": 2425810,
+   "saldo": -262253
+  },
+  {
+   "uf": "PB",
+   "pst": 99.98,
+   "eleitores": 3248531,
+   "pc": 82.62,
+   "f": 33.07,
+   "l": 61.31,
+   "fv": 831205,
+   "lv": 1540937,
+   "saldo": -709732
+  },
+  {
+   "uf": "PR",
+   "pst": 100.0,
+   "eleitores": 8613657,
+   "pc": 79.43,
+   "f": 59.91,
+   "l": 31.2,
+   "fv": 3945345,
+   "lv": 2054597,
+   "saldo": 1890748
+  },
+  {
+   "uf": "PE",
+   "pst": 100.0,
+   "eleitores": 7223450,
+   "pc": 81.83,
+   "f": 31.03,
+   "l": 63.45,
+   "fv": 1738043,
+   "lv": 3553971,
+   "saldo": -1815928
+  },
+  {
+   "uf": "PI",
+   "pst": 99.83,
+   "eleitores": 2704758,
+   "pc": 82.85,
+   "f": 24.1,
+   "l": 70.97,
+   "fv": 516574,
+   "lv": 1520985,
+   "saldo": -1004411
+  },
+  {
+   "uf": "RJ",
+   "pst": 100.0,
+   "eleitores": 12857648,
+   "pc": 76.68,
+   "f": 53.01,
+   "l": 39.41,
+   "fv": 4966844,
+   "lv": 3693021,
+   "saldo": 1273823
+  },
+  {
+   "uf": "RN",
+   "pst": 99.99,
+   "eleitores": 2659825,
+   "pc": 81.62,
+   "f": 34.77,
+   "l": 59.75,
+   "fv": 720383,
+   "lv": 1237802,
+   "saldo": -517419
+  },
+  {
+   "uf": "RS",
+   "pst": 100.0,
+   "eleitores": 8522545,
+   "pc": 78.65,
+   "f": 55.64,
+   "l": 35.73,
+   "fv": 3573783,
+   "lv": 2294759,
+   "saldo": 1279024
+  },
+  {
+   "uf": "RO",
+   "pst": 100.0,
+   "eleitores": 1265893,
+   "pc": 78.29,
+   "f": 67.45,
+   "l": 25.89,
+   "fv": 652988,
+   "lv": 250667,
+   "saldo": 402321
+  },
+  {
+   "uf": "RR",
+   "pst": 100.0,
+   "eleitores": 401521,
+   "pc": 82.88,
+   "f": 71.06,
+   "l": 22.86,
+   "fv": 231322,
+   "lv": 74420,
+   "saldo": 156902
+  },
+  {
+   "uf": "SC",
+   "pst": 100.0,
+   "eleitores": 5734651,
+   "pc": 81.05,
+   "f": 66.65,
+   "l": 25.04,
+   "fv": 3000020,
+   "lv": 1127168,
+   "saldo": 1872852
+  },
+  {
+   "uf": "SP",
+   "pst": 100.0,
+   "eleitores": 34122892,
+   "pc": 77.46,
+   "f": 51.93,
+   "l": 38.2,
+   "fv": 12922023,
+   "lv": 9505413,
+   "saldo": 3416610
+  },
+  {
+   "uf": "SE",
+   "pst": 100.0,
+   "eleitores": 1740135,
+   "pc": 82.7,
+   "f": 30.63,
+   "l": 62.75,
+   "fv": 417839,
+   "lv": 856019,
+   "saldo": -438180
+  },
+  {
+   "uf": "TO",
+   "pst": 100.0,
+   "eleitores": 1182023,
+   "pc": 81.66,
+   "f": 50.44,
+   "l": 43.42,
+   "fv": 469321,
+   "lv": 404009,
+   "saldo": 65312
+  },
+  {
+   "uf": "ZZ",
+   "pst": 98.45,
+   "eleitores": 916534,
+   "pc": 37.54,
+   "f": 43.54,
+   "l": 47.5,
+   "fv": 142488,
+   "lv": 155467,
+   "saldo": -12979
+  }
+ ],
+ "regioes": [
+  {
+   "regiao": "Norte",
+   "f": 49.18,
+   "l": 44.62,
+   "saldo": 463976,
+   "vv": 10184714
+  },
+  {
+   "regiao": "Nordeste",
+   "f": 30.87,
+   "l": 63.75,
+   "saldo": -11067407,
+   "vv": 33662332
+  },
+  {
+   "regiao": "Centro-Oeste",
+   "f": 56.51,
+   "l": 32.62,
+   "saldo": 2170393,
+   "vv": 9084197
+  },
+  {
+   "regiao": "Sudeste",
+   "f": 51.36,
+   "l": 39.68,
+   "saldo": 5662987,
+   "vv": 48477371
+  },
+  {
+   "regiao": "Sul",
+   "f": 60.08,
+   "l": 31.28,
+   "saldo": 5042624,
+   "vv": 17509186
+  },
+  {
+   "regiao": "Exterior",
+   "f": 43.54,
+   "l": 47.5,
+   "saldo": -12979,
+   "vv": 327273
+  }
+ ],
+ "gov": [
+  {
+   "uf": "AC",
+   "pst": 100.0,
+   "status": "2turno",
+   "a": {
+    "nome": "Mailza Assis",
+    "sg": "PP",
+    "p": 49.76,
+    "p_tse": 49.76,
+    "votos": 218760
+   },
+   "b": {
+    "nome": "Alan Rick",
+    "sg": "REPUBLICANOS",
+    "p": 32.27,
+    "votos": 141859
+   },
+   "falta_50": 1064,
+   "subjudice": null
+  },
+  {
+   "uf": "AL",
+   "pst": 99.99,
+   "status": "eleito",
+   "a": {
+    "nome": "JHC",
+    "sg": "PSDB",
+    "p": 52.2,
+    "p_tse": 52.2,
+    "votos": 892264
+   },
+   "b": {
+    "nome": "Renan Filho",
+    "sg": "MDB",
+    "p": 47.37,
+    "votos": 809702
+   },
+   "falta_50": -37615,
+   "subjudice": null
+  },
+  {
+   "uf": "AP",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Dr. Furlan",
+    "sg": "PSD",
+    "p": 62.75,
+    "p_tse": 62.75,
+    "votos": 281595
+   },
+   "b": {
+    "nome": "Clécio",
+    "sg": "UNIÃO",
+    "p": 36.97,
+    "votos": 165900
+   },
+   "falta_50": -57221,
+   "subjudice": null
+  },
+  {
+   "uf": "AM",
+   "pst": 99.79,
+   "status": "2turno",
+   "a": {
+    "nome": "Omar Aziz",
+    "sg": "PSD",
+    "p": 40.57,
+    "p_tse": 40.57,
+    "votos": 838579
+   },
+   "b": {
+    "nome": "Professora Maria do Carmo",
+    "sg": "PL",
+    "p": 24.53,
+    "votos": 507128
+   },
+   "falta_50": 194928,
+   "subjudice": null
+  },
+  {
+   "uf": "BA",
+   "pst": 99.67,
+   "status": "eleito",
+   "a": {
+    "nome": "Jerônimo Rodrigues",
+    "sg": "PT",
+    "p": 55.75,
+    "p_tse": 55.75,
+    "votos": 4606966
+   },
+   "b": {
+    "nome": "ACM Neto",
+    "sg": "UNIÃO",
+    "p": 43.77,
+    "votos": 3616812
+   },
+   "falta_50": -475432,
+   "subjudice": null
+  },
+  {
+   "uf": "CE",
+   "pst": 99.95,
+   "status": "eleito",
+   "a": {
+    "nome": "Elmano de Freitas",
+    "sg": "PT",
+    "p": 53.18,
+    "p_tse": 53.18,
+    "votos": 2873520
+   },
+   "b": {
+    "nome": "Ciro Gomes",
+    "sg": "PSDB",
+    "p": 46.23,
+    "votos": 2497896
+   },
+   "falta_50": -171999,
+   "subjudice": null
+  },
+  {
+   "uf": "DF",
+   "pst": 100.0,
+   "status": "2turno",
+   "a": {
+    "nome": "Celina Leão",
+    "sg": "PP",
+    "p": 49.99,
+    "p_tse": 49.93,
+    "votos": 825530
+   },
+   "b": {
+    "nome": "Leandro Grass",
+    "sg": "PT",
+    "p": 34.51,
+    "votos": 569930
+   },
+   "falta_50": 168,
+   "subjudice": null
+  },
+  {
+   "uf": "ES",
+   "pst": 100.0,
+   "status": "2turno",
+   "a": {
+    "nome": "Lorenzo Pazolini",
+    "sg": "REPUBLICANOS",
+    "p": 49.65,
+    "p_tse": 49.65,
+    "votos": 1048633
+   },
+   "b": {
+    "nome": "Ricardo Ferraço",
+    "sg": "MDB",
+    "p": 34.06,
+    "votos": 719397
+   },
+   "falta_50": 7453,
+   "subjudice": null
+  },
+  {
+   "uf": "GO",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Daniel Vilela",
+    "sg": "MDB",
+    "p": 59.17,
+    "p_tse": 59.17,
+    "votos": 2148218
+   },
+   "b": {
+    "nome": "Wilder Morais",
+    "sg": "PL",
+    "p": 21.96,
+    "votos": 797141
+   },
+   "falta_50": -332929,
+   "subjudice": null
+  },
+  {
+   "uf": "MA",
+   "pst": 99.83,
+   "status": "eleito",
+   "a": {
+    "nome": "Eduardo Braide",
+    "sg": "PSD",
+    "p": 54.74,
+    "p_tse": 54.05,
+    "votos": 2102078
+   },
+   "b": {
+    "nome": "Orleans Brandão",
+    "sg": "MDB",
+    "p": 35.18,
+    "votos": 1351028
+   },
+   "falta_50": -181873,
+   "subjudice": {
+    "nome": "Roberto Rocha",
+    "sg": "PRTB",
+    "votos": 48918,
+    "p": 1.26
+   }
+  },
+  {
+   "uf": "MT",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Otaviano Pivetta",
+    "sg": "REPUBLICANOS",
+    "p": 60.77,
+    "p_tse": 60.77,
+    "votos": 1128099
+   },
+   "b": {
+    "nome": "Wellington Fagundes",
+    "sg": "PL",
+    "p": 23.19,
+    "votos": 430442
+   },
+   "falta_50": -199952,
+   "subjudice": null
+  },
+  {
+   "uf": "MS",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Eduardo Riedel",
+    "sg": "PP",
+    "p": 67.07,
+    "p_tse": 67.07,
+    "votos": 914323
+   },
+   "b": {
+    "nome": "Fábio Trad",
+    "sg": "PT",
+    "p": 23.68,
+    "votos": 322807
+   },
+   "falta_50": -232673,
+   "subjudice": null
+  },
+  {
+   "uf": "MG",
+   "pst": 99.98,
+   "status": "eleito",
+   "a": {
+    "nome": "Cleitinho Azevedo",
+    "sg": "REPUBLICANOS",
+    "p": 55.4,
+    "p_tse": 55.4,
+    "votos": 6320467
+   },
+   "b": {
+    "nome": "Patrus Ananias",
+    "sg": "PT",
+    "p": 26.34,
+    "votos": 3004934
+   },
+   "falta_50": -616555,
+   "subjudice": null
+  },
+  {
+   "uf": "PA",
+   "pst": 99.96,
+   "status": "eleito",
+   "a": {
+    "nome": "Dr. Daniel",
+    "sg": "PODE",
+    "p": 51.4,
+    "p_tse": 51.37,
+    "votos": 2345255
+   },
+   "b": {
+    "nome": "Hana Ghassan",
+    "sg": "MDB",
+    "p": 46.54,
+    "votos": 2123802
+   },
+   "falta_50": -63715,
+   "subjudice": null
+  },
+  {
+   "uf": "PB",
+   "pst": 99.98,
+   "status": "eleito",
+   "a": {
+    "nome": "Lucas Ribeiro",
+    "sg": "PP",
+    "p": 64.3,
+    "p_tse": 64.3,
+    "votos": 1470037
+   },
+   "b": {
+    "nome": "Efraim Filho",
+    "sg": "PL",
+    "p": 24.18,
+    "votos": 552725
+   },
+   "falta_50": -326902,
+   "subjudice": null
+  },
+  {
+   "uf": "PR",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Sergio Moro",
+    "sg": "PL",
+    "p": 50.11,
+    "p_tse": 50.1,
+    "votos": 3127911
+   },
+   "b": {
+    "nome": "Sandro Alex",
+    "sg": "PSD",
+    "p": 25.37,
+    "votos": 1583764
+   },
+   "falta_50": -6773,
+   "subjudice": null
+  },
+  {
+   "uf": "PE",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Raquel Lyra",
+    "sg": "PSD",
+    "p": 53.27,
+    "p_tse": 53.27,
+    "votos": 2805438
+   },
+   "b": {
+    "nome": "João Campos",
+    "sg": "PSB",
+    "p": 44.82,
+    "votos": 2360469
+   },
+   "falta_50": -172011,
+   "subjudice": null
+  },
+  {
+   "uf": "PI",
+   "pst": 99.83,
+   "status": "eleito",
+   "a": {
+    "nome": "Rafael Fonteles",
+    "sg": "PT",
+    "p": 71.09,
+    "p_tse": 70.91,
+    "votos": 1434543
+   },
+   "b": {
+    "nome": "Joel Rodrigues",
+    "sg": "PP",
+    "p": 27.6,
+    "votos": 556999
+   },
+   "falta_50": -425511,
+   "subjudice": null
+  },
+  {
+   "uf": "RJ",
+   "pst": 100.0,
+   "status": "indefinido",
+   "a": {
+    "nome": "Douglas Ruas",
+    "sg": "PL",
+    "p": 50.88,
+    "p_tse": 49.27,
+    "votos": 4271199
+   },
+   "b": {
+    "nome": "Eduardo Paes",
+    "sg": "PSD",
+    "p": 44.16,
+    "votos": 3706984
+   },
+   "falta_50": -73885,
+   "subjudice": {
+    "nome": "Garotinho",
+    "sg": "REPUBLICANOS",
+    "votos": 274411,
+    "p": 3.17
+   }
+  },
+  {
+   "uf": "RN",
+   "pst": 99.99,
+   "status": "2turno",
+   "a": {
+    "nome": "Allyson",
+    "sg": "UNIÃO",
+    "p": 36.94,
+    "p_tse": 36.94,
+    "votos": 733738
+   },
+   "b": {
+    "nome": "Cadu de Lula",
+    "sg": "PT",
+    "p": 36.16,
+    "votos": 718206
+   },
+   "falta_50": 259353,
+   "subjudice": null
+  },
+  {
+   "uf": "RS",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Zucco",
+    "sg": "PL",
+    "p": 58.07,
+    "p_tse": 58.05,
+    "votos": 3516048
+   },
+   "b": {
+    "nome": "Juliana Brizola",
+    "sg": "PDT",
+    "p": 31.66,
+    "votos": 1917374
+   },
+   "falta_50": -488394,
+   "subjudice": null
+  },
+  {
+   "uf": "RO",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Marcos Rogério",
+    "sg": "PL",
+    "p": 56.86,
+    "p_tse": 56.86,
+    "votos": 537370
+   },
+   "b": {
+    "nome": "Adailton Furia",
+    "sg": "PSD",
+    "p": 20.06,
+    "votos": 189547
+   },
+   "falta_50": -64840,
+   "subjudice": null
+  },
+  {
+   "uf": "RR",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Arthur Henrique",
+    "sg": "PL",
+    "p": 69.15,
+    "p_tse": 69.13,
+    "votos": 220809
+   },
+   "b": {
+    "nome": "Soldado Sampaio",
+    "sg": "REPUBLICANOS",
+    "p": 29.26,
+    "votos": 93434
+   },
+   "falta_50": -61140,
+   "subjudice": null
+  },
+  {
+   "uf": "SC",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Jorginho Mello",
+    "sg": "PL",
+    "p": 68.98,
+    "p_tse": 68.98,
+    "votos": 2942386
+   },
+   "b": {
+    "nome": "Gelson Merísio",
+    "sg": "PSB",
+    "p": 15.66,
+    "votos": 668021
+   },
+   "falta_50": -809565,
+   "subjudice": null
+  },
+  {
+   "uf": "SP",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Tarcísio",
+    "sg": "REPUBLICANOS",
+    "p": 62.65,
+    "p_tse": 62.65,
+    "votos": 14491874
+   },
+   "b": {
+    "nome": "Fernando Haddad",
+    "sg": "PT",
+    "p": 36.42,
+    "votos": 8423656
+   },
+   "falta_50": -2926617,
+   "subjudice": null
+  },
+  {
+   "uf": "SE",
+   "pst": 100.0,
+   "status": "eleito",
+   "a": {
+    "nome": "Fábio",
+    "sg": "PSD",
+    "p": 61.12,
+    "p_tse": 59.27,
+    "votos": 727291
+   },
+   "b": {
+    "nome": "Valmir de Francisquinho",
+    "sg": "REPUBLICANOS",
+    "p": 38.65,
+    "votos": 459908
+   },
+   "falta_50": -132327,
+   "subjudice": {
+    "nome": "Dr. Helton",
+    "sg": "PSOL",
+    "votos": 37081,
+    "p": 3.02
+   }
+  },
+  {
+   "uf": "TO",
+   "pst": 100.0,
+   "status": "2turno",
+   "a": {
+    "nome": "Professora Dorinha",
+    "sg": "UNIÃO",
+    "p": 45.52,
+    "p_tse": 45.52,
+    "votos": 386260
+   },
+   "b": {
+    "nome": "Vicentinho Júnior",
+    "sg": "PSDB",
+    "p": 43.94,
+    "votos": 372848
+   },
+   "falta_50": 38055,
+   "subjudice": null
+  }
+ ],
+ "sen": [
+  {
+   "uf": "AC",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Marcio Bittar",
+     "sg": "PL",
+     "p": 30.68,
+     "votos": 223972
+    },
+    {
+     "nome": "Mara Rocha",
+     "sg": "REPUBLICANOS",
+     "p": 21.52,
+     "votos": 157104
+    }
+   ],
+   "proximo": {
+    "nome": "Jorge Viana",
+    "sg": "PT",
+    "p": 16.99,
+    "votos": 124063
+   },
+   "dif_corte": 33041
+  },
+  {
+   "uf": "AL",
+   "pst": 99.99,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Arthur Lira",
+     "sg": "PP",
+     "p": 28.87,
+     "votos": 948596
+    },
+    {
+     "nome": "Marina JHC",
+     "sg": "PSDB",
+     "p": 28.2,
+     "votos": 926641
+    }
+   ],
+   "proximo": {
+    "nome": "Renan",
+    "sg": "MDB",
+    "p": 22.24,
+    "votos": 730957
+   },
+   "dif_corte": 195684
+  },
+  {
+   "uf": "AP",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Rayssa Furlan",
+     "sg": "PODE",
+     "p": 29.98,
+     "votos": 264799
+    },
+    {
+     "nome": "Lucas Barreto",
+     "sg": "PSD",
+     "p": 24.22,
+     "votos": 213948
+    }
+   ],
+   "proximo": {
+    "nome": "Randolfe",
+    "sg": "PT",
+    "p": 18.55,
+    "votos": 163857
+   },
+   "dif_corte": 50091
+  },
+  {
+   "uf": "AM",
+   "pst": 99.79,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Eduardo Braga",
+     "sg": "MDB",
+     "p": 32.26,
+     "votos": 1236386
+    },
+    {
+     "nome": "Plinio Valério",
+     "sg": "PSDB",
+     "p": 24.68,
+     "votos": 945922
+    }
+   ],
+   "proximo": {
+    "nome": "Capitão Alberto Neto",
+    "sg": "PL",
+    "p": 23.7,
+    "votos": 908043
+   },
+   "dif_corte": 37879
+  },
+  {
+   "uf": "BA",
+   "pst": 99.67,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Rui Costa",
+     "sg": "PT",
+     "p": 30.04,
+     "votos": 4316765
+    },
+    {
+     "nome": "Jaques Wagner",
+     "sg": "PT",
+     "p": 27.62,
+     "votos": 3969071
+    }
+   ],
+   "proximo": {
+    "nome": "Angelo Coronel",
+    "sg": "REPUBLICANOS",
+    "p": 20.13,
+    "votos": 2892984
+   },
+   "dif_corte": 1076087
+  },
+  {
+   "uf": "CE",
+   "pst": 99.95,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Cid Gomes",
+     "sg": "PSB",
+     "p": 31.22,
+     "votos": 3031331
+    },
+    {
+     "nome": "Luizianne",
+     "sg": "REDE",
+     "p": 29.05,
+     "votos": 2820852
+    }
+   ],
+   "proximo": {
+    "nome": "Capitão Wagner",
+    "sg": "UNIÃO",
+    "p": 20.71,
+    "votos": 2010631
+   },
+   "dif_corte": 810221
+  },
+  {
+   "uf": "DF",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Michelle Bolsonaro",
+     "sg": "PL",
+     "p": 29.09,
+     "votos": 938496
+    },
+    {
+     "nome": "Bia Kicis",
+     "sg": "PL",
+     "p": 27.48,
+     "votos": 886616
+    }
+   ],
+   "proximo": {
+    "nome": "Leila do Vôlei",
+    "sg": "PDT",
+    "p": 21.27,
+    "votos": 686340
+   },
+   "dif_corte": 200276
+  },
+  {
+   "uf": "ES",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Renato Casagrande",
+     "sg": "PSB",
+     "p": 24.7,
+     "votos": 995361
+    },
+    {
+     "nome": "Evair de Melo",
+     "sg": "REPUBLICANOS",
+     "p": 24.39,
+     "votos": 982978
+    }
+   ],
+   "proximo": {
+    "nome": "Maguinha Malta",
+    "sg": "PL",
+    "p": 18.9,
+    "votos": 761722
+   },
+   "dif_corte": 221256
+  },
+  {
+   "uf": "GO",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Gustavo Gayer",
+     "sg": "PL",
+     "p": 24.53,
+     "votos": 1639247
+    },
+    {
+     "nome": "Gracinha Caiado",
+     "sg": "UNIÃO",
+     "p": 21.83,
+     "votos": 1458522
+    }
+   ],
+   "proximo": {
+    "nome": "Dr. Zacharias Calil",
+    "sg": "MDB",
+    "p": 14.94,
+    "votos": 998319
+   },
+   "dif_corte": 460203
+  },
+  {
+   "uf": "MA",
+   "pst": 99.83,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Fufuca",
+     "sg": "PP",
+     "p": 21.49,
+     "votos": 1527614
+    },
+    {
+     "nome": "Lahesio Bonfim",
+     "sg": "NOVO",
+     "p": 20.69,
+     "votos": 1470337
+    }
+   ],
+   "proximo": {
+    "nome": "Roseana Sarney",
+    "sg": "MDB",
+    "p": 16.45,
+    "votos": 1169119
+   },
+   "dif_corte": 301218
+  },
+  {
+   "uf": "MT",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Mauro Mendes",
+     "sg": "UNIÃO",
+     "p": 33.21,
+     "votos": 1187352
+    },
+    {
+     "nome": "Zé Medeiros",
+     "sg": "PL",
+     "p": 27.35,
+     "votos": 977777
+    }
+   ],
+   "proximo": {
+    "nome": "Janaina Riva",
+    "sg": "MDB",
+    "p": 14.53,
+    "votos": 519434
+   },
+   "dif_corte": 458343
+  },
+  {
+   "uf": "MS",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Reinaldo Azambuja",
+     "sg": "PL",
+     "p": 34.64,
+     "votos": 903554
+    },
+    {
+     "nome": "Capitão Contar",
+     "sg": "PL",
+     "p": 32.82,
+     "votos": 856045
+    }
+   ],
+   "proximo": {
+    "nome": "Vander Loubet",
+    "sg": "PT",
+    "p": 13.88,
+    "votos": 361920
+   },
+   "dif_corte": 494125
+  },
+  {
+   "uf": "MG",
+   "pst": 99.98,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Domingos Sávio",
+     "sg": "PL",
+     "p": 24.21,
+     "votos": 4968308
+    },
+    {
+     "nome": "Marília Campos",
+     "sg": "PT",
+     "p": 19.44,
+     "votos": 3989448
+    }
+   ],
+   "proximo": {
+    "nome": "Carlos Viana",
+    "sg": "PSD",
+    "p": 17.46,
+    "votos": 3583109
+   },
+   "dif_corte": 406339
+  },
+  {
+   "uf": "PA",
+   "pst": 99.96,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Helder",
+     "sg": "MDB",
+     "p": 26.14,
+     "votos": 2340608
+    },
+    {
+     "nome": "Chicão",
+     "sg": "UNIÃO",
+     "p": 22.48,
+     "votos": 2013089
+    }
+   ],
+   "proximo": {
+    "nome": "Delegado Éder Mauro",
+    "sg": "PL",
+    "p": 22.31,
+    "votos": 1997447
+   },
+   "dif_corte": 15642
+  },
+  {
+   "uf": "PB",
+   "pst": 99.98,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Joao Azevêdo",
+     "sg": "PSB",
+     "p": 32.5,
+     "votos": 1391766
+    },
+    {
+     "nome": "Veneziano",
+     "sg": "MDB",
+     "p": 22.76,
+     "votos": 974459
+    }
+   ],
+   "proximo": {
+    "nome": "Nabor",
+    "sg": "REPUBLICANOS",
+    "p": 20.91,
+    "votos": 895267
+   },
+   "dif_corte": 79192
+  },
+  {
+   "uf": "PR",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Filipe Barros",
+     "sg": "PL",
+     "p": 27.28,
+     "votos": 3148583
+    },
+    {
+     "nome": "Deltan Dallagnol",
+     "sg": "NOVO",
+     "p": 25.16,
+     "votos": 2904594
+    }
+   ],
+   "proximo": {
+    "nome": "Alexandre Curi",
+    "sg": "REPUBLICANOS",
+    "p": 16.87,
+    "votos": 1947135
+   },
+   "dif_corte": 957459
+  },
+  {
+   "uf": "PE",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Humberto Costa",
+     "sg": "PT",
+     "p": 27.24,
+     "votos": 2531389
+    },
+    {
+     "nome": "Marília Arraes",
+     "sg": "PDT",
+     "p": 25.02,
+     "votos": 2325127
+    }
+   ],
+   "proximo": {
+    "nome": "Mendonça Filho",
+    "sg": "PL",
+    "p": 18.6,
+    "votos": 1728587
+   },
+   "dif_corte": 596540
+  },
+  {
+   "uf": "PI",
+   "pst": 99.83,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Marcelo Castro",
+     "sg": "MDB",
+     "p": 35.91,
+     "votos": 1305549
+    },
+    {
+     "nome": "Júlio César O Julim do Lula",
+     "sg": "PSD",
+     "p": 27.16,
+     "votos": 987483
+    }
+   ],
+   "proximo": {
+    "nome": "Ciro Nogueira",
+    "sg": "PP",
+    "p": 24.85,
+    "votos": 903416
+   },
+   "dif_corte": 84067
+  },
+  {
+   "uf": "RJ",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Carlos Portinho",
+     "sg": "PL",
+     "p": 26.78,
+     "votos": 4264932
+    },
+    {
+     "nome": "Carlos Jordy",
+     "sg": "PL",
+     "p": 24.57,
+     "votos": 3912405
+    }
+   ],
+   "proximo": {
+    "nome": "Benedita da Silva",
+    "sg": "PT",
+    "p": 20.23,
+    "votos": 3220765
+   },
+   "dif_corte": 691640
+  },
+  {
+   "uf": "RN",
+   "pst": 99.99,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Styvenson Valentim",
+     "sg": "PODE",
+     "p": 29.25,
+     "votos": 1054851
+    },
+    {
+     "nome": "Samanda de Lula",
+     "sg": "PT",
+     "p": 17.63,
+     "votos": 635854
+    }
+   ],
+   "proximo": {
+    "nome": "Zenaide Maia",
+    "sg": "PSD",
+    "p": 17.47,
+    "votos": 630071
+   },
+   "dif_corte": 5783
+  },
+  {
+   "uf": "RS",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Sanderson",
+     "sg": "PL",
+     "p": 30.12,
+     "votos": 3453316
+    },
+    {
+     "nome": "Marcel Van Hattem",
+     "sg": "NOVO",
+     "p": 30.08,
+     "votos": 3449053
+    }
+   ],
+   "proximo": {
+    "nome": "Manuela D'ávila",
+    "sg": "PSOL",
+    "p": 17.07,
+    "votos": 1957697
+   },
+   "dif_corte": 1491356
+  },
+  {
+   "uf": "RO",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Dr. Fernando Máximo",
+     "sg": "PL",
+     "p": 32.43,
+     "votos": 570799
+    },
+    {
+     "nome": "Bruno Scheid",
+     "sg": "PL",
+     "p": 26.95,
+     "votos": 474226
+    }
+   ],
+   "proximo": {
+    "nome": "Sílvia Cristina",
+    "sg": "PP",
+    "p": 17.28,
+    "votos": 304061
+   },
+   "dif_corte": 170165
+  },
+  {
+   "uf": "RR",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Nicoletti",
+     "sg": "PL",
+     "p": 22.92,
+     "votos": 138269
+    },
+    {
+     "nome": "Teresa Surita",
+     "sg": "MDB",
+     "p": 19.44,
+     "votos": 117270
+    }
+   ],
+   "proximo": {
+    "nome": "Helena da Asatur",
+    "sg": "PSD",
+    "p": 17.68,
+    "votos": 106652
+   },
+   "dif_corte": 10618
+  },
+  {
+   "uf": "SC",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Carol de Toni",
+     "sg": "PL",
+     "p": 33.51,
+     "votos": 2694918
+    },
+    {
+     "nome": "Carlos Bolsonaro",
+     "sg": "PL",
+     "p": 25.39,
+     "votos": 2041840
+    }
+   ],
+   "proximo": {
+    "nome": "Esperidião Amin",
+    "sg": "PP",
+    "p": 15.33,
+    "votos": 1233034
+   },
+   "dif_corte": 808806
+  },
+  {
+   "uf": "SP",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Guilherme Derrite",
+     "sg": "PP",
+     "p": 30.6,
+     "votos": 13273880
+    },
+    {
+     "nome": "André do Prado",
+     "sg": "PL",
+     "p": 29.28,
+     "votos": 12703089
+    }
+   ],
+   "proximo": {
+    "nome": "Simone Tebet",
+    "sg": "PSB",
+    "p": 19.23,
+    "votos": 8342968
+   },
+   "dif_corte": 4360121
+  },
+  {
+   "uf": "SE",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Rogerio Carvalho",
+     "sg": "PT",
+     "p": 22.67,
+     "votos": 511142
+    },
+    {
+     "nome": "Delegado Alessandro",
+     "sg": "MDB",
+     "p": 17.73,
+     "votos": 399775
+    }
+   ],
+   "proximo": {
+    "nome": "Delegado André David",
+    "sg": "REPUBLICANOS",
+    "p": 16.8,
+    "votos": 378710
+   },
+   "dif_corte": 21065
+  },
+  {
+   "uf": "TO",
+   "pst": 100.0,
+   "vagas": 2,
+   "eleitos": [
+    {
+     "nome": "Eduardo Gomes",
+     "sg": "PL",
+     "p": 27.28,
+     "votos": 450191
+    },
+    {
+     "nome": "Alexandre Guimarães",
+     "sg": "MDB",
+     "p": 19.19,
+     "votos": 316786
+    }
+   ],
+   "proximo": {
+    "nome": "Eli Borges",
+    "sg": "REPUBLICANOS",
+    "p": 16.47,
+    "votos": 271829
+   },
+   "dif_corte": 44957
+  }
+ ],
+ "sen_part": [
+  [
+   "PL",
+   19
+  ],
+  [
+   "MDB",
+   7
+  ],
+  [
+   "PT",
+   6
+  ],
+  [
+   "PP",
+   3
+  ],
+  [
+   "PSB",
+   3
+  ],
+  [
+   "UNIÃO",
+   3
+  ],
+  [
+   "NOVO",
+   3
+  ],
+  [
+   "REPUBLICANOS",
+   2
+  ],
+  [
+   "PSDB",
+   2
+  ],
+  [
+   "PODE",
+   2
+  ],
+  [
+   "PSD",
+   2
+  ],
+  [
+   "REDE",
+   1
+  ],
+  [
+   "PDT",
+   1
+  ]
+ ],
+ "depfed": {
+  "total": 513,
+  "por_agr": [
+   [
+    "PL",
+    121
+   ],
+   [
+    "PCDOB / PT / PV",
+    88
+   ],
+   [
+    "PP / UNIÃO",
+    87
+   ],
+   [
+    "PSD",
+    43
+   ],
+   [
+    "REPUBLICANOS",
+    41
+   ],
+   [
+    "MDB",
+    36
+   ],
+   [
+    "PODE",
+    27
+   ],
+   [
+    "PSB",
+    15
+   ],
+   [
+    "PSOL / REDE",
+    15
+   ],
+   [
+    "CIDADANIA / PSDB",
+    11
+   ],
+   [
+    "NOVO",
+    10
+   ],
+   [
+    "PRD / SOLIDARIEDADE",
+    7
+   ],
+   [
+    "PDT",
+    6
+   ],
+   [
+    "AVANTE",
+    5
+   ],
+   [
+    "MISSÃO",
+    1
+   ]
+  ],
+  "por_partido": [
+   [
+    "PL",
+    121
+   ],
+   [
+    "PT",
+    70
+   ],
+   [
+    "UNIÃO",
+    46
+   ],
+   [
+    "PSD",
+    43
+   ],
+   [
+    "PP",
+    41
+   ],
+   [
+    "REPUBLICANOS",
+    41
+   ],
+   [
+    "MDB",
+    36
+   ],
+   [
+    "PODE",
+    27
+   ],
+   [
+    "PSB",
+    15
+   ],
+   [
+    "PSOL",
+    14
+   ],
+   [
+    "PCDOB",
+    11
+   ],
+   [
+    "PSDB",
+    11
+   ],
+   [
+    "NOVO",
+    10
+   ],
+   [
+    "PV",
+    7
+   ],
+   [
+    "PDT",
+    6
+   ],
+   [
+    "AVANTE",
+    5
+   ],
+   [
+    "PRD",
+    5
+   ],
+   [
+    "SOLIDARIEDADE",
+    2
+   ],
+   [
+    "REDE",
+    1
+   ],
+   [
+    "MISSÃO",
+    1
+   ]
+  ],
+  "top": [
+   {
+    "nome": "Nikolas Ferreira",
+    "sg": "PL",
+    "uf": "MG",
+    "votos": 3119051,
+    "p": 27.41
+   },
+   {
+    "nome": "Lucas Pavanato",
+    "sg": "PL",
+    "uf": "SP",
+    "votos": 3038379,
+    "p": 12.84
+   },
+   {
+    "nome": "Erika Hilton",
+    "sg": "PSOL",
+    "uf": "SP",
+    "votos": 1596426,
+    "p": 6.74
+   },
+   {
+    "nome": "André Fernandes",
+    "sg": "PL",
+    "uf": "CE",
+    "votos": 684201,
+    "p": 12.4
+   },
+   {
+    "nome": "Sâmia Bomfim",
+    "sg": "PSOL",
+    "uf": "SP",
+    "votos": 583057,
+    "p": 2.46
+   },
+   {
+    "nome": "Julia Zanatta",
+    "sg": "PL",
+    "uf": "SC",
+    "votos": 560223,
+    "p": 13.24
+   },
+   {
+    "nome": "Ana Elisa",
+    "sg": "PT",
+    "uf": "MG",
+    "votos": 524183,
+    "p": 4.61
+   },
+   {
+    "nome": "Kim Kataguiri",
+    "sg": "MISSÃO",
+    "uf": "SP",
+    "votos": 520063,
+    "p": 2.2
+   },
+   {
+    "nome": "Tabata Amaral",
+    "sg": "PSB",
+    "uf": "SP",
+    "votos": 476369,
+    "p": 2.01
+   },
+   {
+    "nome": "Jeffrey Chiquini",
+    "sg": "NOVO",
+    "uf": "PR",
+    "votos": 425399,
+    "p": 6.84
+   },
+   {
+    "nome": "Lucas Polese",
+    "sg": "PL",
+    "uf": "ES",
+    "votos": 419735,
+    "p": 19.66
+   },
+   {
+    "nome": "Delegado Caveira",
+    "sg": "PL",
+    "uf": "PA",
+    "votos": 414918,
+    "p": 8.59
+   },
+   {
+    "nome": "Maurício Marcon",
+    "sg": "PL",
+    "uf": "RS",
+    "votos": 379834,
+    "p": 6.25
+   },
+   {
+    "nome": "Renato Bolsonaro",
+    "sg": "PL",
+    "uf": "SP",
+    "votos": 379300,
+    "p": 1.6
+   },
+   {
+    "nome": "Sargento Nantes",
+    "sg": "PP",
+    "uf": "SP",
+    "votos": 333388,
+    "p": 1.41
+   }
+  ],
+  "ufs": [
+   {
+    "uf": "AC",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PCDOB / PT / PV": 1,
+     "PP / UNIÃO": 4,
+     "PL": 1,
+     "REPUBLICANOS": 1,
+     "MDB": 1
+    }
+   },
+   {
+    "uf": "AL",
+    "vagas": 9,
+    "pst": 99.94,
+    "agr": {
+     "PP / UNIÃO": 4,
+     "PSD": 2,
+     "CIDADANIA / PSDB": 1,
+     "MDB": 2
+    }
+   },
+   {
+    "uf": "AP",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PL": 1,
+     "PP / UNIÃO": 3,
+     "PCDOB / PT / PV": 1,
+     "PDT": 2,
+     "PODE": 1
+    }
+   },
+   {
+    "uf": "AM",
+    "vagas": 8,
+    "pst": 99.79,
+    "agr": {
+     "PSD": 1,
+     "PP / UNIÃO": 2,
+     "REPUBLICANOS": 1,
+     "MDB": 2,
+     "PL": 2
+    }
+   },
+   {
+    "uf": "BA",
+    "vagas": 39,
+    "pst": 99.67,
+    "agr": {
+     "PSD": 6,
+     "PDT": 1,
+     "MDB": 1,
+     "AVANTE": 3,
+     "PSB": 1,
+     "REPUBLICANOS": 3,
+     "PP / UNIÃO": 8,
+     "PCDOB / PT / PV": 10,
+     "PL": 4,
+     "CIDADANIA / PSDB": 2
+    }
+   },
+   {
+    "uf": "CE",
+    "vagas": 22,
+    "pst": 99.95,
+    "agr": {
+     "MDB": 2,
+     "PCDOB / PT / PV": 3,
+     "PRD / SOLIDARIEDADE": 2,
+     "PSD": 3,
+     "PL": 4,
+     "PSB": 4,
+     "REPUBLICANOS": 1,
+     "PP / UNIÃO": 3
+    }
+   },
+   {
+    "uf": "DF",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "MDB": 1,
+     "PSOL / REDE": 1,
+     "REPUBLICANOS": 1,
+     "PCDOB / PT / PV": 2,
+     "PL": 3
+    }
+   },
+   {
+    "uf": "ES",
+    "vagas": 10,
+    "pst": 100.0,
+    "agr": {
+     "PSB": 1,
+     "PP / UNIÃO": 3,
+     "PCDOB / PT / PV": 2,
+     "PL": 2,
+     "REPUBLICANOS": 1,
+     "PODE": 1
+    }
+   },
+   {
+    "uf": "GO",
+    "vagas": 17,
+    "pst": 100.0,
+    "agr": {
+     "MDB": 2,
+     "PP / UNIÃO": 4,
+     "REPUBLICANOS": 1,
+     "PRD / SOLIDARIEDADE": 1,
+     "PSD": 2,
+     "PODE": 1,
+     "PL": 4,
+     "PCDOB / PT / PV": 2
+    }
+   },
+   {
+    "uf": "MA",
+    "vagas": 18,
+    "pst": 99.83,
+    "agr": {
+     "PL": 4,
+     "PCDOB / PT / PV": 2,
+     "MDB": 5,
+     "PDT": 1,
+     "PP / UNIÃO": 3,
+     "REPUBLICANOS": 1,
+     "CIDADANIA / PSDB": 1,
+     "PRD / SOLIDARIEDADE": 1
+    }
+   },
+   {
+    "uf": "MT",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 2,
+     "PL": 3,
+     "REPUBLICANOS": 1,
+     "PCDOB / PT / PV": 1,
+     "PODE": 1
+    }
+   },
+   {
+    "uf": "MS",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PL": 3,
+     "PP / UNIÃO": 2,
+     "REPUBLICANOS": 2,
+     "PCDOB / PT / PV": 1
+    }
+   },
+   {
+    "uf": "MG",
+    "vagas": 53,
+    "pst": 99.97,
+    "agr": {
+     "PL": 21,
+     "PCDOB / PT / PV": 13,
+     "PP / UNIÃO": 6,
+     "CIDADANIA / PSDB": 1,
+     "REPUBLICANOS": 3,
+     "PODE": 1,
+     "AVANTE": 1,
+     "MDB": 1,
+     "PRD / SOLIDARIEDADE": 1,
+     "PSD": 2,
+     "PSB": 1,
+     "PSOL / REDE": 2
+    }
+   },
+   {
+    "uf": "PA",
+    "vagas": 17,
+    "pst": 99.96,
+    "agr": {
+     "PSB": 1,
+     "PSD": 2,
+     "PP / UNIÃO": 1,
+     "PODE": 2,
+     "PL": 3,
+     "PCDOB / PT / PV": 2,
+     "MDB": 6
+    }
+   },
+   {
+    "uf": "PB",
+    "vagas": 12,
+    "pst": 99.98,
+    "agr": {
+     "REPUBLICANOS": 3,
+     "PSD": 1,
+     "PP / UNIÃO": 3,
+     "PCDOB / PT / PV": 2,
+     "PODE": 1,
+     "PL": 2
+    }
+   },
+   {
+    "uf": "PR",
+    "vagas": 30,
+    "pst": 100.0,
+    "agr": {
+     "PODE": 2,
+     "PL": 5,
+     "REPUBLICANOS": 2,
+     "NOVO": 4,
+     "PCDOB / PT / PV": 6,
+     "PP / UNIÃO": 6,
+     "PSD": 4,
+     "MDB": 1
+    }
+   },
+   {
+    "uf": "PE",
+    "vagas": 25,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 4,
+     "PSB": 4,
+     "PSD": 2,
+     "REPUBLICANOS": 2,
+     "NOVO": 1,
+     "AVANTE": 1,
+     "PSOL / REDE": 1,
+     "MDB": 1,
+     "PODE": 3,
+     "PCDOB / PT / PV": 4,
+     "PL": 2
+    }
+   },
+   {
+    "uf": "PI",
+    "vagas": 10,
+    "pst": 99.83,
+    "agr": {
+     "MDB": 2,
+     "REPUBLICANOS": 1,
+     "PSD": 2,
+     "PCDOB / PT / PV": 4,
+     "PP / UNIÃO": 1
+    }
+   },
+   {
+    "uf": "RJ",
+    "vagas": 46,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 6,
+     "REPUBLICANOS": 1,
+     "MDB": 1,
+     "CIDADANIA / PSDB": 4,
+     "PDT": 1,
+     "NOVO": 1,
+     "PL": 15,
+     "PRD / SOLIDARIEDADE": 1,
+     "PSD": 4,
+     "PSOL / REDE": 4,
+     "PCDOB / PT / PV": 8
+    }
+   },
+   {
+    "uf": "RN",
+    "vagas": 8,
+    "pst": 99.99,
+    "agr": {
+     "PL": 3,
+     "PCDOB / PT / PV": 3,
+     "PP / UNIÃO": 2
+    }
+   },
+   {
+    "uf": "RS",
+    "vagas": 31,
+    "pst": 100.0,
+    "agr": {
+     "PSOL / REDE": 1,
+     "PODE": 2,
+     "PDT": 1,
+     "PL": 8,
+     "PCDOB / PT / PV": 6,
+     "MDB": 3,
+     "REPUBLICANOS": 2,
+     "PP / UNIÃO": 5,
+     "PSD": 2,
+     "NOVO": 1
+    }
+   },
+   {
+    "uf": "RO",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PODE": 2,
+     "PL": 3,
+     "PP / UNIÃO": 2,
+     "PSD": 1
+    }
+   },
+   {
+    "uf": "RR",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "REPUBLICANOS": 3,
+     "PP / UNIÃO": 2,
+     "PODE": 2,
+     "PL": 1
+    }
+   },
+   {
+    "uf": "SC",
+    "vagas": 16,
+    "pst": 100.0,
+    "agr": {
+     "PL": 7,
+     "REPUBLICANOS": 1,
+     "PCDOB / PT / PV": 3,
+     "NOVO": 1,
+     "PODE": 1,
+     "PSD": 1,
+     "PP / UNIÃO": 1,
+     "MDB": 1
+    }
+   },
+   {
+    "uf": "SP",
+    "vagas": 70,
+    "pst": 99.99,
+    "agr": {
+     "PSB": 2,
+     "MISSÃO": 1,
+     "PSD": 6,
+     "PL": 19,
+     "PODE": 6,
+     "REPUBLICANOS": 6,
+     "PP / UNIÃO": 5,
+     "NOVO": 2,
+     "PRD / SOLIDARIEDADE": 1,
+     "CIDADANIA / PSDB": 1,
+     "MDB": 4,
+     "PCDOB / PT / PV": 11,
+     "PSOL / REDE": 6
+    }
+   },
+   {
+    "uf": "SE",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PSD": 2,
+     "PSB": 1,
+     "PCDOB / PT / PV": 1,
+     "REPUBLICANOS": 1,
+     "PP / UNIÃO": 3
+    }
+   },
+   {
+    "uf": "TO",
+    "vagas": 8,
+    "pst": 100.0,
+    "agr": {
+     "PODE": 1,
+     "REPUBLICANOS": 3,
+     "PL": 1,
+     "PP / UNIÃO": 2,
+     "CIDADANIA / PSDB": 1
+    }
+   }
+  ]
+ },
+ "depest": {
+  "total": 1059,
+  "por_agr": [
+   [
+    "PL",
+    212
+   ],
+   [
+    "PCDOB / PT / PV",
+    168
+   ],
+   [
+    "PP / UNIÃO",
+    154
+   ],
+   [
+    "MDB",
+    112
+   ],
+   [
+    "PSD",
+    103
+   ],
+   [
+    "REPUBLICANOS",
+    78
+   ],
+   [
+    "PODE",
+    47
+   ],
+   [
+    "PSB",
+    42
+   ],
+   [
+    "PSOL / REDE",
+    29
+   ],
+   [
+    "CIDADANIA / PSDB",
+    27
+   ],
+   [
+    "PDT",
+    24
+   ],
+   [
+    "AVANTE",
+    18
+   ],
+   [
+    "PRD / SOLIDARIEDADE",
+    17
+   ],
+   [
+    "NOVO",
+    15
+   ],
+   [
+    "AGIR",
+    7
+   ],
+   [
+    "MOBILIZA",
+    3
+   ],
+   [
+    "DEMOCRATA",
+    1
+   ],
+   [
+    "DC",
+    1
+   ],
+   [
+    "MISSÃO",
+    1
+   ]
+  ],
+  "por_partido": [
+   [
+    "PL",
+    212
+   ],
+   [
+    "PT",
+    140
+   ],
+   [
+    "MDB",
+    112
+   ],
+   [
+    "PSD",
+    103
+   ],
+   [
+    "PP",
+    81
+   ],
+   [
+    "REPUBLICANOS",
+    78
+   ],
+   [
+    "UNIÃO",
+    73
+   ],
+   [
+    "PODE",
+    47
+   ],
+   [
+    "PSB",
+    42
+   ],
+   [
+    "PSDB",
+    26
+   ],
+   [
+    "PSOL",
+    26
+   ],
+   [
+    "PDT",
+    24
+   ],
+   [
+    "PV",
+    19
+   ],
+   [
+    "AVANTE",
+    18
+   ],
+   [
+    "NOVO",
+    15
+   ],
+   [
+    "PRD",
+    13
+   ],
+   [
+    "PCDOB",
+    9
+   ],
+   [
+    "AGIR",
+    7
+   ],
+   [
+    "SOLIDARIEDADE",
+    4
+   ],
+   [
+    "REDE",
+    3
+   ],
+   [
+    "MOBILIZA",
+    3
+   ],
+   [
+    "CIDADANIA",
+    1
+   ],
+   [
+    "DEMOCRATA",
+    1
+   ],
+   [
+    "DC",
+    1
+   ],
+   [
+    "MISSÃO",
+    1
+   ]
+  ],
+  "top": [
+   {
+    "nome": "Eduarda Campopiano",
+    "sg": "PL",
+    "uf": "SP",
+    "votos": 1956205,
+    "p": 8.4
+   },
+   {
+    "nome": "Bruno Engler",
+    "sg": "PL",
+    "uf": "MG",
+    "votos": 675869,
+    "p": 5.98
+   },
+   {
+    "nome": "Eduardo Suplicy",
+    "sg": "PT",
+    "uf": "SP",
+    "votos": 654606,
+    "p": 2.81
+   },
+   {
+    "nome": "Sofia Favero",
+    "sg": "PSOL",
+    "uf": "SP",
+    "votos": 407749,
+    "p": 1.75
+   },
+   {
+    "nome": "Ana Campagnolo",
+    "sg": "PL",
+    "uf": "SC",
+    "votos": 387523,
+    "p": 9.07
+   },
+   {
+    "nome": "Carlos Giannazi",
+    "sg": "PSOL",
+    "uf": "SP",
+    "votos": 367830,
+    "p": 1.58
+   },
+   {
+    "nome": "Beatriz Cerqueira",
+    "sg": "PT",
+    "uf": "MG",
+    "votos": 328355,
+    "p": 2.9
+   },
+   {
+    "nome": "Paula da Bancada Feminista",
+    "sg": "PSOL",
+    "uf": "SP",
+    "votos": 326187,
+    "p": 1.4
+   },
+   {
+    "nome": "Índia Armelau",
+    "sg": "PL",
+    "uf": "RJ",
+    "votos": 248504,
+    "p": 2.93
+   },
+   {
+    "nome": "Giovanni Sanches",
+    "sg": "PL",
+    "uf": "SP",
+    "votos": 235363,
+    "p": 1.01
+   },
+   {
+    "nome": "Rogerio Lins",
+    "sg": "PODE",
+    "uf": "SP",
+    "votos": 229928,
+    "p": 0.99
+   },
+   {
+    "nome": "Pablo Almeida",
+    "sg": "PL",
+    "uf": "MG",
+    "votos": 226989,
+    "p": 2.01
+   },
+   {
+    "nome": "Ivana Bastos",
+    "sg": "PSD",
+    "uf": "BA",
+    "votos": 203005,
+    "p": 2.5
+   },
+   {
+    "nome": "Tenente Coimbra",
+    "sg": "PL",
+    "uf": "SP",
+    "votos": 198338,
+    "p": 0.85
+   },
+   {
+    "nome": "Márcio Canella",
+    "sg": "UNIÃO",
+    "uf": "RJ",
+    "votos": 197178,
+    "p": 2.33
+   }
+  ],
+  "ufs": [
+   {
+    "uf": "AC",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 9,
+     "MDB": 2,
+     "PSD": 2,
+     "PDT": 1,
+     "PL": 4,
+     "PCDOB / PT / PV": 1,
+     "CIDADANIA / PSDB": 1,
+     "NOVO": 1,
+     "REPUBLICANOS": 3
+    }
+   },
+   {
+    "uf": "AL",
+    "vagas": 27,
+    "pst": 99.94,
+    "agr": {
+     "PL": 2,
+     "MDB": 15,
+     "PP / UNIÃO": 5,
+     "CIDADANIA / PSDB": 2,
+     "PCDOB / PT / PV": 3
+    }
+   },
+   {
+    "uf": "AP",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "REPUBLICANOS": 5,
+     "PODE": 2,
+     "PCDOB / PT / PV": 1,
+     "PP / UNIÃO": 6,
+     "MDB": 2,
+     "PL": 1,
+     "PSD": 2,
+     "PDT": 3,
+     "PSOL / REDE": 2
+    }
+   },
+   {
+    "uf": "AM",
+    "vagas": 24,
+    "pst": 99.79,
+    "agr": {
+     "MDB": 3,
+     "PL": 3,
+     "PP / UNIÃO": 5,
+     "PODE": 2,
+     "PSD": 4,
+     "PCDOB / PT / PV": 2,
+     "AGIR": 1,
+     "AVANTE": 3,
+     "REPUBLICANOS": 1
+    }
+   },
+   {
+    "uf": "BA",
+    "vagas": 63,
+    "pst": 99.66,
+    "agr": {
+     "AVANTE": 6,
+     "PDT": 5,
+     "REPUBLICANOS": 4,
+     "PSD": 9,
+     "MDB": 2,
+     "PCDOB / PT / PV": 19,
+     "PSOL / REDE": 1,
+     "CIDADANIA / PSDB": 2,
+     "PP / UNIÃO": 8,
+     "PL": 7
+    }
+   },
+   {
+    "uf": "CE",
+    "vagas": 46,
+    "pst": 99.95,
+    "agr": {
+     "REPUBLICANOS": 2,
+     "PL": 6,
+     "PSOL / REDE": 2,
+     "MDB": 1,
+     "PSB": 13,
+     "PRD / SOLIDARIEDADE": 1,
+     "PSD": 3,
+     "PCDOB / PT / PV": 12,
+     "PP / UNIÃO": 3,
+     "CIDADANIA / PSDB": 3
+    }
+   },
+   {
+    "uf": "DF",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PCDOB / PT / PV": 3,
+     "PSD": 1,
+     "REPUBLICANOS": 3,
+     "PL": 5,
+     "PSB": 2,
+     "PSOL / REDE": 2,
+     "PODE": 1,
+     "MDB": 3,
+     "PP / UNIÃO": 4
+    }
+   },
+   {
+    "uf": "ES",
+    "vagas": 30,
+    "pst": 100.0,
+    "agr": {
+     "PSOL / REDE": 1,
+     "AGIR": 2,
+     "PCDOB / PT / PV": 3,
+     "PODE": 4,
+     "PSB": 3,
+     "MDB": 4,
+     "REPUBLICANOS": 2,
+     "PL": 6,
+     "PP / UNIÃO": 5
+    }
+   },
+   {
+    "uf": "GO",
+    "vagas": 41,
+    "pst": 100.0,
+    "agr": {
+     "PRD / SOLIDARIEDADE": 4,
+     "REPUBLICANOS": 1,
+     "PSD": 2,
+     "PSB": 1,
+     "PCDOB / PT / PV": 4,
+     "NOVO": 2,
+     "PODE": 2,
+     "MDB": 7,
+     "PL": 5,
+     "AGIR": 2,
+     "MOBILIZA": 3,
+     "CIDADANIA / PSDB": 3,
+     "PP / UNIÃO": 5
+    }
+   },
+   {
+    "uf": "MA",
+    "vagas": 42,
+    "pst": 99.83,
+    "agr": {
+     "PCDOB / PT / PV": 2,
+     "PSD": 4,
+     "PL": 7,
+     "PDT": 3,
+     "PP / UNIÃO": 2,
+     "PSB": 2,
+     "REPUBLICANOS": 4,
+     "MDB": 17,
+     "PRD / SOLIDARIEDADE": 1
+    }
+   },
+   {
+    "uf": "MT",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PL": 4,
+     "MDB": 3,
+     "CIDADANIA / PSDB": 2,
+     "PSD": 1,
+     "PCDOB / PT / PV": 2,
+     "PODE": 6,
+     "REPUBLICANOS": 4,
+     "PP / UNIÃO": 2
+    }
+   },
+   {
+    "uf": "MS",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "REPUBLICANOS": 2,
+     "PP / UNIÃO": 4,
+     "PCDOB / PT / PV": 4,
+     "AVANTE": 1,
+     "CIDADANIA / PSDB": 3,
+     "PL": 9,
+     "MDB": 1
+    }
+   },
+   {
+    "uf": "MG",
+    "vagas": 77,
+    "pst": 99.95,
+    "agr": {
+     "PL": 21,
+     "PSB": 2,
+     "AVANTE": 2,
+     "DEMOCRATA": 1,
+     "PODE": 2,
+     "PSD": 9,
+     "REPUBLICANOS": 4,
+     "PCDOB / PT / PV": 17,
+     "PP / UNIÃO": 8,
+     "PDT": 1,
+     "PRD / SOLIDARIEDADE": 3,
+     "NOVO": 2,
+     "CIDADANIA / PSDB": 3,
+     "PSOL / REDE": 2
+    }
+   },
+   {
+    "uf": "PA",
+    "vagas": 41,
+    "pst": 99.96,
+    "agr": {
+     "PL": 7,
+     "PCDOB / PT / PV": 4,
+     "REPUBLICANOS": 2,
+     "MDB": 13,
+     "PSD": 3,
+     "PP / UNIÃO": 5,
+     "PODE": 3,
+     "AVANTE": 2,
+     "PDT": 1,
+     "PSOL / REDE": 1
+    }
+   },
+   {
+    "uf": "PB",
+    "vagas": 36,
+    "pst": 99.98,
+    "agr": {
+     "PP / UNIÃO": 10,
+     "PL": 6,
+     "REPUBLICANOS": 8,
+     "PCDOB / PT / PV": 5,
+     "MDB": 4,
+     "PSB": 3
+    }
+   },
+   {
+    "uf": "PR",
+    "vagas": 54,
+    "pst": 100.0,
+    "agr": {
+     "PCDOB / PT / PV": 8,
+     "NOVO": 3,
+     "REPUBLICANOS": 3,
+     "PP / UNIÃO": 6,
+     "PODE": 3,
+     "MDB": 2,
+     "PL": 14,
+     "PDT": 1,
+     "PSD": 14
+    }
+   },
+   {
+    "uf": "PE",
+    "vagas": 49,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 8,
+     "PODE": 6,
+     "NOVO": 1,
+     "PCDOB / PT / PV": 9,
+     "AVANTE": 1,
+     "REPUBLICANOS": 1,
+     "PSD": 9,
+     "PL": 3,
+     "PSB": 9,
+     "MDB": 2
+    }
+   },
+   {
+    "uf": "PI",
+    "vagas": 30,
+    "pst": 99.83,
+    "agr": {
+     "MDB": 8,
+     "PCDOB / PT / PV": 14,
+     "PSD": 5,
+     "PP / UNIÃO": 3
+    }
+   },
+   {
+    "uf": "RJ",
+    "vagas": 70,
+    "pst": 100.0,
+    "agr": {
+     "PCDOB / PT / PV": 10,
+     "MDB": 2,
+     "PL": 21,
+     "PSD": 9,
+     "REPUBLICANOS": 3,
+     "PRD / SOLIDARIEDADE": 3,
+     "AGIR": 1,
+     "PSB": 2,
+     "PDT": 2,
+     "PSOL / REDE": 5,
+     "CIDADANIA / PSDB": 1,
+     "NOVO": 1,
+     "PP / UNIÃO": 9,
+     "DC": 1
+    }
+   },
+   {
+    "uf": "RN",
+    "vagas": 24,
+    "pst": 99.99,
+    "agr": {
+     "PP / UNIÃO": 6,
+     "MDB": 1,
+     "PL": 7,
+     "CIDADANIA / PSDB": 3,
+     "PCDOB / PT / PV": 7
+    }
+   },
+   {
+    "uf": "RS",
+    "vagas": 55,
+    "pst": 100.0,
+    "agr": {
+     "REPUBLICANOS": 4,
+     "MDB": 5,
+     "CIDADANIA / PSDB": 1,
+     "PSOL / REDE": 3,
+     "NOVO": 1,
+     "PCDOB / PT / PV": 10,
+     "PDT": 4,
+     "PODE": 2,
+     "PL": 12,
+     "PP / UNIÃO": 8,
+     "PSD": 5
+    }
+   },
+   {
+    "uf": "RO",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PODE": 1,
+     "PL": 7,
+     "NOVO": 2,
+     "PSD": 3,
+     "PCDOB / PT / PV": 2,
+     "PRD / SOLIDARIEDADE": 3,
+     "REPUBLICANOS": 2,
+     "PP / UNIÃO": 2,
+     "AVANTE": 2
+    }
+   },
+   {
+    "uf": "RR",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PP / UNIÃO": 9,
+     "PODE": 3,
+     "PDT": 2,
+     "PL": 5,
+     "AGIR": 1,
+     "MDB": 1,
+     "REPUBLICANOS": 3
+    }
+   },
+   {
+    "uf": "SC",
+    "vagas": 40,
+    "pst": 100.0,
+    "agr": {
+     "MDB": 4,
+     "PCDOB / PT / PV": 5,
+     "PDT": 1,
+     "PSOL / REDE": 1,
+     "PL": 16,
+     "PODE": 2,
+     "PP / UNIÃO": 4,
+     "NOVO": 1,
+     "PSD": 3,
+     "REPUBLICANOS": 3
+    }
+   },
+   {
+    "uf": "SP",
+    "vagas": 94,
+    "pst": 99.99,
+    "agr": {
+     "MISSÃO": 1,
+     "PCDOB / PT / PV": 16,
+     "PL": 27,
+     "PSD": 9,
+     "PRD / SOLIDARIEDADE": 1,
+     "PP / UNIÃO": 9,
+     "PSB": 3,
+     "PSOL / REDE": 9,
+     "MDB": 5,
+     "PODE": 6,
+     "NOVO": 1,
+     "CIDADANIA / PSDB": 1,
+     "REPUBLICANOS": 6
+    }
+   },
+   {
+    "uf": "SE",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "PSD": 5,
+     "PP / UNIÃO": 6,
+     "PCDOB / PT / PV": 3,
+     "REPUBLICANOS": 3,
+     "PL": 2,
+     "AVANTE": 1,
+     "MDB": 2,
+     "PSB": 2
+    }
+   },
+   {
+    "uf": "TO",
+    "vagas": 24,
+    "pst": 100.0,
+    "agr": {
+     "REPUBLICANOS": 5,
+     "PP / UNIÃO": 3,
+     "PCDOB / PT / PV": 2,
+     "PODE": 2,
+     "PL": 5,
+     "PSD": 1,
+     "MDB": 3,
+     "CIDADANIA / PSDB": 2,
+     "PRD / SOLIDARIEDADE": 1
+    }
+   }
+  ]
+ },
+ "hist": [
+  {
+   "ht": "18:19:48",
+   "pst": 24.45,
+   "f": 50.94,
+   "l": 40.97
+  },
+  {
+   "ht": "18:23:39",
+   "pst": 27.88,
+   "f": 50.85,
+   "l": 41.05
+  },
+  {
+   "ht": "18:32:50",
+   "pst": 36.6,
+   "f": 50.63,
+   "l": 41.23
+  },
+  {
+   "ht": "19:06:33",
+   "pst": 64.81,
+   "f": 49.58,
+   "l": 42.25
+  },
+  {
+   "ht": "19:32:06",
+   "pst": 84.93,
+   "f": 48.47,
+   "l": 43.49
+  },
+  {
+   "ht": "20:47:57",
+   "pst": 93.21,
+   "f": 47.79,
+   "l": 44.26
+  },
+  {
+   "ht": "21:56:49",
+   "pst": 99.71,
+   "f": 47.09,
+   "l": 45.09
+  },
+  {
+   "ht": "22:49:30",
+   "pst": 99.95,
+   "f": 47.04,
+   "l": 45.15
+  }
+ ]
+}
