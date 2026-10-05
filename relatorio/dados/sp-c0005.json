@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "sp", "dg" : "04/10/2026", "hg" : "22:59:13", "idg" : "2347482", "dt" : "04/10/2026", "ht" : "22:56:59", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "sp", "dg" : "05/10/2026", "hg" : "11:44:31", "idg" : "2819473", "dt" : "04/10/2026", "ht" : "22:56:59", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "5", "nmn" : "Senador", "nmm" : "Senador", "nmf" : "Senadora", "nv" : "2", "fed" : [ 
 { "n" : "102", "sg" : "PSOL/REDE", "nm" : "FEDERAÇÃO PSOL REDE", "com" : "PSOL/REDE", "npar" : [ "18", "50" ] }, 
 { "n" : "104", "sg" : "UNIÃO/PP", "nm" : "FEDERAÇÃO UNIÃO PROGRESSISTA", "com" : "UNIÃO/PP", "npar" : [ "11", "44" ] }, 
@@ -32,16 +32,6 @@
 { "n" : "180", "sqcand" : "250002551501", "nm" : "MARIA OSMARINA MARINA DA SILVA VAZ DE LIMA", "nmu" : "MARINA SILVA", "dt" : "08/02/1958", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "7862400", "pvap" : "18,12", "pvapn" : "18,121709600", "vs" : [ 
 { "tp" : "s1", "sqcand" : "250002551504", "nm" : "DJALMA NERY FERREIRA NETO", "nmu" : "DJALMA NERY", "sgp" : "PSOL" }, 
 { "tp" : "s2", "sqcand" : "250002551506", "nm" : "ANTONIO FERNANDES DOS SANTOS NETO", "nmu" : "ANTONIO NETO", "sgp" : "PDT" } ] } ] } ] }, 
-{ "n" : "250001801300", "nm" : "FEDERAÇÃO PSDB CIDADANIA", "tp" : "f", "com" : "CIDADANIA / PSDB", "tvtn" : "165707", "tvan" : "165707", "vag" : "0", "par" : [ 
-{ "n" : "23", "sg" : "CIDADANIA", "nm" : "CIDADANIA", "nfed" : "100", "tvtn" : "165707", "tvan" : "165707", "cand" : [ 
-{ "n" : "232", "sqcand" : "250002552369", "nm" : "SONIA FRANCINE GASPAR MARMO", "nmu" : "SONINHA FRANCINE", "dt" : "25/08/1967", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "Não eleito", "vap" : "165707", "pvap" : "0,38", "pvapn" : "0,381930979", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "250002552371", "nm" : "FABIO DOS SANTOS LOPES", "nmu" : "DR. FABIO LOPES", "sgp" : "CIDADANIA" }, 
-{ "tp" : "s2", "sqcand" : "250002552370", "nm" : "ALAN GOMES FERREIRA", "nmu" : "SHELL GOMES", "sgp" : "CIDADANIA" } ] } ] } ] }, 
-{ "n" : "250001800739", "nm" : "PODEMOS", "tp" : "i", "com" : "PODE", "vag" : "0", "par" : [ 
-{ "n" : "20", "sg" : "PODE", "nm" : "PODEMOS", "nfed" : "", "tvtn" : "386468", "tvan" : "386468", "cand" : [ 
-{ "n" : "200", "sqcand" : "250002544673", "nm" : "GERALDO ARISTIDES RUFINO", "nmu" : "GERALDO RUFINO", "dt" : "21/11/1958", "dvt" : "Válido", "seq" : "6", "e" : "n", "st" : "Não eleito", "vap" : "386468", "pvap" : "0,89", "pvapn" : "0,890753570", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "250002554098", "nm" : "LUCIANA AVIGO FELIX", "nmu" : "LUCIANA FELIX", "sgp" : "PODE" }, 
-{ "tp" : "s2", "sqcand" : "250002544672", "nm" : "JASON MOISES DE ALBUQUERQUE", "nmu" : "JASON ALBUQUERQUE", "sgp" : "PODE" } ] } ] } ] }, 
 { "n" : "250001800477", "nm" : "PARTIDO SOCIALISTA  DOS TRABALHADORES UNIFICADO", "tp" : "i", "com" : "PSTU", "vag" : "0", "par" : [ 
 { "n" : "16", "sg" : "PSTU", "nm" : "PARTIDO SOCIALISTA  DOS TRABALHADORES UNIFICADO", "nfed" : "", "tvtn" : "85703", "tvan" : "85703", "cand" : [ 
 { "n" : "161", "sqcand" : "250002541362", "nm" : "ELIANA LUCIA FERREIRA", "nmu" : "DRA ELIANA FERREIRA", "dt" : "29/01/1968", "dvt" : "Válido", "seq" : "9", "e" : "n", "st" : "Não eleito", "vap" : "65200", "pvap" : "0,15", "pvapn" : "0,150276692", "vs" : [ 
@@ -50,6 +40,16 @@
 { "n" : "160", "sqcand" : "250002541365", "nm" : "WELLER PEREIRA GONÇALVES", "nmu" : "WELLER GONÇALVES", "dt" : "09/05/1986", "dvt" : "Válido", "seq" : "12", "e" : "n", "st" : "Não eleito", "vap" : "20503", "pvap" : "0,05", "pvapn" : "0,047256488", "vs" : [ 
 { "tp" : "s1", "sqcand" : "250002541366", "nm" : "MARIA GUILHERME", "nmu" : "MARIA GUILHERME", "sgp" : "PSTU" }, 
 { "tp" : "s2", "sqcand" : "250002541364", "nm" : "BRUNO MENDES COELHO TEIXEIRA", "nmu" : "BRUNO TEIXEIRA", "sgp" : "PSTU" } ] } ] } ] }, 
+{ "n" : "250001800739", "nm" : "PODEMOS", "tp" : "i", "com" : "PODE", "vag" : "0", "par" : [ 
+{ "n" : "20", "sg" : "PODE", "nm" : "PODEMOS", "nfed" : "", "tvtn" : "386468", "tvan" : "386468", "cand" : [ 
+{ "n" : "200", "sqcand" : "250002544673", "nm" : "GERALDO ARISTIDES RUFINO", "nmu" : "GERALDO RUFINO", "dt" : "21/11/1958", "dvt" : "Válido", "seq" : "6", "e" : "n", "st" : "Não eleito", "vap" : "386468", "pvap" : "0,89", "pvapn" : "0,890753570", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "250002554098", "nm" : "LUCIANA AVIGO FELIX", "nmu" : "LUCIANA FELIX", "sgp" : "PODE" }, 
+{ "tp" : "s2", "sqcand" : "250002544672", "nm" : "JASON MOISES DE ALBUQUERQUE", "nmu" : "JASON ALBUQUERQUE", "sgp" : "PODE" } ] } ] } ] }, 
+{ "n" : "250001801300", "nm" : "FEDERAÇÃO PSDB CIDADANIA", "tp" : "f", "com" : "CIDADANIA / PSDB", "tvtn" : "165707", "tvan" : "165707", "vag" : "0", "par" : [ 
+{ "n" : "23", "sg" : "CIDADANIA", "nm" : "CIDADANIA", "nfed" : "100", "tvtn" : "165707", "tvan" : "165707", "cand" : [ 
+{ "n" : "232", "sqcand" : "250002552369", "nm" : "SONIA FRANCINE GASPAR MARMO", "nmu" : "SONINHA FRANCINE", "dt" : "25/08/1967", "dvt" : "Válido", "seq" : "7", "e" : "n", "st" : "Não eleito", "vap" : "165707", "pvap" : "0,38", "pvapn" : "0,381930979", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "250002552371", "nm" : "FABIO DOS SANTOS LOPES", "nmu" : "DR. FABIO LOPES", "sgp" : "CIDADANIA" }, 
+{ "tp" : "s2", "sqcand" : "250002552370", "nm" : "ALAN GOMES FERREIRA", "nmu" : "SHELL GOMES", "sgp" : "CIDADANIA" } ] } ] } ] }, 
 { "n" : "250001801351", "nm" : "AGIR", "tp" : "i", "com" : "AGIR", "vag" : "0", "par" : [ 
 { "n" : "36", "sg" : "AGIR", "nm" : "AGIR", "nfed" : "", "tvtn" : "0", "tvan" : "8732", "cand" : [ 
 { "n" : "360", "sqcand" : "250002553252", "nm" : "WILLIAM TEIXEIRA DE OLIVEIRA", "nmu" : "WILLIAM TEIXEIRA", "dt" : "19/05/1985", "dvt" : "Anulado sub judice", "seq" : "13", "e" : "n", "st" : "Não eleito", "vap" : "8732", "pvap" : "0,02", "pvapn" : "0,020126013", "vs" : [ 

@@ -1,5 +1,5 @@
 
-{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "pa", "dg" : "04/10/2026", "hg" : "23:56:32", "idg" : "2555534", "dt" : "04/10/2026", "ht" : "23:55:28", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
+{ "ele" : "6259", "t" : "1", "f" : "o", "sup" : "n", "tpabr" : "uf", "cdabr" : "pa", "dg" : "05/10/2026", "hg" : "11:42:29", "idg" : "2814528", "dt" : "04/10/2026", "ht" : "23:55:28", "dv" : "s", "tf" : "s", "and" : "f", "esae" : "n", "mnae" : [  ], "carg" : [ 
 { "cd" : "5", "nmn" : "Senador", "nmm" : "Senador", "nmf" : "Senadora", "nv" : "2", "fed" : [ 
 { "n" : "102", "sg" : "PSOL/REDE", "nm" : "FEDERAÇÃO PSOL REDE", "com" : "PSOL/REDE", "npar" : [ "18", "50" ] }, 
 { "n" : "104", "sg" : "UNIÃO/PP", "nm" : "FEDERAÇÃO UNIÃO PROGRESSISTA", "com" : "UNIÃO/PP", "npar" : [ "11", "44" ] }, 
@@ -24,26 +24,26 @@
 { "n" : "277", "sqcand" : "140002554209", "nm" : "JONILDO DE CASTRO TEIXEIRA", "nmu" : "CORONEL JONILDO", "dt" : "11/06/1976", "dvt" : "Válido", "seq" : "10", "e" : "n", "st" : "Não eleito", "vap" : "12547", "pvap" : "0,14", "pvapn" : "0,139824759", "vs" : [ 
 { "tp" : "s1", "sqcand" : "140002553741", "nm" : "SANDRO REIS DE OLIVEIRA", "nmu" : "SANDRO OLIVEIRA", "sgp" : "DC" }, 
 { "tp" : "s2", "sqcand" : "140002553742", "nm" : "MARCILIO FERNANDES FERREIRA", "nmu" : "MARCILIO FERREIRA", "sgp" : "DC" } ] } ] } ] }, 
-{ "n" : "140001800585", "nm" : "PODEMOS", "tp" : "i", "com" : "PODE", "vag" : "0", "par" : [ 
-{ "n" : "20", "sg" : "PODE", "nm" : "PODEMOS", "nfed" : "", "tvtn" : "1889653", "tvan" : "1889653", "cand" : [ 
-{ "n" : "200", "sqcand" : "140002542691", "nm" : "JOSÉ DA CRUZ MARINHO", "nmu" : "ZEQUINHA MARINHO", "dt" : "18/09/1959", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "1889653", "pvap" : "21,06", "pvapn" : "21,058442336", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "140002542690", "nm" : "TARCIZIO BURIN", "nmu" : "BURIN", "sgp" : "PODE" }, 
-{ "tp" : "s2", "sqcand" : "140002554078", "nm" : "FRANCISCA CHARLES CARNEIRO SILVA", "nmu" : "FRANCY PARÁ", "sgp" : "PODE" } ] } ] } ] }, 
-{ "n" : "140001800975", "nm" : "DEMOCRATA", "tp" : "i", "com" : "DEMOCRATA", "vag" : "0", "par" : [ 
-{ "n" : "35", "sg" : "DEMOCRATA", "nm" : "DEMOCRATA", "nfed" : "", "tvtn" : "0", "tvan" : "8766", "cand" : [ 
-{ "n" : "355", "sqcand" : "140002548150", "nm" : "EDLAINE GUIMARÃES SANTOS RODRIGUES", "nmu" : "EDLAINE RODRIGUES", "dt" : "12/08/1982", "dvt" : "Anulado sub judice", "seq" : "11", "e" : "n", "st" : "Não eleito", "vap" : "8766", "pvap" : "0,10", "pvapn" : "0,097688997", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "140002554425", "nm" : "OLINTO ALFREDO CEI", "nmu" : "OLINTO CEI", "sgp" : "DEMOCRATA" }, 
-{ "tp" : "s2", "sqcand" : "140002548152", "nm" : "NELSON ANTONIO BARBOSA MARGALHO", "nmu" : "NELSON MARGALHO", "sgp" : "DEMOCRATA" } ] } ] } ] }, 
-{ "n" : "140001801449", "nm" : "MOBILIZAÇÃO NACIONAL", "tp" : "i", "com" : "MOBILIZA", "vag" : "0", "par" : [ 
-{ "n" : "33", "sg" : "MOBILIZA", "nm" : "MOBILIZAÇÃO NACIONAL", "nfed" : "", "tvtn" : "0", "tvan" : "7047", "cand" : [ 
-{ "n" : "333", "sqcand" : "140002553852", "nm" : "BRENO RAMOS GUIMARAES MARTINS", "nmu" : "BRENO GUIMARÃES", "dt" : "16/07/1981", "dvt" : "Anulado sub judice", "seq" : "12", "e" : "n", "st" : "Não eleito", "vap" : "7047", "pvap" : "0,08", "pvapn" : "0,078532325", "vs" : [ 
-{ "tp" : "s1", "sqcand" : "140002553851", "nm" : "TELMO LIMA MARINHO", "nmu" : "DR TELMO MARINHO", "sgp" : "MOBILIZA" }, 
-{ "tp" : "s2", "sqcand" : "140002553853", "nm" : "ROSELI DO SOCORRO AMARAL MALCHER", "nmu" : "ROSELI MALCHER", "sgp" : "MOBILIZA" } ] } ] } ] }, 
 { "n" : "140001800378", "nm" : "PARTIDO DEMOCRÁTICO TRABALHISTA", "tp" : "i", "com" : "PDT", "vag" : "0", "par" : [ 
 { "n" : "12", "sg" : "PDT", "nm" : "PARTIDO DEMOCRÁTICO TRABALHISTA", "nfed" : "", "tvtn" : "526994", "tvan" : "526994", "cand" : [ 
 { "n" : "123", "sqcand" : "140002538404", "nm" : "CELSO SABINO DE OLIVEIRA", "nmu" : "CELSO SABINO", "dt" : "29/08/1978", "dvt" : "Válido", "seq" : "5", "e" : "n", "st" : "Não eleito", "vap" : "526994", "pvap" : "5,87", "pvapn" : "5,872862775", "vs" : [ 
 { "tp" : "s1", "sqcand" : "140002538406", "nm" : "ITALO DE ALMEIDA MACOLA JUNIOR", "nmu" : "ITALO MÁCOLA", "sgp" : "PDT" }, 
 { "tp" : "s2", "sqcand" : "140002538405", "nm" : "JARI EDNEI TEIXEIRA", "nmu" : "NEI TEIXEIRA", "sgp" : "PDT" } ] } ] } ] }, 
+{ "n" : "140001800585", "nm" : "PODEMOS", "tp" : "i", "com" : "PODE", "vag" : "0", "par" : [ 
+{ "n" : "20", "sg" : "PODE", "nm" : "PODEMOS", "nfed" : "", "tvtn" : "1889653", "tvan" : "1889653", "cand" : [ 
+{ "n" : "200", "sqcand" : "140002542691", "nm" : "JOSÉ DA CRUZ MARINHO", "nmu" : "ZEQUINHA MARINHO", "dt" : "18/09/1959", "dvt" : "Válido", "seq" : "4", "e" : "n", "st" : "Não eleito", "vap" : "1889653", "pvap" : "21,06", "pvapn" : "21,058442336", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "140002542690", "nm" : "TARCIZIO BURIN", "nmu" : "BURIN", "sgp" : "PODE" }, 
+{ "tp" : "s2", "sqcand" : "140002554078", "nm" : "FRANCISCA CHARLES CARNEIRO SILVA", "nmu" : "FRANCY PARÁ", "sgp" : "PODE" } ] } ] } ] }, 
+{ "n" : "140001801449", "nm" : "MOBILIZAÇÃO NACIONAL", "tp" : "i", "com" : "MOBILIZA", "vag" : "0", "par" : [ 
+{ "n" : "33", "sg" : "MOBILIZA", "nm" : "MOBILIZAÇÃO NACIONAL", "nfed" : "", "tvtn" : "0", "tvan" : "7047", "cand" : [ 
+{ "n" : "333", "sqcand" : "140002553852", "nm" : "BRENO RAMOS GUIMARAES MARTINS", "nmu" : "BRENO GUIMARÃES", "dt" : "16/07/1981", "dvt" : "Anulado sub judice", "seq" : "12", "e" : "n", "st" : "Não eleito", "vap" : "7047", "pvap" : "0,08", "pvapn" : "0,078532325", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "140002553851", "nm" : "TELMO LIMA MARINHO", "nmu" : "DR TELMO MARINHO", "sgp" : "MOBILIZA" }, 
+{ "tp" : "s2", "sqcand" : "140002553853", "nm" : "ROSELI DO SOCORRO AMARAL MALCHER", "nmu" : "ROSELI MALCHER", "sgp" : "MOBILIZA" } ] } ] } ] }, 
+{ "n" : "140001800975", "nm" : "DEMOCRATA", "tp" : "i", "com" : "DEMOCRATA", "vag" : "0", "par" : [ 
+{ "n" : "35", "sg" : "DEMOCRATA", "nm" : "DEMOCRATA", "nfed" : "", "tvtn" : "0", "tvan" : "8766", "cand" : [ 
+{ "n" : "355", "sqcand" : "140002548150", "nm" : "EDLAINE GUIMARÃES SANTOS RODRIGUES", "nmu" : "EDLAINE RODRIGUES", "dt" : "12/08/1982", "dvt" : "Anulado sub judice", "seq" : "11", "e" : "n", "st" : "Não eleito", "vap" : "8766", "pvap" : "0,10", "pvapn" : "0,097688997", "vs" : [ 
+{ "tp" : "s1", "sqcand" : "140002554425", "nm" : "OLINTO ALFREDO CEI", "nmu" : "OLINTO CEI", "sgp" : "DEMOCRATA" }, 
+{ "tp" : "s2", "sqcand" : "140002548152", "nm" : "NELSON ANTONIO BARBOSA MARGALHO", "nmu" : "NELSON MARGALHO", "sgp" : "DEMOCRATA" } ] } ] } ] }, 
 { "n" : "140001801116", "nm" : "O PARÁ TÁ JUNTO", "tp" : "c", "com" : "PSD / PP / UNIÃO / PSB / REPUBLICANOS / PCDOB / PT / PV / CIDADANIA / PSDB / MDB / AVANTE", "tvtn" : "4356479", "tvan" : "4356479", "par" : [ 
 { "n" : "44", "sg" : "UNIÃO", "nm" : "UNIÃO BRASIL", "nfed" : "104", "tvtn" : "2014409", "tvan" : "2014409", "cand" : [ 
 { "n" : "444", "sqcand" : "140002550780", "nm" : "FRANCISCO DAS CHAGAS SILVA MELO FILHO", "nmu" : "CHICÃO", "dt" : "19/04/1961", "dvt" : "Válido", "seq" : "2", "e" : "s", "st" : "Eleito", "vap" : "2014409", "pvap" : "22,45", "pvapn" : "22,448733058", "vs" : [ 
