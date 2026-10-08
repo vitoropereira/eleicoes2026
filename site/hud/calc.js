@@ -52,21 +52,20 @@ export function linha(cargo, row, lista) {
   if (ehDep(cargo)) {
     const [vv, sg, vp, top] = row;
     const cands = (top || []).map(([nome, s, v]) => ({ nome, sg: s, v, p: vv ? v / vv : 0 }));
-    return { dep: true, val: cands, sj: [], validos: vv, sg, partidoV: vp, partidoP: vv ? vp / vv : 0, cands, lider: { sg }, p1: vv ? vp / vv : 0, margem: null };
+    return { dep: true, val: cands, validos: vv, sg, partidoV: vp, partidoP: vv ? vp / vv : 0, cands, lider: { sg }, p1: vv ? vp / vv : 0, margem: null };
   }
   // [eleitores, comparecimento, validos, brancos, nulos, [votos], vansj]
-  // candidato com "sj": true (votos anulados sub judice) não entra nos válidos: sem %, nunca lidera
+  // Semântica do TSE: votos anulados sub judice (vansj) entram no total até o julgamento.
+  // % = votos / (validos + vansj); candidato "sj" tem % e etiqueta. Líder = mais votado (inclusive sj).
+  // "Eleito" / "2º turno" NUNCA sai daqui: vem de /hud/status.json (situação oficial).
   const [el, comp, vv, vb, vn, votos, vansj = 0] = row;
-  const todos = (lista || []).map((c, i) => ({ ...c, v: votos?.[i] || 0 }));
-  const val = todos.filter((c) => !c.sj);
-  const sj = todos.filter((c) => c.sj).sort((a, b) => b.v - a.v);
-  const base = vv || val.reduce((s, c) => s + c.v, 0) || 1;
-  val.forEach((c) => { c.p = c.v / base; });
-  sj.forEach((c) => { c.p = null; });
-  val.sort((a, b) => b.v - a.v);
-  const [a, b] = val;
+  const cands = (lista || []).map((c, i) => ({ ...c, v: votos?.[i] || 0 }));
+  const base = (vv + vansj) || cands.reduce((s, c) => s + c.v, 0) || 1;
+  cands.forEach((c) => { c.p = c.v / base; });
+  cands.sort((a, b) => b.v - a.v);
+  const [a, b] = cands;
   return {
-    eleitores: el, comparecimento: comp, validos: vv, brancos: vb, nulos: vn, vansj, cands: [...val, ...sj], val, sj,
+    eleitores: el, comparecimento: comp, validos: vv, brancos: vb, nulos: vn, vansj, total: base, cands, val: cands,
     lider: a, segundo: b, p1: a ? a.p : 0, margem: a ? a.p - (b ? b.p : 0) : 0,
     pc: el ? comp / el : 0, pbn: comp ? (vb + vn) / comp : 0,
   };
@@ -98,7 +97,7 @@ export function linhaSerie(uf3, lista) {
   const [pst, f, l] = uf3;
   const F = lista?.[0] || { nome: "Flávio Bolsonaro", sg: "PL" }, L = lista?.[1] || { nome: "Lula", sg: "PT" };
   const cands = [{ ...F, p: f / 100 }, { ...L, p: l / 100 }].sort((a, b) => b.p - a.p);
-  return { cands, val: cands, sj: [], lider: cands[0], segundo: cands[1], p1: cands[0].p, margem: cands[0].p - cands[1].p, pst };
+  return { cands, val: cands, lider: cands[0], segundo: cands[1], p1: cands[0].p, margem: cands[0].p - cands[1].p, pst };
 }
 
 /** soma linhas no formato [el, comp, vv, vb, vn, [votos], vansj] */
@@ -114,3 +113,15 @@ export function somar(rows) {
 }
 
 export const fundo = () => token("--bg");
+
+/**
+ * Situação oficial (de /hud/status.json, gerado do relatorio.json no build).
+ * Devolve {status, a, b, eleitos} com os candidatos já resolvidos pela lista, ou null.
+ * Os números de candidato identificam a pessoa (nomes podem vir com acentuação diferente).
+ */
+export function oficial(status, cargo, uf, lista) {
+  const e = status?.[cargo]?.[uf || "BR"];
+  if (!e || !lista) return null;
+  const por = (n) => lista.find((c) => String(c.n) === String(n)) || null;
+  return { status: e.status || null, a: por(e.a), b: por(e.b), eleitos: (e.eleitos || []).map(por).filter(Boolean) };
+}
