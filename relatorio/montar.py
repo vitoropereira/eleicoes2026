@@ -5,6 +5,8 @@ Uso: python3 baixar.py && python3 montar.py"""
 import json, math, collections
 from datetime import datetime
 from pathlib import Path
+import sys; sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import brand
 
 H = Path(__file__).parent
 D = H / "dados"
@@ -167,10 +169,13 @@ if nac["pst"] > data["hist"][-1]["pst"]:
     data["hist"].append(dict(ht=nac["ht"], pst=nac["pst"], f=nac["cand"][0]["p"] if nac["cand"][0]["nome"].startswith("Flavio") else nac["cand"][1]["p"],
                              l=next(c["p"] for c in nac["cand"] if c["nome"] == "Lula")))
 (D / "mapa.json").write_text(json.dumps(mapa, ensure_ascii=False))  # contornos para a página ao vivo
+ant = json.loads((H / "relatorio.json").read_text()) if (H / "relatorio.json").exists() else {}
+sem = lambda d: json.dumps({k: v for k, v in d.items() if k not in ("mapa", "gerado")}, ensure_ascii=False, sort_keys=True)
+if ant and sem(ant) == sem(data): data["gerado"] = ant["gerado"]  # dados iguais: mantém o carimbo da leitura
 (H / "relatorio.json").write_text(json.dumps({k: v for k, v in data.items() if k != "mapa"}, ensure_ascii=False, indent=1))
 tpl = (H / "template_relatorio.html").read_text() if (H / "template_relatorio.html").exists() else None
 if tpl:
-    (H / "relatorio_final.html").write_text(tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False)))
+    (H / "relatorio_final.html").write_text(brand.aplicar(tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False))))
 print("ok", nac["pst"], nac["ht"], "| gov:", collections.Counter(g["status"] for g in gov),
       "| dep fed", depfed["total"], "| dep est", depest["total"], "| mapa", len(mapa), "UFs",
       f"{len(json.dumps(mapa)) // 1024} KB")

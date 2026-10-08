@@ -3,3 +3,8 @@
 __pycache__/
 .build/
 .vercel/
+
+# credenciais locais (repo público: nunca versionar)
+.env
+.env.*
+!.env.example

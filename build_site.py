@@ -6,6 +6,7 @@ Uso: python3 relatorio/montar.py && python3 build_site.py"""
 import json, re, shutil, subprocess, threading, functools, html, http.server, socketserver, time
 from datetime import datetime
 from pathlib import Path
+import brand
 
 BASE = "https://eleicoes2026.vitorpereira.ia.br"
 SITE_NAME = "Eleições 2026 · Apuração e resultados"
@@ -56,14 +57,16 @@ for src, slug in RODADAS:
     rodadas.append(dict(slug=slug, d=d, url=f"/apuracao/{slug}/"))
 
 # ---------------- peças compartilhadas
-FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1b1c1e"/><rect x="12" y="34" width="11" height="18" rx="3" fill="#5b8def"/><rect x="27" y="22" width="11" height="30" rx="3" fill="#e35a4f"/><rect x="42" y="12" width="11" height="40" rx="3" fill="#a3a7ad"/></svg>"""
+FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#070B12"/><rect x="12" y="34" width="10" height="18" rx="2" fill="#5B7FE8"/><rect x="26" y="22" width="10" height="30" rx="2" fill="#E35A4F"/><rect x="42" y="12" width="9" height="40" rx="2" fill="#24C8FF"/></svg>"""
 
 SITE_CSS = """<style id="site-chrome">
-.sitebar{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.sitebar{background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
 .sitebar .in{max-width:1160px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .sitebar a{color:var(--ink);text-decoration:none}
-.sitebar .brand{font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-.sitebar .brand svg{width:22px;height:22px}
+.sitebar .brand{font-family:var(--font-mono);font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+.sitebar .brand .dim{color:var(--muted);margin-left:.45em}
+.sitebar .brand .cursor{display:inline-block;width:.5em;height:1.05em;background:var(--brand);margin-left:2px;vertical-align:-.15em}
+.sitebar .brand .sep{color:var(--line)}
 .sitebar nav.top{display:flex;gap:4px;margin:0 0 0 auto;flex-wrap:wrap}
 .sitebar nav.top a{border:0;background:none}
 nav.crumbs{display:block;margin:14px auto 0}
@@ -73,7 +76,7 @@ nav.crumbs a{border:0;padding:0;background:none;font-size:13px}
 .crumbs{max-width:1160px;margin:14px auto 0;padding:0 16px;font-size:13px;color:var(--ink2)}
 .crumbs a{color:var(--ink2)}
 .banner{max-width:1160px;margin:14px auto 0;padding:0 16px}
-.banner div{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber,#c98a12);border-radius:10px;padding:10px 14px;font-size:14px}
+.banner div{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:10px 14px;font-size:14px}
 .banner a{color:var(--ink);font-weight:600}
 .rounds{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .rounds a{font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--ink2);text-decoration:none;font-variant-numeric:tabular-nums}
@@ -90,30 +93,29 @@ footer.site .eu ul{display:flex;align-items:center;gap:14px;list-style:none;marg
 footer.site .eu ul a{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px}
 footer.site .eu svg{width:18px;height:18px;fill:currentColor}
 footer.site .eu .tn{font-size:12px;font-weight:700;letter-spacing:-.02em}
-footer.site button:focus-visible{outline:2px solid var(--flavio);outline-offset:2px;border-radius:4px}
+footer.site button:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 8px}
 .faq summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:15px}
 .faq p{margin:8px 0 0;color:var(--ink2)}
-header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
+header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;text-transform:uppercase;color:var(--ink2)}
 .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:50;background:var(--card);padding:6px 10px;border-radius:8px}
-a:focus-visible,summary:focus-visible{outline:2px solid var(--flavio);outline-offset:2px;border-radius:4px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
 .grid>*{min-width:0}.ch canvas{max-width:100%}
 </style>"""
 
 
-FAVICON_INLINE = FAVICON.replace("<svg ", '<svg aria-hidden="true" ')
 
 # ---------------- medições (entram depois do pré-render, para o banner não ficar congelado no HTML)
 # Vercel Web Analytics/Speed Insights ficam de fora: não estão ativados no projeto, e os scripts dariam 404.
 MEDICAO_BODY = """<style id="consent-css">
-.consent{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--card,#fff);color:var(--ink,#1b1c1e);border-top:1px solid var(--line,#e6e5e1);box-shadow:0 -6px 24px rgba(0,0,0,.12)}
+.consent{position:fixed;inset:auto 0 0 0;z-index:60;background:var(--card);color:var(--ink);border-top:1px solid var(--line);box-shadow:0 -6px 24px rgba(0,0,0,.12)}
 .consent .in{max-width:1160px;margin:0 auto;padding:14px 16px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.consent p{margin:0;font-size:14px;color:var(--ink2,#55595f);flex:1 1 320px}
-.consent p a{color:var(--ink,#1b1c1e)}
+.consent p{margin:0;font-size:14px;color:var(--ink2);flex:1 1 320px}
+.consent p a{color:var(--ink)}
 .consent .bt{display:flex;gap:8px}
-.consent button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line,#e6e5e1);background:var(--card,#fff);color:var(--ink,#1b1c1e)}
-.consent button.ok{background:var(--ink,#1b1c1e);color:var(--card,#fff);border-color:var(--ink,#1b1c1e)}
-.consent button:focus-visible{outline:2px solid var(--flavio,#2563c9);outline-offset:2px}
+.consent button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.consent button.ok{background:var(--brand);color:var(--bg);border-color:var(--brand)}
+.consent button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 @media (max-width:520px){.consent .bt{width:100%}.consent button{flex:1}}
 </style>
 <script id="consent-js">
@@ -156,7 +158,9 @@ def sitebar(atual):
     links = [("/", "Resultado final"), ("/ao-vivo/", "Ao vivo"), ("/apuracao/", "Histórico da apuração"), ("/#metodo", "Método e fontes")]
     nav = "".join(f'<a href="{u}"{" aria-current=page" if u == atual else ""}>{t}</a>' for u, t in links)
     return (f'<a class="skip" href="#conteudo">Pular para o conteúdo</a><header class="sitebar"><div class="in">'
-            f'<a class="brand" href="/">{FAVICON_INLINE}<span>Eleições 2026</span></a>'
+            f'<a class="brand" href="/" aria-label="Eleições 2026, por Vitor Pereira">'
+            f'<span class="wm">vitor<span class="dim">pereira</span><span class="cursor" aria-hidden="true"></span></span>'
+            f'<span class="sep" aria-hidden="true">/</span><span>eleições 2026</span></a>'
             f'<nav class="top" aria-label="Principal">{nav}</nav></div></header>')
 
 
@@ -202,8 +206,10 @@ def head(title, desc, path, og_img, extra_ld, published, modified):
 <link rel="canonical" href="{url}">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
 <meta name="author" content="{AUTOR["nome"]}">
-<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FBFCFE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070B12" media="(prefers-color-scheme: dark)">
+<link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="alternate" type="text/plain" href="/llms.txt" title="Resumo para LLMs">
@@ -317,22 +323,28 @@ def prerender(url):
 # ---------------- imagem de compartilhamento (1200×630)
 def og_card(titulo, sub, f, l, rodape_txt):
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-*{{box-sizing:border-box}}body{{margin:0;width:1200px;height:630px;background:#f7f6f3;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1b1c1e}}
+@font-face{{font-family:Inter;font-weight:100 900;src:url(/fonts/inter-latin-wght-normal.woff2)}}
+@font-face{{font-family:"JetBrains Mono";font-weight:100 800;src:url(/fonts/jetbrains-mono-latin-wght-normal.woff2)}}
+*{{box-sizing:border-box}}body{{margin:0;width:1200px;height:630px;background:#070B12;font-family:Inter,sans-serif;color:#E9EEF7}}
 .w{{padding:64px 72px;height:100%;display:flex;flex-direction:column}}
-.k{{font-size:26px;color:#55595f;letter-spacing:.02em}}h1{{font-size:62px;line-height:1.05;margin:10px 0 0;letter-spacing:-.02em}}
-.row{{display:flex;gap:28px;margin-top:auto}}.c{{flex:1;background:#fff;border:2px solid #e6e5e1;border-radius:22px;padding:24px 30px;border-top:10px solid var(--c)}}
-.n{{font-size:28px;color:#55595f}}.p{{font-size:92px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}}
-.f{{margin-top:26px;font-size:22px;color:#55595f;display:flex;justify-content:space-between}}</style></head><body><div class="w">
+.k{{font:500 22px "JetBrains Mono",monospace;color:#8593AB;letter-spacing:.1em;text-transform:uppercase}}
+h1{{font:600 60px/1.05 "JetBrains Mono",monospace;margin:14px 0 0;letter-spacing:-.02em}}
+.row{{display:flex;gap:28px;margin-top:auto}}.c{{flex:1;background:#0C121D;border:2px solid #1E2A3D;border-radius:20px;padding:24px 30px;border-top:10px solid var(--c)}}
+.n{{font-size:28px;color:#8593AB}}.p{{font:600 92px/1 "JetBrains Mono",monospace;color:var(--c)}}
+.f{{margin-top:26px;font-size:22px;color:#8593AB;display:flex;justify-content:space-between}}
+.f b{{color:#E9EEF7;font:600 22px "JetBrains Mono",monospace}}.f b i{{display:inline-block;width:11px;height:24px;background:#24C8FF;vertical-align:-4px;margin-left:3px}}</style></head><body><div class="w">
 <div class="k">{html.escape(sub)}</div><h1>{html.escape(titulo)}</h1>
-<div class="row"><div class="c" style="--c:#2563c9"><div class="n">Flávio Bolsonaro · PL</div><div class="p">{fmt(f, 2)}%</div></div>
-<div class="c" style="--c:#d1453b"><div class="n">Lula · PT</div><div class="p">{fmt(l, 2)}%</div></div></div>
-<div class="f"><span>{html.escape(rodape_txt)}</span><span>eleicoes2026.vitorpereira.ia.br</span></div></div></body></html>"""
+<div class="row"><div class="c" style="--c:#5B7FE8"><div class="n">Flávio Bolsonaro · PL</div><div class="p">{fmt(f, 2)}%</div></div>
+<div class="c" style="--c:#E35A4F"><div class="n">Lula · PT</div><div class="p">{fmt(l, 2)}%</div></div></div>
+<div class="f"><span>{html.escape(rodape_txt)}</span><b>vitor pereira<i></i></b></div></div></body></html>"""
 
 
 def main():
     if BUILD.exists(): shutil.rmtree(BUILD)
     if OUT.exists(): shutil.rmtree(OUT)
     BUILD.mkdir(); OUT.mkdir()
+    for dest in (BUILD / "fonts", OUT / "fonts"):
+        shutil.copytree(R / "assets" / "fonts", dest, ignore=shutil.ignore_patterns("*.md"))
     srv = serve(BUILD)
     base_url = "http://127.0.0.1:8799"
     publicado = ISO(datetime(2026, 10, 4, 18, 25)); modificado = ISO(LEITURA)
@@ -341,6 +353,7 @@ def main():
     # ---- página principal = relatório final
     faq_vis, faq_ld, qa = faq()
     raw = (R / "relatorio" / "relatorio_final.html").read_text()
+    assert brand.CSS in raw, "relatorio_final.html desatualizado: rode relatorio/montar.py"
     raw = raw.replace('<section id="metodo">', faq_vis + '\n<section id="metodo">', 1)
     raw = raw.replace('<a href="#metodo">Método e fontes</a>', '<a href="#perguntas">Perguntas</a><a href="#metodo">Método e fontes</a>', 1)
     # H1 com a resposta (AEO); o título antigo vira subtítulo
@@ -374,7 +387,7 @@ def main():
     tpl = (R / "template.html").read_text()
     for i, r in enumerate(rodadas):
         d = r["d"]; pst = fmt(d["pst"], 1); hora = d["ht"][:5]
-        raw = tpl.replace("/*__DATA__*/null", json.dumps(d, ensure_ascii=False))
+        raw = brand.aplicar(tpl.replace("/*__DATA__*/null", json.dumps(d, ensure_ascii=False)))
         raw = raw.replace("<h1>Presidente 2026 · 1º turno — apuração e projeções</h1>", f"<h1>Apuração com {pst}% das urnas: Flávio {fmt(d['f'], 2)}% × Lula {fmt(d['l'], 2)}%</h1>", 1)
         titulo = f"Apuração {pst}%: Flávio × Lula | Eleições 2026"
         mc = d["mc"]
@@ -431,7 +444,7 @@ def main():
 
     # ---- ao vivo (busca o TSE no navegador; o pré-render guarda a leitura do momento do build)
     mapa = (R / "relatorio" / "dados" / "mapa.json").read_text()
-    raw = (R / "template_aovivo.html").read_text().replace("/*__MAPA__*/null", mapa)
+    raw = brand.aplicar((R / "template_aovivo.html").read_text().replace("/*__MAPA__*/null", mapa))
     titulo = "Apuração ao vivo das Eleições 2026 | Resultados do TSE"
     desc = "Resultado das Eleições 2026 em tempo real: presidente e governadores por estado, lidos dos arquivos públicos do TSE e atualizados a cada minuto. Pronto para o 2º turno em 25/10."
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "name": titulo, "description": desc, "url": BASE + "/ao-vivo/", "inLanguage": "pt-BR",
@@ -467,9 +480,9 @@ def main():
     cards += [(f"apuracao-{r['slug']}", f"Apuração com {fmt(r['d']['pst'], 1)}% das urnas", f"Eleições 2026 · 04/10 às {r['d']['ht'][:5]}", r["d"]["f"], r["d"]["l"], "Leitura parcial do TSE") for r in rodadas]
     for nome, t, s, f, l, rp in cards:
         (BUILD / "og" / f"{nome}.html").write_text(og_card(t, s, f, l, rp))
-        chrome("--window-size=1200,630", f"--screenshot={OUT / 'og' / (nome + '.png')}", f"{base_url}/og/{nome}.html")
+        chrome("--window-size=1200,630", "--virtual-time-budget=3000", f"--screenshot={OUT / 'og' / (nome + '.png')}", f"{base_url}/og/{nome}.html")
     (BUILD / "og" / "touch.html").write_text(f'<!doctype html><html><body style="margin:0">{FAVICON.replace("<svg ", "<svg width=180 height=180 ")}</body></html>')
-    chrome("--window-size=180,180", f"--screenshot={OUT / 'apple-touch-icon.png'}", f"{base_url}/og/touch.html")
+    chrome("--window-size=180,180", "--virtual-time-budget=3000", f"--screenshot={OUT / 'apple-touch-icon.png'}", f"{base_url}/og/touch.html")
     srv.shutdown()
 
     # ---- arquivos estáticos
@@ -508,6 +521,7 @@ f"- [Dados consolidados em JSON]({BASE}/dados/relatorio.json)\n", encoding="utf-
         "cleanUrls": True, "trailingSlash": True,
         "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"}],
         "headers": [{"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
+                    {"source": "/fonts/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
                     {"source": "/og/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=86400"}]},
                     {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
                     {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]}]}
