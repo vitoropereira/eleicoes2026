@@ -158,7 +158,7 @@ function Busca({ aberto, fechar, meta, geo, onEscolha }) {
       }} />
       <button type="button" class="bt ic" aria-label="Fechar busca" onClick=${fechar}>${Ic.x}</button></div>
     <ul id="busca-res" role="listbox" aria-label="Resultados">
-      ${res.map((it, i) => html`<li id=${"br-" + i} role="option" aria-selected=${i === sel}><button type="button" tabindex="-1" onClick=${() => escolher(it)} onMouseEnter=${() => setSel(i)}><b>${it.txt}</b><small>${it.sub}</small></button></li>`)}
+      ${res.map((it, i) => html`<li id=${"br-" + i} role="option" aria-selected=${i === sel}><button type="button" tabindex="-1" onClick=${() => escolher(it)} onMouseMove=${(e) => { if (e.movementX || e.movementY) setSel(i); }}><b>${it.txt}</b><small>${it.sub}</small></button></li>`)}
       ${q.trim().length >= 2 && !res.length && html`<li class="nada">Nada encontrado para “${q}”.</li>`}
       ${q.trim().length < 2 && html`<li class="nada">Digite ao menos 2 letras. Ex.: Curitiba, Bahia, Lula.</li>`}
     </ul></dialog>`;
@@ -320,7 +320,7 @@ function App() {
       return;
     }
     mapa.current = new Mapa(mapaEl.current, geo, {
-      onHover: (i, x, y) => { if (dicaAtual?.fixa) return; setDica(i >= 0 ? { i, x, y } : null); },
+      onHover: (i, x, y) => { if (dicaAtual?.fixa || st.current.buscaEm > performance.now() - 900) return; setDica(i >= 0 ? { i, x, y } : null); },
       // (com a malha leve, i é a UF inteira; a dica mostra o resultado do estado)
       onClick: (i, x, y) => {
         mapa.current.setSelecao(i);
@@ -366,6 +366,7 @@ function App() {
       return;
     }
     setUfSel(null);
+    st.current.buscaEm = performance.now(); // o mapa anda sob o mouse parado: não deixa o hover roubar a dica
     mapa.current.setSelecao(i); mapa.current.enquadrarMun(i);
     setTimeout(() => {
       const m = geo.muns[i], M = mapa.current, r = M.cv.getBoundingClientRect();

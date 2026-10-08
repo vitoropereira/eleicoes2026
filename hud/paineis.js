@@ -146,7 +146,7 @@ export function ResumoDep({ cargo, res, uf, onUF, onVoltar, geo }) {
     return html`
       <div class="cab"><p class="kicker">${CARGO_NOME[cargo]} · ${UF_NOME[uf]}</p><button type="button" class="link" onClick=${onVoltar}>← Brasil</button></div>
       <h1 class="manchete pequena"><${Nome} c=${{ nome: r.sg, sg: r.sg }} /> é o partido mais votado ${uf === "DF" && cargo === "depest" ? "para a Câmara Legislativa" : "no estado"}</h1>
-      <dl class="totais"><div><dt>Votos nominais do partido</dt><dd>${int(r.partidoV)}</dd></div><div><dt>Dos válidos (nominais)</dt><dd>${pct(r.partidoP * 100, 1)}%</dd></div><div><dt>Votos válidos</dt><dd>${int(r.validos)}</dd></div></dl>
+      <dl class="totais"><div><dt>Votos nominais do partido</dt><dd>${int(r.partidoV)}</dd></div><div><dt>Dos válidos</dt><dd>${pct(r.partidoP * 100, 1)}%</dd></div><div><dt>Votos válidos</dt><dd>${int(r.validos)}</dd></div></dl>
       <p class="kicker sub">Mais votados no estado</p>
       <ul class="outros">${r.cands.map((c) => html`<li><${Sw} sg=${c.sg} /><span class="nm">${c.nome}<small>${c.sg}</small></span><span class="p">${int(c.v)}</span></li>`)}</ul>
       <p class="kicker sub">Municípios com o partido na frente</p>
