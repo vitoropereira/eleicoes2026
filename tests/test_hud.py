@@ -223,3 +223,35 @@ class Build(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PessoasAgora(unittest.TestCase):
+    """window.HUD_PRESENCE vem do build; a chave no repo é a publishable (pública), nunca service_role/secret."""
+
+    def test_build_emite_hud_presence_antes_do_app(self):
+        h = B.injetar_presenca(TEMPLATE.read_text())
+        m = re.search(r"<script>window\.HUD_PRESENCE=(\{.*?\});</script>\n<script type=\"module\" src=\"/hud/app\.js\"></script>", h)
+        self.assertIsNotNone(m, "HUD_PRESENCE precisa vir logo antes do app.js")
+        cfg = json.loads(m.group(1))
+        self.assertEqual(set(cfg), {"url", "key", "canal"})
+        self.assertEqual(cfg["url"], "https://qzczyicspbizosjogmlq.supabase.co")
+        self.assertEqual(cfg["canal"], "eleicoes-hud")
+        self.assertEqual(cfg["key"], B.SUPABASE_PUBLISHABLE_KEY)
+
+    def test_chave_e_publishable_nunca_secreta(self):
+        k = B.SUPABASE_PUBLISHABLE_KEY
+        self.assertTrue(k.startswith("sb_publishable_"), "só a publishable key pode ir para o repo/navegador")
+        self.assertNotRegex(k, r"^sb_secret_|^eyJ")  # secret key nova ou JWT (anon/service_role legados)
+        fontes = [R / "build_site.py", TEMPLATE, *HUD.glob("*.js"), *(R / "supabase").rglob("*.ts"), *(R / "supabase").rglob("*.md")]
+        for p in fontes:
+            t = p.read_text()
+            self.assertNotRegex(t, r"sb_secret_[A-Za-z0-9_\-]{8,}", p.name)
+            self.assertNotRegex(t, r"eyJ[A-Za-z0-9_\-]{10,}\.eyJ[A-Za-z0-9_\-]{10,}", f"{p.name}: JWT no repo")
+
+    def test_site_publicado_tem_a_config(self):
+        pagina = R / "site" / "ao-vivo" / "index.html"
+        if not pagina.exists():
+            self.skipTest("site/ não gerado")
+        h = pagina.read_text()
+        self.assertIn("window.HUD_PRESENCE=", h)
+        self.assertNotIn("pessoas agora</span>", h, "o pré-render (headless) não pode contar nem mostrar o contador")

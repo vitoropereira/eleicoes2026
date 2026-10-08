@@ -3,6 +3,7 @@ import { html, render, useState, useEffect, useMemo, useRef, useCallback, useErr
 import { t1, malha, criarVivo, vivoExtra, criarMinuto } from "./dados.js";
 import { decodificar, decodificarUFs } from "./topo.js";
 import { Mapa } from "./mapa.js";
+import { assinarPresenca } from "./presenca.js";
 import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
@@ -39,11 +40,12 @@ const Ic = {
   olho: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`,
 };
 
-// ---------------- "pessoas agora": o controlador liga window.HUD_PRESENCE = { subscribe(cb) -> unsubscribe }
+// ---------------- "pessoas agora": presença no Supabase Realtime (hud/presenca.js); o build define
+// window.HUD_PRESENCE = { url, key, canal } (key = publishable, pública por desenho). Sem config ou com erro: nada aparece.
 function PessoasAgora() {
   const P = typeof window !== "undefined" ? window.HUD_PRESENCE : undefined;
   const [n, setN] = useState(null);
-  useEffect(() => { if (!P?.subscribe) return; try { return P.subscribe((x) => setN(x)); } catch { return undefined; } }, [P]);
+  useEffect(() => { try { return assinarPresenca(P, setN); } catch { setN(null); return undefined; } }, [P]);
   if (!P || n == null) return null;
   return html`<span class="pessoas">${Ic.olho}<b>${int(n)}</b> pessoas agora</span>`;
 }

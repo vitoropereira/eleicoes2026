@@ -16,6 +16,10 @@ Repo **público**: nada de segredo em commit.
 - Sem tabelas: o estado do ao vivo é JSON no Storage (bucket `vivo`). O público lê via rewrite
   da Vercel com cache, nunca direto no Storage.
 - Toda escrita/DDL e criação de recurso: mostrar o SQL/comando ao Vitor e esperar o OK.
+- "Pessoas agora" (presença no Realtime, `hud/presenca.js`): usa a **publishable key** (`sb_publishable_…`), que é
+  pública por desenho e fica como constante em `build_site.py` (`SUPABASE_PUBLISHABLE_KEY`), injetada no HUD como
+  `window.HUD_PRESENCE`. Nunca trocar por `service_role`/`sb_secret_`: `tests/test_hud.py` barra isso.
+- Ensaio geral do 2º turno, todo local: `supabase/ensaio.md`.
 
 ## Comandos
 - Testes: `python3 -m unittest discover -s tests -v`
