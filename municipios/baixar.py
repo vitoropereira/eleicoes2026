@@ -72,7 +72,7 @@ def main():
                 itens.append((f"{uf}{cd}-c{c:04d}.json", f"{TSE}/6259/dados/{uf}/{uf}{cd}-c{c:04d}-e006259-u.json"))
     print(f"{len(itens)} arquivos na fila", flush=True)
     feitos = 0
-    with cf.ThreadPoolExecutor(16) as ex:
+    with cf.ThreadPoolExecutor(12) as ex:
         for _ in ex.map(job, itens):
             feitos += 1
             if feitos % 500 == 0:
