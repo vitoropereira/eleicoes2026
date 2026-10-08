@@ -7,13 +7,13 @@ const CORES_MARCA = new Set(["PL", "PT"]);
 export const Nome = ({ c, curto }) => html`<span class=${CORES_MARCA.has(c.sg) ? "nm-c" : "nm-u"} style=${{ "--c": cor(c.sg) }}>${curto ? primeiroNome(c.nome) : c.nome}</span>`;
 export const Sw = ({ sg }) => html`<i class="sw" style=${{ "--c": cor(sg) }} aria-hidden="true"></i>`;
 
-function manchete(cargo, r, onde, turno, pst, parcial, of) {
+function manchete(cargo, r, onde, turno, pst, parcial, of, eleito) {
   const [a, b] = r.cands;
   if (!a) return null;
   const lidera = html`<${Nome} c=${a} /> lidera com ${pct(a.p * 100, 1)}%${onde}`;
   if (parcial) return html`<${Nome} c=${a} /> lidera com ${pct(parcial.pst, 1)}% das seções`;
-  // 2º turno: sem situação oficial no agora.json, então nunca "eleito" — só quem lidera e com quanto apurado
-  if (turno === 2) return html`<${Nome} c=${a} /> lidera com ${pct(pst ?? 0, 1)}% das seções${onde}`;
+  // 2º turno: "eleito" SÓ quando o TSE marcou (agora.json `eleito`); senão, quem lidera e com quanto apurado
+  if (turno === 2) return eleito ? html`<${Nome} c=${eleito} /> é eleito presidente` : html`<${Nome} c=${a} /> lidera com ${pct(pst ?? 0, 1)}% das seções${onde}`;
   // 1º turno: só a situação oficial diz quem foi eleito ou quem vai ao 2º turno
   // Senado: "eleito" só com a situação oficial E 100% apurado (senadoEleitos); leitura parcial nunca anuncia eleito
   const el = cargo === "senador" ? senadoEleitos(of, pst) : null;
@@ -28,7 +28,7 @@ function manchete(cargo, r, onde, turno, pst, parcial, of) {
 export const TagSJ = ({ c }) => (c.sj ? html` · <span class="tag-sj">sub judice</span>` : null);
 
 // ---------------- placar (presidente, governador, senador)
-export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of, pend }) {
+export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of, pend, eleito, atualizado }) {
   const [todos, setTodos] = useState(false);
   if (!r || !r.cands.length) return html`<p class="vazio-txt">Sem dados para este recorte.</p>`;
   if (r.vazio) return html`
@@ -57,7 +57,8 @@ export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, tu
       ${onVoltar && html`<button type="button" class="link" onClick=${onVoltar}>← Brasil</button>`}
       ${selo && html`<span class="selo">${selo}</span>`}
     </div>
-    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of)}</h1>
+    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of, eleito)}</h1>
+    ${atualizado && html`<p class="mais">${atualizado}</p>`}
     ${pend?.length > 0 && html`<p class="mais pend">UFs atualizando: ${pend.join(", ")}</p>`}
     <div class="placar">${lado(a, "l1")}${b && lado(b, "l2")}</div>
     ${b && html`<div class="duelo" aria-hidden="true">

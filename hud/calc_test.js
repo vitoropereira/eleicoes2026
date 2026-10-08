@@ -114,3 +114,27 @@ Deno.test("série do 2º turno: leitura sem voto (0%) fica de fora; Flávio e Lu
   perto(s[0].f, 60, "Flávio pelo número 22"); perto(s[0].l, 40, "Lula pelo número 13");
   ok(serieTurno2(null, cand).length === 0, "sem índice");
 });
+
+Deno.test("2º turno: 'eleito' só do agora.json (`eleito` do TSE), nunca de porcentagem", async () => {
+  const { eleitoTurno2, resumoLeitor: rl } = await import("./calc.js");
+  const fonte = { br: [0, 0, 100, 0, 0, [60, 40]], pst: 100, t: "22:40" };
+  ok(eleitoTurno2(fonte, PRES) === null, "60% a 100% apurado, sem marca do TSE: ninguém eleito");
+  ok(eleitoTurno2({ ...fonte, eleito: "22" }, PRES)?.nome === "Flávio Bolsonaro", "marca do TSE pelo número");
+  ok(eleitoTurno2({ ...fonte, eleito: "99" }, PRES) === null, "número fora da lista: ignora");
+  const base = { turno: 2, temVivo: true, meta: META, cargo: "presidente", lista: PRES, ponto: null, pontoUF: null };
+  ok(!rl({ ...base, fonte, ufSel: null }).includes("eleito"), "resumo sem marca: sem eleito");
+  ok(rl({ ...base, fonte: { ...fonte, eleito: "22" }, ufSel: null }).startsWith("Flávio Bolsonaro é eleito presidente"), "resumo com marca");
+});
+
+Deno.test("2º turno: leitura parada há mais de 5 min com apuração aberta → 'aguardando nova leitura do TSE', sem 'ao vivo'", async () => {
+  const { situacaoVivo, PARADO_MS } = await import("./calc.js");
+  const agora = 10_000_000;
+  const vivo = { status: "ok", dados: { t: "20:47", pst: 93.2 }, mudouEm: agora - 60_000 };
+  const s1 = situacaoVivo(vivo, agora);
+  ok(s1.aoVivo && s1.longo === "atualizado às 20h47" && s1.txt.includes("93,2%"), JSON.stringify(s1));
+  const s2 = situacaoVivo({ ...vivo, mudouEm: agora - PARADO_MS - 1 }, agora);
+  ok(!s2.aoVivo && s2.longo === "atualizado às 20h47 · aguardando nova leitura do TSE" && s2.txt.includes("aguardando"), JSON.stringify(s2));
+  const s3 = situacaoVivo({ ...vivo, dados: { t: "22:40", pst: 100 }, mudouEm: agora - 3_600_000 }, agora);
+  ok(s3.aoVivo && !s3.longo.includes("aguardando"), "100%: não fica 'aguardando'");
+  ok(!situacaoVivo({ status: "atrasado", dados: vivo.dados }, agora).aoVivo, "TSE sem resposta: sem ao vivo");
+});

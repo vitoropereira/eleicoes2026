@@ -145,3 +145,20 @@ Deno.test("b. minuto: pedido novo cancela o anterior e resposta velha é descart
   pendentes.at(-2).ok_({ ok: true, status: 200, json: async () => ({ idg: "4" }) });
   ok((await d1) === null && (await d2).dados.idg === "5", "resposta velha descartada");
 });
+
+Deno.test("mudouEm só anda quando a leitura muda (idg, pst ou pend), não a cada consulta", async () => {
+  let t = 1000;
+  const respostas = [AGORA("10", 50), AGORA("10", 50), { ...AGORA("10", 50), pend: ["SP"] }];
+  const timers = [], estados = [];
+  const v = criarVivo((e) => estados.push(e), {
+    fetch: async () => ({ ok: true, status: 200, json: async () => respostas.shift() }),
+    setTimeout: (f, ms) => { timers.push({ f, ms }); return timers.length; }, clearTimeout() {},
+    doc: { hidden: false, addEventListener() {} }, agora: () => t,
+  });
+  v.ativar(); await esperar();
+  ok(estados.at(-1).mudouEm === 1000, "1ª leitura");
+  t = 400_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 1000, "mesma leitura: não mexe");
+  t = 500_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 500_000, "pend mudou: mudou");
+});
