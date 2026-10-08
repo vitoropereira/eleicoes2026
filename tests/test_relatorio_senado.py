@@ -26,6 +26,13 @@ class SenadoPct(unittest.TestCase):
         bittar = next(e for e in ac["eleitos"] if "Bittar" in e["nome"])
         self.assertEqual(bittar["p"], 25.59)
 
+    def test_rodape_lidos_em_usa_data_do_tse_nao_a_de_geracao(self):
+        html = (R.parent / "site" / "index.html").read_text()
+        nac = self.rel["nac"]
+        self.assertIn(f'lidos em {nac["dg"]} {nac["ht"]}', html)
+        self.assertIn("lidos em 05/10/2026", html)
+        self.assertNotIn("lidos em 08/10", html)
+
 
 if __name__ == "__main__":
     unittest.main()
