@@ -1,13 +1,14 @@
 # Ensaio geral do 2º turno (local, nada em produção)
 
 A noite do 1º turno reencenada como se fosse o 2º turno (eleição 6258): simulador do TSE progressivo → agregador
-(`executar`, o mesmo código da Edge Function) → arquivos em `.build/vivo/` → HUD servido localmente.
-Tudo fica em `.build/` (fora do git). Não usa Supabase, Storage, cron nem a Vercel.
+(`executar`, o mesmo código da Edge Function) → arquivos em `.ensaio/vivo/` → HUD servido localmente.
+Tudo fica em `.ensaio/` (fora do git; **não** em `.build/`, que o `build_site.py` apaga no fim). Não usa Supabase,
+Storage, cron nem a Vercel.
 
 ## 0. Uma vez: os arquivos do 1º turno
 
 ```bash
-deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .build/tse-1t   # ~5,8 mil arquivos, ~53 MB, retomável
+deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .ensaio/tse-1t   # ~5,8 mil arquivos, ~53 MB, retomável
 ```
 
 ## 1. Os passos da noite
@@ -35,7 +36,7 @@ Atenção: nos snapshots o % das UFs foi lido alguns minutos depois do % naciona
 ## 2. Rodar a noite (um terminal)
 
 ```bash
-deno run -A supabase/ensaio.ts 0 --zerar          # recomeça: apaga .build/vivo/
+deno run -A supabase/ensaio.ts 0 --zerar          # recomeça: apaga .ensaio/vivo/
 deno run -A supabase/ensaio.ts 1
 deno run -A supabase/ensaio.ts 2
 deno run -A supabase/ensaio.ts 3
@@ -47,7 +48,7 @@ deno run -A supabase/ensaio.ts 6
 
 Cada comando sobe o simulador em `127.0.0.1:8787` (HTTP de verdade, com ETag/304), roda **uma** rodada do agregador e
 imprime o resultado e um resumo do `agora.json` (UFs, municípios, `pend`, válidos do país = soma das UFs, validação do
-contrato). Opções: `--concorrencia 16`, `--verboso` (log do agregador), `--porta 8787`, `--vivo .build/vivo`.
+contrato). Opções: `--concorrencia 16`, `--verboso` (log do agregador), `--porta 8787`, `--vivo .ensaio/vivo`.
 Com `--corte-ms` muito baixo nenhuma UF fecha e a rodada não publica (`sem-mudanca`): suba o valor.
 
 ## 3. Ver no HUD (outro terminal)
@@ -56,7 +57,7 @@ Com `--corte-ms` muito baixo nenhuma UF fecha e a rodada não publica (`sem-muda
 python3 supabase/ensaio_site.py --porta 8790      # http://127.0.0.1:8790/ao-vivo/
 ```
 
-Serve `site/` como na Vercel, `/vivo/*` de `.build/vivo/` e `/hud/*.js` direto de `hud/` (testa mudança no HUD sem
+Serve `site/` como na Vercel, `/vivo/*` de `.ensaio/vivo/` e `/hud/*.js` direto de `hud/` (testa mudança no HUD sem
 rodar o build). Objeto que não existe em `/vivo/` responde como o Storage responde hoje (HTTP 400 + `NoSuchKey`).
 Recarregue a página depois de cada passo (ou espere o polling de 15 s).
 
@@ -83,7 +84,7 @@ servida por **http** (`python3 -m http.server`); aberta como `file://` o iframe 
 
 O simulador progressivo também serve HTTP sozinho; `/_passo/<i>` troca o passo:
 ```bash
-deno run --allow-net --allow-read supabase/simular.ts servir .build/tse-1t --progressivo --host 0.0.0.0 --porta 8787
+deno run --allow-net --allow-read supabase/simular.ts servir .ensaio/tse-1t --progressivo --host 0.0.0.0 --porta 8787
 curl -s http://127.0.0.1:8787/_passo/1
 ```
 e a função local segue o roteiro de `PROPOSTA.md`, seção 7 (`supabase start` + `supabase functions serve`).

@@ -1,6 +1,6 @@
-"""Servidor local do ensaio: `site/` como na Vercel e `/vivo/*` lido de `.build/vivo/` (o que o agregador gravou).
+"""Servidor local do ensaio: `site/` como na Vercel e `/vivo/*` lido de `.ensaio/vivo/` (o que o agregador gravou).
 
-    python3 supabase/ensaio_site.py [--porta 8790] [--site site] [--vivo .build/vivo]
+    python3 supabase/ensaio_site.py [--porta 8790] [--site site] [--vivo .ensaio/vivo]
 
 `/hud/*.js` vem de `hud/` do repo (não de `site/hud/`), para ensaiar mudanças no HUD sem rodar o build.
 Objeto ausente em /vivo/ responde como o Storage do Supabase responde hoje em produção (HTTP 400 + NoSuchKey),
@@ -17,7 +17,7 @@ NAO_ACHADO = b'{"statusCode":"404","error":"not_found","message":"Object not fou
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    vivo: Path = R / ".build" / "vivo"
+    vivo: Path = R / ".ensaio" / "vivo"
 
     def log_message(self, *a):
         pass
@@ -55,7 +55,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--porta", type=int, default=8790)
     ap.add_argument("--site", default=str(R / "site"))
-    ap.add_argument("--vivo", default=str(R / ".build" / "vivo"))
+    ap.add_argument("--vivo", default=str(R / ".ensaio" / "vivo"))
     a = ap.parse_args()
     Handler.vivo = Path(a.vivo)
 

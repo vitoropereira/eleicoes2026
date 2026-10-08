@@ -1,11 +1,11 @@
 // Ensaio geral local do 2º turno: simulador progressivo do TSE (HTTP de verdade, com ETag) + o agregador (`executar`,
-// o mesmo código da Edge Function) + um Storage que grava em arquivos (`.build/vivo/`). Nada em produção.
+// o mesmo código da Edge Function) + um Storage que grava em arquivos (`.ensaio/vivo/`). Nada em produção.
 //
-//   deno run -A supabase/ensaio.ts <passo> [--tse .build/tse-1t] [--vivo .build/vivo] [--corte-ms N] [--zerar]
+//   deno run -A supabase/ensaio.ts <passo> [--tse .ensaio/tse-1t] [--vivo .ensaio/vivo] [--corte-ms N] [--zerar]
 //
 //   <passo>       índice do passo (0 = 0%, depois as leituras da noite do 1º turno, por último 100%); `lista` mostra os passos
 //   --corte-ms N  orçamento de N ms para ler municípios: as UFs que não fecharem a tempo ficam em `pend` (ensaia "UFs atualizando")
-//   --zerar       apaga `.build/vivo/` antes (recomeça a noite)
+//   --zerar       apaga `.ensaio/vivo/` antes (recomeça a noite)
 // Comandos completos, na ordem, em supabase/ensaio.md.
 import { criarSimulador, passosDaNoite } from "./simular.ts";
 import { executar } from "./functions/agregador-eleicoes/executar.ts";
@@ -52,13 +52,13 @@ if (import.meta.main) {
     console.error(`passo inválido: ${alvo} (0..${passos.length - 1})`);
     Deno.exit(2);
   }
-  const vivo = op("--vivo", ".build/vivo");
+  const vivo = op("--vivo", ".ensaio/vivo");
   if (resto.includes("--zerar")) {
     await Deno.remove(vivo, { recursive: true }).catch(() => {});
   }
   await Deno.mkdir(vivo, { recursive: true });
 
-  const sim = criarSimulador({ dir: op("--tse", ".build/tse-1t"), passos });
+  const sim = criarSimulador({ dir: op("--tse", ".ensaio/tse-1t"), passos });
   sim.passo = i;
   const porta = Number(op("--porta", "8787"));
   const servidor = Deno.serve({

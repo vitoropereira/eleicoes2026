@@ -1,13 +1,13 @@
 // Simulador do TSE para o ensaio geral: serve os arquivos do 1º turno (eleição 6257) como se fossem o 2º turno.
 //
-//   # 1) baixar uma vez (~5,7 mil arquivos, ~50 MB; fora do git em .build/)
-//   deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .build/tse-1t
+//   # 1) baixar uma vez (~5,7 mil arquivos, ~50 MB; fora do git em .ensaio/)
+//   deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .ensaio/tse-1t
 //   # 2) servir (o 2º turno "aparece" como eleição 6258, igual ao padrão de 2022)
-//   deno run --allow-net --allow-read supabase/simular.ts servir .build/tse-1t --porta 8787
+//   deno run --allow-net --allow-read supabase/simular.ts servir .ensaio/tse-1t --porta 8787
 //   # 3) apontar o agregador para ele: TSE_BASE=http://127.0.0.1:8787
 //
 //   # medir o limite do TSE (resultado em supabase/PROPOSTA.md, Riscos)
-//   deno run --allow-net --allow-write --allow-read supabase/simular.ts medir .build/tse-1t --concorrencia 8
+//   deno run --allow-net --allow-write --allow-read supabase/simular.ts medir .ensaio/tse-1t --concorrencia 8
 //
 // Opções do `servir`: --ele2 6258 (código exposto) · --origem 6257 (código real dos arquivos)
 //                     --sem-turno2 (não publica o 2º turno: ensaia o caminho "ainda não existe")
@@ -577,7 +577,7 @@ export function criarSimulador(o: OpcoesSimulador) {
 }
 
 if (import.meta.main) {
-  const [cmd, dir = ".build/tse-1t", ...resto] = Deno.args;
+  const [cmd, dir = ".ensaio/tse-1t", ...resto] = Deno.args;
   const op = (nome: string, padrao: string) => {
     const i = resto.indexOf(nome);
     return i >= 0 ? resto[i + 1] : padrao;

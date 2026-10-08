@@ -168,9 +168,9 @@ que o já aceito é ignorado. Depois de um 429 do TSE a função fica em pausa d
 
 ```bash
 # baixa o 1º turno do TSE uma vez (~5,8 mil arquivos; retomável; fora do git)
-deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .build/tse-1t
+deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .ensaio/tse-1t
 # serve como se fosse o 2º turno (eleição 6258); --sem-turno2 ensaia o caminho "ainda não existe"
-deno run --allow-net --allow-read supabase/simular.ts servir .build/tse-1t --porta 8787 --host 0.0.0.0
+deno run --allow-net --allow-read supabase/simular.ts servir .ensaio/tse-1t --porta 8787 --host 0.0.0.0
 ```
 Função local contra o Supabase local (Docker), em outro terminal:
 ```bash
@@ -182,11 +182,11 @@ supabase functions serve agregador-eleicoes --no-verify-jwt --env-file supabase/
 curl -sS -X POST "http://127.0.0.1:54321/functions/v1/agregador-eleicoes?sincrono=1" -H "x-agregador: ensaio"
 ```
 A noite progressiva (0% → leituras do 1º turno por UF → 100%) tem modo próprio (`servir --progressivo`) e um roteiro
-completo sem Docker, com o agregador gravando em `.build/vivo/` e o HUD servido localmente: `supabase/ensaio.md`.
+completo sem Docker, com o agregador gravando em `.ensaio/vivo/` e o HUD servido localmente: `supabase/ensaio.md`.
 
 ## Riscos e decisões que dependem de você
 
-1. **Limite do TSE (medido em 08/10/2026, 15h22-15h25 de Brasília, a partir da máquina local do Vitor, não da Edge Function).**
+1. **Limite do TSE (medido em 08/10/2026, 15h22-15h44 de Brasília, a partir da máquina local do Vitor, não da Edge Function).**
    `deno run --allow-net --allow-read --allow-write supabase/simular.ts medir <dir> --concorrencia N [--condicional <dir>]`
    baixou o 1º turno inteiro de presidente (eleição 6257: 28 arquivos de UF + 5.757 de município = 5.785, ~9 KB cada, 52,7 MB):
 
@@ -195,9 +195,10 @@ completo sem Docker, com o agregador gravando em `.build/vivo/` e o HUD servido 
    | 1. carga completa | 8 | 80,4 s | 71,9 | 5.784 × 200, 1 timeout (20 s) | 0 | 86 / 221 ms |
    | 2. revalidação com ETag (`If-None-Match`) | 12 | 38,0 s | 152,2 | 5.784 × 304, 1 × 200 (o do timeout) | 0 | 60 / 150 ms |
    | 3. carga completa, pasta nova | 16 | 40,0 s | 144,6 | 5.785 × 200 | 0 | 93 / 202 ms |
+   | 4. repetição da 3 (15h43) | 16 | 45,8 s | 126,2 | 5.785 × 200 | 0 | 117 / 256 ms |
 
    O TSE anuncia `x-ratelimit-limit: 2000, 2000;w=1` (2.000 por segundo); o menor `x-ratelimit-remaining` visto foi 1.513.
-   Resumos brutos: `.build/tse-1t/_medicao-c8.json`, `_medicao-c12-etag.json`, `.build/tse-1t-c16/_medicao-c16.json` (fora do git).
+   O `medir` grava o resumo bruto de cada passada em `<dir>/_medicao-cN[-etag].json` (fora do git).
    **Decisão:** padrão da função = 16 (o maior que rodou sem nenhum 429). Ressalvas: (a) num teste anterior, também com 16
    conexões, o TSE respondeu 429 depois de ~1,5 mil arquivos e bloqueou por vários minutos, então o limite real varia
    (carga do TSE/Akamai, IP); (b) a função roda nos EUA (us-east-1), com latência maior e outro IP, e na noite da eleição o

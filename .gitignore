@@ -2,6 +2,7 @@
 .DS_Store
 __pycache__/
 .build/
+.ensaio/
 .vercel/
 
 # credenciais locais (repo público: nunca versionar)
