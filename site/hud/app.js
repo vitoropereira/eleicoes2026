@@ -8,7 +8,7 @@ import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
-import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2, eleitoTurno2, situacaoVivo } from "./calc.js";
+import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2, eleitoTurno2, situacaoVivo, exteriorCidades } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -47,7 +47,7 @@ function PessoasAgora() {
   const [n, setN] = useState(null);
   useEffect(() => { try { return assinarPresenca(P, setN); } catch { setN(null); return undefined; } }, [P]);
   if (!P || n == null) return null;
-  return html`<span class="pessoas">${Ic.olho}<b>${int(n)}</b> pessoas agora</span>`;
+  return html`<span class="pessoas">${Ic.olho}<b>${typeof n === "string" ? n : int(n)}</b> ${n === 1 ? "pessoa" : "pessoas"} agora</span>`;
 }
 
 // ---------------- cabeçalho
@@ -168,19 +168,17 @@ function Busca({ aberto, fechar, meta, geo, onEscolha }) {
 }
 
 // ---------------- Exterior
-function Exterior({ aberto, fechar, meta, res, lista }) {
+function Exterior({ aberto, fechar, meta, res, lista, turno }) {
   const ref = useRef();
   useEffect(() => { const d = ref.current; if (!d) return; if (aberto && !d.open) d.showModal(); else if (!aberto && d.open) d.close(); }, [aberto]);
-  const itens = useMemo(() => {
-    if (!meta || !res?.ex) return [];
-    return (meta.exterior || []).map(([nome, cod]) => ({ nome: titulo(nome), r: linha("presidente", res.ex[cod], lista) })).filter((x) => x.r?.lider).sort((a, b) => b.r.validos - a.r.validos);
-  }, [meta, res, lista]);
+  const { itens, semVoto } = useMemo(() => exteriorCidades(meta, res, lista, titulo), [meta, res, lista]);
   const zz0 = res?.uf?.ZZ && linha("presidente", res.uf.ZZ, lista), zz = zz0?.lider && zz0.segundo ? zz0 : null;
   return html`<dialog class="modal ext-dlg" ref=${ref} onClose=${fechar} aria-labelledby="ext-t">
     <div class="cab"><h2 id="ext-t">Exterior · Presidente</h2><button type="button" class="bt ic" aria-label="Fechar" onClick=${fechar}>${Ic.x}</button></div>
     ${zz ? html`<p class="ext-tot"><${Sw} sg=${zz.lider.sg} /><${Nome} c=${zz.lider} /> ${pct(zz.p1 * 100, 1)}% × <${Nome} c=${zz.segundo} /> ${pct(zz.segundo.p * 100, 1)}% · ${int(zz.validos)} votos válidos em ${itens.length} cidades</p>` : html`<p class="vazio-txt">Sem dados do exterior para este turno ainda.</p>`}
     <div class="ext-lista"><table><thead><tr><th scope="col">Cidade</th><th scope="col">1º colocado</th><th class="n" scope="col">%</th><th class="n" scope="col">Válidos</th></tr></thead>
-    <tbody>${itens.map(({ nome, r }) => html`<tr><td>${nome}</td><td><${Sw} sg=${r.lider.sg} />${r.lider.nome}</td><td class="n">${pct(r.p1 * 100, 1)}</td><td class="n">${int(r.validos)}</td></tr>`)}</tbody></table></div>
+    <tbody>${itens.map(({ nome, r }) => html`<tr><td>${nome}</td><td><${Sw} sg=${r.lider.sg} />${r.lider.nome}</td><td class="n">${pct(r.p1 * 100, 1)}</td><td class="n">${int(r.validos)}</td></tr>`)}
+    ${semVoto > 0 && html`<tr class="sem-voto"><td colspan="4">+${int(semVoto)} ${semVoto === 1 ? "cidade" : "cidades"} ${turno === 2 ? "sem votos apurados ainda" : "sem voto válido"}</td></tr>`}</tbody></table></div>
   </dialog>`;
 }
 
@@ -547,7 +545,7 @@ function App() {
         <span><a href="/">Resultado final</a> · <a href="/apuracao/">Histórico</a> · <a href="/#metodo">Método</a> · <a href="https://vitorpereira.ia.br/privacidade">Privacidade</a> · <button type="button" class="link" onClick=${() => window.dispatchEvent(new CustomEvent("consent:reopen"))}>Cookies</button></span></footer>
       <${Dica} conteudo=${conteudoDica} />
       <${Busca} aberto=${busca} fechar=${() => setBusca(false)} meta=${meta} geo=${geo} onEscolha=${onEscolha} />
-      <${Exterior} aberto=${ext} fechar=${() => setExt(false)} meta=${meta} res=${turno === 2 ? vivo.dados : res.presidente} lista=${listaPres} />
+      <${Exterior} aberto=${ext} fechar=${() => setExt(false)} meta=${meta} res=${turno === 2 ? vivo.dados : res.presidente} lista=${listaPres} turno=${turno} />
     </div>`;
 }
 
