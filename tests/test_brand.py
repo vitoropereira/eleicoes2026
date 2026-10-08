@@ -70,7 +70,7 @@ class Brand(unittest.TestCase):
             brand.aplicar("<style>body{}</style>")
 
 
-TEMPLATES = [R / "template.html", R / "template_aovivo.html", R / "relatorio" / "template_relatorio.html"]
+TEMPLATES = [R / "template.html", R / "template_hud.html", R / "relatorio" / "template_relatorio.html"]
 
 
 class Templates(unittest.TestCase):

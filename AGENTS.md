@@ -19,6 +19,7 @@ Repo **público**: nada de segredo em commit.
 
 ## Comandos
 - Testes: `python3 -m unittest discover -s tests -v`
+- Testes do HUD (JS): `deno test hud/`
 - Relatório: `cd relatorio && python3 montar.py && cd ..`
 - Site: `python3 build_site.py`
 - PR: `/ship`
