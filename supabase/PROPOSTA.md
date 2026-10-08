@@ -156,6 +156,8 @@ extensão pode afetar o que já usa. Só derrube com `drop extension pg_net` se 
 | Objeto em `vivo/` | Quando muda |
 |---|---|
 | `agora.json` | **só quando as 28 UFs (27 + ZZ) estão presentes**. Carrega `pend: [UFs]`, as UFs cujo dado ficou atrás do TSE nesta publicação (o front mostra "UFs atualizando") |
+| `agora.json` → `eleito` | número do candidato que o TSE marcou como eleito (`e: "s"` **e** `st: "Eleito"` no arquivo; `e: "s"` sozinho também aparece em quem vai ao 2º turno). Sem marca, a chave não existe. O HUD só diz "é eleito" a partir dela |
+| `agora.json` → `pend` sem dado novo | rodada que não fecha nenhuma UF mas mudou o conjunto de UFs atrasadas regrava o `agora.json` publicado só com o `pend` novo (mesmos números, mesmo `idg` e `t`) |
 | `_parcial.json` | rascunho gravado a cada rodada com o progresso (mesmo formato do `agora.json`). A rodada seguinte parte dele (cai para `agora.json` se não existir). Na primeira carga, várias rodadas curtas convergem aqui e só então publicam |
 | `serie/HHMM.json`, `serie/index.json`, `feed.json` | junto com o `agora.json` |
 | `_estado.json` | ETags, idg por UF, trava (`dono`/`travaAte`) e pausa (`pausaAte`/`pausaMs`) |

@@ -77,7 +77,8 @@ servida por **http** (`python3 -m http.server`); aberta como `file://` o iframe 
 | 0 | abre sozinho no 2º turno; "Nenhuma seção apurada ainda"; mapa sem cor de partido; sem legenda; feed vazio |
 | 1 | mapa por município colorido; manchete "lidera com X% das seções"; feed com o 1º evento; gráfico sem o ponto 0% |
 | 4 (`--corte-ms`) | "UFs atualizando: …" com as UFs pendentes; modo Apurado ligado (há `pm`) |
-| 6 | 100%; feed com "é eleito presidente"; manchete continua "lidera" (o 2º turno não tem status.json) |
+| 6 | 100%; `agora.json` com `eleito` (o simulador marca `e:"s"` + `st:"Eleito"`, como o TSE); manchete "é eleito presidente" e o mesmo evento no feed. No passo 5 (99,7%) ainda não há `eleito` e a manchete é "lidera" |
+| parado | leitura sem mudança há mais de 5 min com pst < 100: selo "HHhMM · aguardando o TSE", painel "atualizado às HHhMM · aguardando nova leitura do TSE", sem "Ao vivo" |
 | linha do tempo | arrastar troca para o `serie/HHMM.json` daquele minuto e o selo vira "Revendo a noite"; se o minuto falhar, aviso com "Tentar de novo" e nada do ao vivo |
 
 ## Ensaio com a função de verdade (Docker, opcional)

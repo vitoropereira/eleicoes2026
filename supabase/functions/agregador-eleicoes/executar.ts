@@ -336,6 +336,17 @@ export async function executar(deps: Deps): Promise<Resultado> {
     const republicar = confirmadas.length === 0 && !!prev && faltando.length === 0 &&
       big(prev.idg) > big(estado.ultimoIdg);
     if (confirmadas.length === 0 && !republicar) {
+      // nada novo para publicar, mas se o conjunto de UFs atrasadas mudou, o agora.json publicado passa a dizer isso
+      // (mesmos números e mesmo idg; o HUD mostra "UFs atualizando" e a hora `t` da última leitura)
+      const pendNovo = estado.pendentes.filter((u) => publicado && u in publicado.uf).sort();
+      if (publicado && faltando.length === 0 && pendNovo.join() !== [...(publicado.pend ?? [])].sort().join()) {
+        const atual = parse(await st.ler("_estado.json"));
+        if (!atual || atual.dono !== dono || atual.travaAte < deps.agora()) {
+          log("trava perdida para outra rodada; abortando sem gravar");
+          return { status: "trava-perdida" };
+        }
+        await gravarAtomico(st, "agora.json", JSON.stringify({ ...publicado, pend: pendNovo }));
+      }
       await salvar(estado);
       return faltando.length > 0 && (prev || mudadas.length > 0)
         ? { status: "sem-dados", motivo: `UFs faltando: ${faltando.join(",")}` }
@@ -347,7 +358,9 @@ export async function executar(deps: Deps): Promise<Resultado> {
     // 7) montar e validar
     const meta: Record<string, ResumoArquivo> = {};
     for (const u of Object.keys(uf)) if (estado.uf[u]) meta[u] = estado.uf[u];
-    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta, pend: estado.pendentes });
+    // resultado oficial: só quando o TSE marca (nunca deduzido de %); depois de marcado, segue nas próximas publicações
+    const eleito = eleitoNovo?.n ?? estado.eleito;
+    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta, pend: estado.pendentes, eleito });
     if (!/^\d\d:\d\d$/.test(agora.t)) agora.t = hhmmBrasilia(deps.agora());
     const erros = validarAgora(agora);
     if (erros.length > 0) throw new Error(`agora.json inválido: ${erros.slice(0, 3).join("; ")}`);
