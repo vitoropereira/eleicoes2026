@@ -8,7 +8,7 @@ import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
-import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2 } from "./calc.js";
+import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2, eleitoTurno2, situacaoVivo } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -69,7 +69,7 @@ function Topo({ turno, setTurno, cargo, setCargo, status, onBusca, onExterior, o
       </div>
       <div class="acoes">
         <button type="button" class="bt busca" onClick=${onBusca} aria-keyshortcuts="Meta+K Control+K">${Ic.busca}<span>Buscar</span><kbd>⌘K</kbd></button>
-        <span class=${"status " + status.cls}><i class="dot" aria-hidden="true"></i><span class=${status.curto ? "st-l" : ""}>${status.txt}</span>${status.curto && html`<span class="st-c" aria-hidden="true">${status.curto}</span>`}</span>
+        <span class=${"status " + status.cls} title=${status.longo || null}><i class="dot" aria-hidden="true"></i><span class=${status.curto ? "st-l" : ""}>${status.txt}</span>${status.curto && html`<span class="st-c" aria-hidden="true">${status.curto}</span>`}</span>
         <button type="button" class="bt" onClick=${onExterior}>${Ic.globo}<span>Exterior</span></button>
         <button type="button" class="bt ic" onClick=${onCheia} aria-label=${cheia ? "Sair da tela cheia" : "Tela cheia"} title=${cheia ? "Sair da tela cheia" : "Tela cheia"}>${Ic.cheia}</button>
       </div>
@@ -105,7 +105,7 @@ function LinhaDoTempo({ serie, idx, setIdx, ativa, motivo, turno, vivo }) {
         </div>
         <span class="pst mono">${pct(atual.pst, 1)}%</span>` : html`<span class="linha-off">${motivo}</span>`}
       <${PessoasAgora} />
-      <span class=${"aovivo " + (turno === 2 && vivo === "ok" && final ? "on" : "")}><i class="dot" aria-hidden="true"></i>${turno === 2 ? (!final ? "Revendo a noite" : vivo === "ok" ? "Ao vivo" : "Aguardando") : final ? "Resultado final" : "Revendo a noite"}</span>
+      <span class=${"aovivo " + (turno === 2 && vivo === "ok" && final ? "on" : "")}><i class="dot" aria-hidden="true"></i>${turno === 2 ? (!final ? "Revendo a noite" : vivo === "ok" ? "Ao vivo" : vivo === "parado" ? "Aguardando nova leitura do TSE" : "Aguardando") : final ? "Resultado final" : "Revendo a noite"}</span>
     </div>`;
 }
 
@@ -443,12 +443,7 @@ function App() {
 
   // textos
   const status = useMemo(() => {
-    if (turno === 2) {
-      if (vivo.status === "ok" && vivo.dados) return { cls: "vivo", txt: `${(vivo.dados.t || "").replace(":", "h")} · ${pct(vivo.dados.pst ?? 0, 1)}% apurado` };
-      if (vivo.status === "atrasado") return { cls: "atraso", txt: `TSE sem resposta · último dado às ${vivo.dados?.t || "–"}` };
-      if (vivo.status === "carregando" || vivo.status === "inicial") return { cls: "", txt: "Consultando…" };
-      return { cls: "", txt: "Aguardando o TSE" };
-    }
+    if (turno === 2) return situacaoVivo(vivo);
     if (ponto) return { cls: "", txt: `Revendo ${ponto.d ? ponto.d + " " : ""}${ponto.ht} · ${pct(ponto.pst, 1)}%` };
     return { cls: "", txt: meta ? `${meta.dg?.slice(0, 5)} ${meta.ht?.slice(0, 5).replace(":", "h")} · 100% apurado` : "Carregando…", curto: meta ? "100% apurado" : null };
   }, [turno, vivo, ponto, meta]);
@@ -496,7 +491,7 @@ function App() {
     else if (turno === 2) pontoP = null;
     esq = semLeitura ? html`<div class="cab"><p class="kicker">Presidente · ${UF_NOME[ufSel]}</p><button type="button" class="link" onClick=${voltar}>← Brasil</button></div>
       <h1 class="manchete pequena">Sem leitura desta UF neste momento</h1><p class="vazio-txt">O TSE não tinha publicado ${UF_NOME[ufSel]} às ${ponto.ht}. Arraste a linha do tempo para outra leitura.</p>` : html`<${Placar} cargo="presidente" r=${r} turno=${turno} pst=${turno === 2 ? (ufSel ? pstUF(ufSel) : fonte?.pst ?? 0) : 100} ponto=${pontoP}
-      pend=${turno === 2 ? fonte?.pend : null}
+      pend=${turno === 2 ? fonte?.pend : null} atualizado=${turno === 2 ? (idx == null ? status.longo : fonte?.t ? `leitura das ${fonte.t.replace(":", "h")}` : null) : null} eleito=${turno === 2 && !ufSel ? eleitoTurno2(fonte, listaPres) : null}
       kicker=${`Presidente · ${turno}º turno · ${ufSel ? UF_NOME[ufSel] : "Brasil"}`} selo=${turno === 1 ? "2º turno em 25/10" : null}
       of=${turno === 1 && !ufSel ? oficial(situacao, "presidente", null, listaPres) : null}
       onVoltar=${ufSel ? voltar : null} serie=${!ufSel ? (turno === 1 ? serie : serie2) : null} idx=${idx} />`;
@@ -545,7 +540,7 @@ function App() {
             ${turno === 2 ? (feed2?.length ? html`<${Feed} itens=${feed2} onUF=${(uf) => { escolherUF(uf); }} />` : html`<p class="vazio-txt">O feed do 2º turno começa quando o TSE publicar as primeiras seções.</p>`) : html`<${Feed} itens=${feed} onUF=${(uf) => { escolherUF(uf); }} />`}</section>
           <p class="fonte">Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do IBGE. Não é site oficial da Justiça Eleitoral. <a href="/">Resultado final</a> · <a href="/apuracao/">Histórico</a> · <a href="/#metodo">Método</a> · <a href="https://vitorpereira.ia.br/privacidade">Privacidade</a> · <button type="button" class="link" onClick=${() => window.dispatchEvent(new CustomEvent("consent:reopen"))}>Cookies</button></p>
         </aside>
-        <${LinhaDoTempo} serie=${turno === 1 ? serie : serie2} idx=${idx} setIdx=${setIdx} ativa=${linhaAtiva} motivo=${motivoLinha} turno=${turno} vivo=${vivo.status} />
+        <${LinhaDoTempo} serie=${turno === 1 ? serie : serie2} idx=${idx} setIdx=${setIdx} ativa=${linhaAtiva} motivo=${motivoLinha} turno=${turno} vivo=${status.aoVivo ? "ok" : vivo.status === "ok" ? "parado" : vivo.status} />
       </main>
       <p class="sr-only" aria-live="polite">${resumo}</p>
       <footer class="hud-pe"><span>Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do <a href="https://www.ibge.gov.br/" rel="noopener">IBGE</a>. Não é um site oficial da Justiça Eleitoral.</span>

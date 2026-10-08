@@ -36,12 +36,14 @@ const corpoVazio = (d) => !!d && typeof d === "object" && !Array.isArray(d) && (
   String(d.statusCode) === "404" || /NoSuchBucket|not[_ ]found/i.test(`${d.error ?? ""} ${d.code ?? ""} ${d.message ?? ""}`));
 const valido = (d) => d && typeof d === "object" && Array.isArray(d.br) && d.mu && typeof d.mu === "object";
 
-/** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document) */
+/** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document), agora (relógio) */
 export function criarVivo(aoMudar, deps = {}) {
   const F = deps.fetch || ((...a) => fetch(...a));
   const ST = deps.setTimeout || ((f, ms) => setTimeout(f, ms)), CT = deps.clearTimeout || ((t) => clearTimeout(t));
   const doc = deps.doc !== undefined ? deps.doc : (typeof document !== "undefined" ? document : null);
-  const est = { status: "inicial", dados: null, erro: null, ultimoOk: null, falhas: 0 };
+  // mudouEm: quando a leitura mudou de fato pela última vez (idg, pst ou pend); o HUD usa para "aguardando nova leitura"
+  const est = { status: "inicial", dados: null, erro: null, ultimoOk: null, falhas: 0, mudouEm: null };
+  const AGORA = deps.agora || (() => Date.now());
   let timer = 0, ativo = false, carregando = false;
   const emitir = () => aoMudar({ ...est });
 
@@ -54,8 +56,10 @@ export function criarVivo(aoMudar, deps = {}) {
     return d;
   }
 
+  const chave = (d) => `${d.idg}|${d.pst}|${(d.pend || []).join()}|${d.eleito || ""}`;
   function aceitar(d) {
     if (est.dados && idgNum(d.idg) < idgNum(est.dados.idg)) return; // mais velho: descarta
+    if (!est.dados || chave(d) !== chave(est.dados)) est.mudouEm = AGORA();
     est.dados = d;
   }
 

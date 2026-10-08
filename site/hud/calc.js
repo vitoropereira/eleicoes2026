@@ -181,6 +181,8 @@ export function resumoLeitor({ turno, temVivo, fonte, meta, cargo, ponto, pontoU
   const apurado = turno === 2 ? `, ${fonte.t ? "às " + fonte.t + ", " : ""}${pct((ufSel ? fonte.pu?.[ufSel] : null) ?? fonte.pst ?? 0, 1)}% das seções` : "";
   if (!r) return `Presidente${onde}: sem dados.`;
   if (r.vazio) return `Presidente, ${turno}º turno${onde}${apurado}: nenhum voto apurado ainda.`;
+  const el = turno === 2 && !ufSel ? eleitoTurno2(fonte, lista) : null;
+  if (el) return `${el.nome} é eleito presidente (TSE)${apurado}: ${r.cands.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
   return `Presidente, ${turno}º turno${onde}${apurado}: ${r.cands.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
 }
 
@@ -196,4 +198,33 @@ export function serieTurno2(indice, cand) {
     const v = (x) => { const i = pos(x); return i >= 0 ? (e.br[5]?.[i] || 0) : 0; };
     return { ht: e.t, pst: e.pst, f: (100 * v(F)) / tot, l: (100 * v(L)) / tot };
   });
+}
+
+/** 2º turno: o eleito vem SÓ do TSE (agora.json `eleito`, número), nunca de porcentagem. null se não houver. */
+export function eleitoTurno2(fonte, lista) {
+  if (!fonte?.eleito) return null;
+  return (lista || []).find((c) => String(c.n) === String(fonte.eleito)) || null;
+}
+
+export const PARADO_MS = 5 * 60 * 1000;
+/**
+ * Selo do 2º turno: "atualizado às HH:MM" (hora `t` da leitura do TSE). Se a leitura não muda há mais de 5 min e a
+ * apuração não acabou, "aguardando nova leitura do TSE" e nada de "ao vivo".
+ */
+export function situacaoVivo(vivo, agora = Date.now()) {
+  const d = vivo?.dados;
+  if (vivo?.status === "atrasado") return { cls: "atraso", txt: `TSE sem resposta · último dado às ${d?.t || "–"}`, aoVivo: false };
+  if (!d) {
+    if (vivo?.status === "carregando" || vivo?.status === "inicial") return { cls: "", txt: "Consultando…", aoVivo: false };
+    return { cls: "", txt: "Aguardando o TSE", aoVivo: false };
+  }
+  const hora = (d.t || "").replace(":", "h");
+  const parado = (d.pst ?? 0) < 100 && vivo.mudouEm != null && agora - vivo.mudouEm > PARADO_MS;
+  // txt/curto: selo do cabeçalho (curto cabe na barra); longo: frase inteira (painel, linha do tempo, leitor de tela)
+  if (parado) {
+    return { cls: "atraso", txt: `${hora} · aguardando o TSE`, curto: `${hora} · aguardando`, aoVivo: false,
+      longo: `atualizado às ${hora} · aguardando nova leitura do TSE` };
+  }
+  return { cls: "vivo", txt: `${hora} · ${pct(d.pst ?? 0, 1)}% apurado`, curto: `${hora} · ${pct(d.pst ?? 0, 1)}%`, aoVivo: true,
+    longo: `atualizado às ${hora}` };
 }
