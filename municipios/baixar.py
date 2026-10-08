@@ -29,7 +29,7 @@ def get(url, tentativas=3):  # 429 espera 10/20/30 s além do backoff
         except urllib.error.HTTPError as e:
             if e.code == 404: return None, 404
             err = f"HTTP {e.code}"
-            if e.code == 429: time.sleep(10 * (i + 1))  # o TSE limita rajadas: espera extra
+            if e.code == 429 and i < tentativas - 1: time.sleep(10 * (i + 1))  # o TSE limita rajadas: espera extra
         except Exception as e:
             err = repr(e)[:120]
         if i < tentativas - 1:
@@ -59,7 +59,7 @@ def main():
         if not (OUT / nome).exists():
             b, st = get(url)
             if b is None: sys.exit(f"falha em {url}: {st}")
-            (OUT / nome).write_bytes(b)
+            tmp = (OUT / nome).with_suffix(".tmp"); tmp.write_bytes(b); tmp.replace(OUT / nome)
     cfg = json.loads((OUT / "mun-config.json").read_text())
     itens = []
     for ab in cfg["abr"]:

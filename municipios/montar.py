@@ -74,14 +74,15 @@ def totais(d):
 
 def linha_maj(d, ordem):
     votos = {k: vap for k, _, _, vap, _ in cands(d)}
-    return totais(d) + [[votos.get(k, 0) for k in ordem]]
+    return totais(d) + [[votos.get(k, 0) for k in ordem], int(d["v"].get("vansj") or 0)]
 
 
 def lista_meta(d):
     """Candidatos de um arquivo, por votos desc: (chaves ordenadas, [{n,nome,sg}])."""
     cs = sorted(cands(d), key=lambda c: (-c[3], c[1]))
     num = {x["sqcand"]: x["n"] for a in d["carg"][0]["agr"] for p in a["par"] for x in p.get("cand", [])}
-    return [c[0] for c in cs], [dict(n=num[c[0]], nome=nome(c[1]), sg=c[2]) for c in cs]
+    # sj: "Anulado sub judice" (votos fora de v.vv; somados em v.vansj)
+    return [c[0] for c in cs], [dict(n=num[c[0]], nome=nome(c[1]), sg=c[2], **({"sj": True} if "sub judice" in c[4] else {})) for c in cs]
 
 
 def linha_prop(d):
@@ -153,37 +154,40 @@ def main():
 
     # ---- série da noite: histórico (sem uf) + snapshots/marcos (com uf) + leitura final
     pts = {}
+    DNOITE = "04/10"
     for p in ld(R / "historico.json"):
-        pts[p["ht"]] = dict(ht=p["ht"][:5], pst=p["pst"], f=p["f"], l=p["l"], uf=None)
+        pts[p["ht"]] = dict(ht=p["ht"][:5], d=DNOITE, pst=p["pst"], f=p["f"], l=p["l"], uf=None)
     for g in sorted((R / "snapshots").glob("*/dados.json")) + sorted((R / "marcos").glob("*/dados.json")):
         d = ld(g)
         uf = {s["uf"]: [s["pst"], s["f"], s["l"]] for s in d["states"] if s["uf"] != "ZZ"}
-        pts[d["ht"]] = dict(ht=d["ht"][:5], pst=d["pst"], f=d["f"], l=d["l"], uf=uf)
+        pts[d["ht"]] = dict(ht=d["ht"][:5], d=d["gerado"][:5], pst=d["pst"], f=d["f"], l=d["l"], uf=uf)
     cf_ = next(c for c in rel["nac"]["cand"] if c["nome"].startswith("Flavio"))
     cl_ = next(c for c in rel["nac"]["cand"] if c["nome"] == "Lula")
     fin_uf = {u["uf"]: [u["pst"], u["f"], u["l"]] for u in rel["pres_uf"] if u["uf"] != "ZZ"}
-    pts[rel["nac"]["ht"]] = dict(ht=rel["nac"]["ht"][:5], pst=rel["nac"]["pst"], f=cf_["p"], l=cl_["p"], uf=fin_uf)
+    pts[rel["nac"]["ht"]] = dict(ht=rel["nac"]["ht"][:5], d=rel["nac"]["dg"][:5], pst=rel["nac"]["pst"], f=cf_["p"], l=cl_["p"], uf=fin_uf)
     serie = sorted(pts.values(), key=lambda p: p["pst"])  # por avanço da apuração (a leitura final é do dia seguinte)
 
     # ---- feed
     pt = lambda x: f"{x:.1f}".replace(".", ",")
-    feed = []
-    feed.append(dict(h=serie[-1]["ht"], t="apuracao",
-                     txt=f"{pt(serie[-1]['pst']) if serie[-1]['pst'] < 100 else '100'}% das seções · Flávio {pt(serie[-1]['f'])}% × Lula {pt(serie[-1]['l'])}%"))
-    hf = serie[-1]["ht"]
+    fim = serie[-1]
+    final = dict(h=fim["ht"], d=fim["d"], t="apuracao",
+                 txt=f"100% das seções · Flávio {pt(fim['f'])}% × Lula {pt(fim['l'])}%")
+    bloco = []  # sem hora real por UF: h nulo, dia da leitura final
     for g in rel["gov"]:
         n = NOME_UF[g["uf"]]
         if g["status"] == "eleito":
-            feed.append(dict(h=hf, t="eleito", uf=g["uf"], txt=f"{n}: {g['a']['nome']} ({g['a']['sg']}) é eleito governador"))
+            bloco.append(dict(h=None, d=fim["d"], t="eleito", uf=g["uf"], txt=f"{n}: {g['a']['nome']} ({g['a']['sg']}) é eleito governador"))
         elif g["status"] == "2turno":
-            feed.append(dict(h=hf, t="2turno", uf=g["uf"], txt=f"{n}: {g['a']['nome']} ({g['a']['sg']}) × {g['b']['nome']} ({g['b']['sg']}) vão ao 2º turno"))
-    for s in rel["sen"]:
-        if s.get("oficial"):
-            feed.append(dict(h=hf, t="eleito", uf=s["uf"], txt=f"{NOME_UF[s['uf']]}: " + " e ".join(f"{e['nome']} ({e['sg']})" for e in s["eleitos"]) + " eleitos senadores"))
-    for p in reversed(serie[:-1]):
-        feed.append(dict(h=p["ht"], t="apuracao", txt=f"{pt(p['pst'])}% das seções · Flávio {pt(p['f'])}% × Lula {pt(p['l'])}%"))
-    feed = feed[:60]
+            bloco.append(dict(h=None, d=fim["d"], t="2turno", uf=g["uf"], txt=f"{n}: {g['a']['nome']} ({g['a']['sg']}) × {g['b']['nome']} ({g['b']['sg']}) vão ao 2º turno"))
+    for sn in rel["sen"]:
+        if sn.get("oficial"):
+            bloco.append(dict(h=None, d=fim["d"], t="eleito", uf=sn["uf"], txt=f"{NOME_UF[sn['uf']]}: " + " e ".join(f"{e['nome']} ({e['sg']})" for e in sn["eleitos"]) + " eleitos senadores"))
+    noite = [dict(h=p["ht"], d=p["d"], t="apuracao", txt=f"{pt(p['pst'])}% das seções · Flávio {pt(p['f'])}% × Lula {pt(p['l'])}%")
+             for p in reversed(serie[:-1])]
+    feed = [final] + bloco[:max(0, 60 - 1 - len(noite))] + noite  # nunca corta leituras da apuração
 
+    if faltam:
+        sys.exit(f"{len(faltam)} arquivos ausentes em brutos/ (rode baixar.py): {faltam[:10]}")
     meta["mun"] = dict(sorted(meta["mun"].items()))
     for nm, o in (("meta", meta), ("presidente", pres), ("governador", gov), ("senador", sen),
                   ("depfed", dfed), ("depest", dest), ("serie", serie), ("feed", feed)):
