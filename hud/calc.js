@@ -91,11 +91,18 @@ export function corPara(modo, r, cargo, pstFrac = 1) {
 
 export const cor = corCSS;
 
+// Na série do 1º turno, "f" e "l" são Flávio (22) e Lula (13): acha pelo NÚMERO, nunca pela posição na lista
+export const N_FLAVIO = "22", N_LULA = "13";
+export function duelo(lista) {
+  const por = (n) => (lista || []).find((c) => String(c.n) === n);
+  return { F: por(N_FLAVIO) || { n: N_FLAVIO, nome: "Flávio Bolsonaro", sg: "PL" }, L: por(N_LULA) || { n: N_LULA, nome: "Lula", sg: "PT" } };
+}
+
 /** linha de UF a partir de um ponto da série: [pst, f, l] */
 export function linhaSerie(uf3, lista) {
   if (!uf3) return null;
   const [pst, f, l] = uf3;
-  const F = lista?.[0] || { nome: "Flávio Bolsonaro", sg: "PL" }, L = lista?.[1] || { nome: "Lula", sg: "PT" };
+  const { F, L } = duelo(lista);
   const cands = [{ ...F, p: f / 100 }, { ...L, p: l / 100 }].sort((a, b) => b.p - a.p);
   return { cands, val: cands, lider: cands[0], segundo: cands[1], p1: cands[0].p, margem: cands[0].p - cands[1].p, pst };
 }

@@ -23,28 +23,43 @@ export function malha() {
 }
 
 // ---------------- 2º turno: /vivo/agora.json
-// Regras: só faz polling com a aba do 2º turno ativa e depois do 1º fetch que deu certo;
-// mantém o último estado bom; descarta resposta com idg menor ou inválida.
+// Regras: só faz polling com a aba do 2º turno ativa; 15 s com dado, 60 s enquanto não há dado (404/erro);
+// pausa com a aba do navegador escondida e busca na hora ao voltar; mantém o último estado bom;
+// descarta resposta com idg menor ou inválida.
 export const VIVO_URL = "/vivo/agora.json";
-const INTERVALO = 15000;
+export const INTERVALO = 15000, INTERVALO_VAZIO = 60000;
 
 const idgNum = (x) => { try { return BigInt(String(x ?? "").replace(/\D/g, "") || "0"); } catch { return 0n; } };
 const valido = (d) => d && typeof d === "object" && Array.isArray(d.br) && d.mu && typeof d.mu === "object";
 
-export function criarVivo(aoMudar) {
+/** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document) */
+export function criarVivo(aoMudar, deps = {}) {
+  const F = deps.fetch || ((...a) => fetch(...a));
+  const ST = deps.setTimeout || ((f, ms) => setTimeout(f, ms)), CT = deps.clearTimeout || ((t) => clearTimeout(t));
+  const doc = deps.doc !== undefined ? deps.doc : (typeof document !== "undefined" ? document : null);
   const est = { status: "inicial", dados: null, erro: null, ultimoOk: null, falhas: 0 };
   let timer = 0, ativo = false, carregando = false;
   const emitir = () => aoMudar({ ...est });
+
+  async function baixar() {
+    const r = await F(`${VIVO_URL}?t=${Math.floor(Date.now() / 15000)}`, { cache: "no-store" });
+    if (!r.ok) { const e = new Error(`agora.json: HTTP ${r.status}`); e.status = r.status; throw e; }
+    const d = await r.json();
+    if (!valido(d)) throw new Error("agora.json inválido");
+    return d;
+  }
+
+  function aceitar(d) {
+    if (est.dados && idgNum(d.idg) < idgNum(est.dados.idg)) return; // mais velho: descarta
+    est.dados = d;
+  }
 
   async function buscar() {
     if (carregando) return;
     carregando = true;
     if (!est.dados) { est.status = "carregando"; emitir(); }
     try {
-      const d = await json(`${VIVO_URL}?t=${Math.floor(Date.now() / 15000)}`, { cache: "no-store" });
-      if (!valido(d)) throw new Error("agora.json inválido");
-      if (est.dados && idgNum(d.idg) < idgNum(est.dados.idg)) { /* mais velho: descarta */ }
-      else { est.dados = d; }
+      aceitar(await baixar());
       est.status = "ok"; est.erro = null; est.falhas = 0; est.ultimoOk = Date.now();
     } catch (e) {
       est.falhas++;
@@ -59,13 +74,42 @@ export function criarVivo(aoMudar) {
   }
 
   function agendar() {
-    clearTimeout(timer);
-    if (ativo && est.dados) timer = setTimeout(buscar, INTERVALO);
+    CT(timer);
+    if (!ativo) return;
+    timer = ST(() => { if (doc?.hidden) agendar(); else buscar(); }, est.dados ? INTERVALO : INTERVALO_VAZIO);
   }
+
+  const aoVoltar = () => { if (ativo && !doc?.hidden) { CT(timer); buscar(); } };
+  doc?.addEventListener?.("visibilitychange", aoVoltar);
 
   return {
     ativar() { if (ativo) return; ativo = true; buscar(); },
-    desativar() { ativo = false; clearTimeout(timer); },
+    desativar() { ativo = false; CT(timer); },
+    /** 1 leitura sem polling: o HUD abre direto no 2º turno quando o agora.json já existe */
+    async sondar() {
+      try { aceitar(await baixar()); est.status = "ok"; est.ultimoOk = Date.now(); emitir(); return true; }
+      catch { return false; }
+    },
     get estado() { return { ...est }; },
   };
+}
+
+/** feed.json e serie/index.json do 2º turno (null se ainda não existem) */
+export async function vivoExtra(nome, F = (...a) => fetch(...a)) {
+  try {
+    const r = await F(`/vivo/${nome}?t=${Math.floor(Date.now() / 15000)}`, { cache: "no-store" });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
+
+/** agora.json de um minuto da noite (/vivo/serie/HHMM.json), com cache LRU de 16 */
+const lru = new Map();
+export async function vivoMinuto(t, F = (...a) => fetch(...a)) {
+  const k = String(t).replace(":", "");
+  if (lru.has(k)) { const v = lru.get(k); lru.delete(k); lru.set(k, v); return v; }
+  const r = await F(`/vivo/serie/${k}.json`);
+  if (!r.ok) throw new Error(`serie/${k}: HTTP ${r.status}`);
+  const d = await r.json();
+  lru.set(k, d); if (lru.size > 16) lru.delete(lru.keys().next().value);
+  return d;
 }

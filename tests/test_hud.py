@@ -163,9 +163,9 @@ console.log(JSON.stringify({{ a: r.cands[0].nome, pa: r.cands[0].p, pb: r.cands[
 class Build(unittest.TestCase):
     def test_cache_de_geo_e_hud(self):
         hs = {h["source"]: h["headers"] for h in B.VERCEL["headers"]}
-        for src in ("/geo/(.*)", "/hud/(.*)"):
-            self.assertIn(src, hs)
-            self.assertIn({"key": "Cache-Control", "value": "public, max-age=3600"}, hs[src])
+        self.assertIn({"key": "Cache-Control", "value": "public, max-age=3600"}, hs["/geo/(.*)"])
+        # módulos ES sem hash: revalidar sempre
+        self.assertIn({"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}, hs["/hud/(.*)"])
 
     def test_vivo_reescrito_para_o_storage_com_cache_curto(self):
         rw = {r["source"]: r["destination"] for r in B.VERCEL["rewrites"]}
@@ -200,6 +200,9 @@ class Build(unittest.TestCase):
     def test_resumo_para_buscadores(self):
         r = B.resumo_hud()
         self.assertIn("Mapa da apuração por município", r)
+        self.assertIn("47,03%", r)
+        self.assertIn("45,16%", r)
+        self.assertNotIn("<h1", r)  # a página tem um único h1 (o do painel)
         self.assertIn("<table", r)
         self.assertIn("Flávio", r)
 

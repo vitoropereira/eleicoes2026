@@ -271,14 +271,15 @@ VERCEL = {
                 {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
                 {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
                 {"source": "/geo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
-                {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
+                # módulos ES sem hash no nome: sempre revalidar, senão um deploy mistura versões
+                {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
                 {"source": "/vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=15, stale-while-revalidate=30"}]}]}
 
 
 # ---------------- HUD (/ao-vivo/)
 def copiar_hud(dest):
     """hud/ → /hud/ (+ ufs.json), assets/vendor/ → /vendor/, municipios/geo/ → /geo/ (se existir; vem do build dos dados)"""
-    shutil.copytree(R / "hud", dest / "hud", dirs_exist_ok=True)
+    shutil.copytree(R / "hud", dest / "hud", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*_test.js"))  # testes Deno não vão ao ar
     shutil.copytree(R / "assets" / "vendor", dest / "vendor", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
     # malha leve das 27 UFs para aparelho fraco (spec §9): contornos já gerados por relatorio/montar.py
     shutil.copy(R / "relatorio" / "dados" / "mapa.json", dest / "hud" / "ufs.json")
@@ -320,7 +321,7 @@ def resumo_hud():
     """texto pré-renderizado para buscadores e leitores de tela (o HUD em si é desenhado no navegador)"""
     linhas = "".join(f"<tr><th scope=row>{u['uf']}</th><td>{fmt(u['f'], 2)}%</td><td>{fmt(u['l'], 2)}%</td></tr>"
                      for u in sorted(rel["pres_uf"], key=lambda u: u["uf"]) if u["uf"] != "ZZ")
-    return (f'<section class="crawl" id="resumo" aria-label="Resumo do resultado"><h1>Mapa da apuração por município · Eleições 2026</h1>'
+    return (f'<section class="crawl" id="resumo" aria-label="Resumo do resultado"><h2>Mapa da apuração por município · Eleições 2026</h2>'
             f'<p>1º turno, {fmt(N["pst"], 2)}% das seções apuradas (TSE, {N["dg"]} {N["ht"]}): Flávio Bolsonaro (PL) {fmt(cF["p"], 2)}% '
             f'e Lula (PT) {fmt(cL["p"], 2)}% dos votos válidos. Os dois disputam o 2º turno em 25 de outubro de 2026. '
             f'Flávio venceu em {len(ufF)} unidades da federação e Lula em {len(ufL)}.</p>'

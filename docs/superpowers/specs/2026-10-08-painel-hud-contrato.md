@@ -72,3 +72,11 @@ Até 60 eventos derivados de `relatorio/relatorio.json` e de `serie.json`, mais 
 
 ## Cores de partido
 Usar os tokens do `brand.css`: `--flavio` (PL), `--lula` (PT), `--outros`. Demais partidos: tabela fixa em `hud/partidos.js` com cores distintas do ciano da brand.
+
+## Emendas (08/10, depois da integração com os dados reais)
+- **7º elemento `vansj`** em toda linha de presidente/governador/senador (`br`/`uf`/`mu`/`ex`): votos anulados sub judice. Em `meta.json`, candidato com votos anulados tem `"sj": true`.
+- **Percentual de governador e Senado = votos / (validos + vansj)**, a regra do TSE (o `pvap` publicado). Candidato sub judice **tem %** e aparece com a etiqueta "sub judice". Presidente: vansj = 0, mesma conta. O mais votado do município (inclusive sub judice) é quem colore o mapa.
+- **"Eleito" e "2º turno" vêm de `/hud/status.json`**, gerado no build a partir do `relatorio.json` (candidato identificado pelo número), nunca de porcentagem. Sem status, a manchete é neutra ("lidera com X%"). Na linha do tempo (leitura parcial) a manchete é sempre "lidera com X% das seções".
+- **`serie.json` e `feed.json` com `d`** ("04/10"/"05/10"); a série vem ordenada por pst; item do feed com `"h": null` é exibido como "05/10 · resultado final".
+- **`/vivo/agora.json`**: traz a própria lista `cand` (os votos seguem essa ordem, não o meta.json); chaves extras ignoradas (`t`, `idg`, `pst`, `dg`, `ele`, `cargo`); `pend` = UFs atrasadas em relação ao TSE (o HUD mostra "UFs atualizando: …"); `pu` = % de seções por UF e `pm` = % por município (modo Apurado e rótulos; sem `pm`, Apurado fica desabilitado no 2º turno). O HUD também lê `/vivo/feed.json` e `/vivo/serie/index.json` (+ `/vivo/serie/HHMM.json` sob demanda) e abre no 2º turno quando `agora.json` existe.
+- **5101837 (Boa Esperança do Norte, MT)** está em `meta.mun` e nos dados, mas não tem geometria na malha do IBGE: aparece na busca e na dica, não no mapa.
