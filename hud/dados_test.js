@@ -146,9 +146,9 @@ Deno.test("b. minuto: pedido novo cancela o anterior e resposta velha é descart
   ok((await d1) === null && (await d2).dados.idg === "5", "resposta velha descartada");
 });
 
-Deno.test("mudouEm só anda quando a leitura muda (idg, pst ou pend), não a cada consulta", async () => {
+Deno.test("mudouEm só anda quando a leitura muda (idg/pst/eleito); consulta repetida ou só o pend mudando não contam", async () => {
   let t = 1000;
-  const respostas = [AGORA("10", 50), AGORA("10", 50), { ...AGORA("10", 50), pend: ["SP"] }];
+  const respostas = [AGORA("10", 50), AGORA("10", 50), { ...AGORA("10", 50), pend: ["SP"] }, AGORA("11", 51)];
   const timers = [], estados = [];
   const v = criarVivo((e) => estados.push(e), {
     fetch: async () => ({ ok: true, status: 200, json: async () => respostas.shift() }),
@@ -160,5 +160,7 @@ Deno.test("mudouEm só anda quando a leitura muda (idg, pst ou pend), não a cad
   t = 400_000; await timers.shift().f(); await esperar();
   ok(estados.at(-1).mudouEm === 1000, "mesma leitura: não mexe");
   t = 500_000; await timers.shift().f(); await esperar();
-  ok(estados.at(-1).mudouEm === 500_000, "pend mudou: mudou");
+  ok(estados.at(-1).mudouEm === 1000, "só o pend mudou: não conta como leitura nova");
+  t = 600_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 600_000, "idg/pst mudaram: leitura nova");
 });

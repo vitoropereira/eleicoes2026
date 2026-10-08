@@ -128,13 +128,41 @@ Deno.test("2º turno: 'eleito' só do agora.json (`eleito` do TSE), nunca de por
 
 Deno.test("2º turno: leitura parada há mais de 5 min com apuração aberta → 'aguardando nova leitura do TSE', sem 'ao vivo'", async () => {
   const { situacaoVivo, PARADO_MS } = await import("./calc.js");
-  const agora = 10_000_000;
-  const vivo = { status: "ok", dados: { t: "20:47", pst: 93.2 }, mudouEm: agora - 60_000 };
+  const lida = Date.UTC(2026, 9, 25, 23, 47); // 20:47 em Brasília
+  let agora = lida + 60_000;
+  const vivo = { status: "ok", dados: { t: "20:47", dg: "25/10/2026", pst: 93.2 }, mudouEm: agora };
   const s1 = situacaoVivo(vivo, agora);
   ok(s1.aoVivo && s1.longo === "atualizado às 20h47" && s1.txt.includes("93,2%"), JSON.stringify(s1));
-  const s2 = situacaoVivo({ ...vivo, mudouEm: agora - PARADO_MS - 1 }, agora);
+  agora = lida + PARADO_MS + 1;
+  const s2 = situacaoVivo(vivo, agora);
   ok(!s2.aoVivo && s2.longo === "atualizado às 20h47 · aguardando nova leitura do TSE" && s2.txt.includes("aguardando"), JSON.stringify(s2));
-  const s3 = situacaoVivo({ ...vivo, dados: { t: "22:40", pst: 100 }, mudouEm: agora - 3_600_000 }, agora);
+  const s3 = situacaoVivo({ ...vivo, dados: { t: "20:47", dg: "25/10/2026", pst: 100 } }, lida + 3_600_000);
   ok(s3.aoVivo && !s3.longo.includes("aguardando"), "100%: não fica 'aguardando'");
   ok(!situacaoVivo({ status: "atrasado", dados: vivo.dados }, agora).aoVivo, "TSE sem resposta: sem ao vivo");
+});
+
+Deno.test("leitura parada: idade pela hora do TSE (t + dg, Brasília), não pela hora em que a aba viu", async () => {
+  const { situacaoVivo, idadeLeitura } = await import("./calc.js");
+  const utc = (h, m) => Date.UTC(2026, 9, 25, h, m); // 25/10/2026; Brasília = UTC-3
+  const dados = { t: "20:47", dg: "25/10/2026", pst: 90 };
+  ok(idadeLeitura(dados, utc(23, 53)) === 6 * 60_000, `idade: ${idadeLeitura(dados, utc(23, 53))}`);
+  // a aba acabou de abrir (mudouEm agora), mas a leitura do TSE é de 6 min atrás: parada
+  const s1 = situacaoVivo({ status: "ok", dados, mudouEm: utc(23, 53) }, utc(23, 53));
+  ok(!s1.aoVivo && s1.longo.includes("aguardando nova leitura do TSE"), JSON.stringify(s1));
+  // leitura do TSE de 2 min atrás, mesmo com a aba sem ver mudança há muito tempo: não está parada
+  const s2 = situacaoVivo({ status: "ok", dados, mudouEm: utc(22, 0) }, utc(23, 49));
+  ok(s2.aoVivo, JSON.stringify(s2));
+  // sem dg: usa a data de hoje em Brasília (e ontem se a hora ainda não chegou hoje)
+  ok(idadeLeitura({ t: "23:58" }, Date.UTC(2026, 9, 26, 3, 3)) === 5 * 60_000 + 0, "virada do dia");
+  ok(idadeLeitura({ t: "xx" }, utc(23, 0)) === null, "t inválido: sem idade");
+});
+
+Deno.test("Exterior: cidade sem voto válido fica fora do ranking, mas é contada", async () => {
+  const { exteriorCidades } = await import("./calc.js");
+  const meta = { exterior: [["ABUJA", "1"], ["LISBOA", "2"], ["TÓQUIO", "3"], ["NOVA", "4"]] };
+  const res = { ex: { "1": [10, 0, 0, 0, 0, [0, 0]], "2": [99, 90, 80, 5, 5, [50, 30]], "3": [50, 40, 40, 0, 0, [10, 30]] } };
+  const { itens, semVoto } = exteriorCidades(meta, res, PRES);
+  ok(itens.map((x) => x.nome).join() === "LISBOA,TÓQUIO", itens.map((x) => x.nome).join());
+  ok(semVoto === 2, `Abuja (zero) e Nova (sem linha): ${semVoto}`);
+  ok(exteriorCidades(meta, null, PRES).semVoto === 0, "sem dado nenhum: nada a contar");
 });

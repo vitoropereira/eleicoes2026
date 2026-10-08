@@ -207,6 +207,24 @@ export function eleitoTurno2(fonte, lista) {
 }
 
 export const PARADO_MS = 5 * 60 * 1000;
+const BRT_MS = 3 * 3600_000; // Brasília = UTC-3 (sem horário de verão)
+/**
+ * Idade da leitura do TSE em ms: `t` ("HH:MM", hora de Brasília) no dia `dg` ("DD/MM/AAAA"); sem `dg`, hoje em
+ * Brasília (ou ontem, se a hora ainda não chegou hoje). null se `t` não for uma hora válida.
+ */
+export function idadeLeitura(d, agora = Date.now()) {
+  const h = /^(\d\d):(\d\d)$/.exec(String(d?.t || ""));
+  if (!h) return null;
+  const dg = /^(\d\d)\/(\d\d)\/(\d{4})$/.exec(String(d?.dg || ""));
+  let ms;
+  if (dg) ms = Date.UTC(+dg[3], +dg[2] - 1, +dg[1], +h[1], +h[2]) + BRT_MS;
+  else {
+    const hoje = new Date(agora - BRT_MS);
+    ms = Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate(), +h[1], +h[2]) + BRT_MS;
+    if (ms > agora) ms -= 86400_000;
+  }
+  return agora - ms;
+}
 /**
  * Selo do 2º turno: "atualizado às HH:MM" (hora `t` da leitura do TSE). Se a leitura não muda há mais de 5 min e a
  * apuração não acabou, "aguardando nova leitura do TSE" e nada de "ao vivo".
@@ -219,7 +237,9 @@ export function situacaoVivo(vivo, agora = Date.now()) {
     return { cls: "", txt: "Aguardando o TSE", aoVivo: false };
   }
   const hora = (d.t || "").replace(":", "h");
-  const parado = (d.pst ?? 0) < 100 && vivo.mudouEm != null && agora - vivo.mudouEm > PARADO_MS;
+  // idade pela hora do TSE (t/dg); só sem `t` válido cai na hora em que esta aba viu a leitura mudar
+  const idade = idadeLeitura(d, agora) ?? (vivo.mudouEm != null ? agora - vivo.mudouEm : null);
+  const parado = (d.pst ?? 0) < 100 && idade != null && idade > PARADO_MS;
   // txt/curto: selo do cabeçalho (curto cabe na barra); longo: frase inteira (painel, linha do tempo, leitor de tela)
   if (parado) {
     return { cls: "atraso", txt: `${hora} · aguardando o TSE`, curto: `${hora} · aguardando`, aoVivo: false,
@@ -227,4 +247,15 @@ export function situacaoVivo(vivo, agora = Date.now()) {
   }
   return { cls: "vivo", txt: `${hora} · ${pct(d.pst ?? 0, 1)}% apurado`, curto: `${hora} · ${pct(d.pst ?? 0, 1)}%`, aoVivo: true,
     longo: `atualizado às ${hora}` };
+}
+
+/**
+ * Exterior: cidades com voto (ordenadas por válidos, entram no ranking e na cor do líder) e quantas ficaram sem voto
+ * válido (fora do ranking; o HUD mostra "+N cidades sem voto válido" no fim da lista).
+ */
+export function exteriorCidades(meta, res, lista, titulador = (s) => s) {
+  if (!meta || !res?.ex) return { itens: [], semVoto: 0 };
+  const todas = (meta.exterior || []).map(([nome, cod]) => ({ nome: titulador(nome), r: linha("presidente", res.ex[cod], lista) }));
+  const itens = todas.filter((x) => x.r?.lider).sort((a, b) => b.r.validos - a.r.validos);
+  return { itens, semVoto: todas.length - itens.length };
 }
