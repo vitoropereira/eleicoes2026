@@ -36,12 +36,14 @@ const corpoVazio = (d) => !!d && typeof d === "object" && !Array.isArray(d) && (
   String(d.statusCode) === "404" || /NoSuchBucket|not[_ ]found/i.test(`${d.error ?? ""} ${d.code ?? ""} ${d.message ?? ""}`));
 const valido = (d) => d && typeof d === "object" && Array.isArray(d.br) && d.mu && typeof d.mu === "object";
 
-/** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document) */
+/** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document), agora (relógio) */
 export function criarVivo(aoMudar, deps = {}) {
   const F = deps.fetch || ((...a) => fetch(...a));
   const ST = deps.setTimeout || ((f, ms) => setTimeout(f, ms)), CT = deps.clearTimeout || ((t) => clearTimeout(t));
   const doc = deps.doc !== undefined ? deps.doc : (typeof document !== "undefined" ? document : null);
-  const est = { status: "inicial", dados: null, erro: null, ultimoOk: null, falhas: 0 };
+  // mudouEm: quando a leitura mudou de fato pela última vez (idg, pst ou eleito); o HUD usa para "aguardando nova leitura"
+  const est = { status: "inicial", dados: null, erro: null, ultimoOk: null, falhas: 0, mudouEm: null };
+  const AGORA = deps.agora || (() => Date.now());
   let timer = 0, ativo = false, carregando = false;
   const emitir = () => aoMudar({ ...est });
 
@@ -54,8 +56,11 @@ export function criarVivo(aoMudar, deps = {}) {
     return d;
   }
 
+  // só o pend mudando não é leitura nova do TSE (o agregador regrava o pend com os mesmos números)
+  const chave = (d) => `${d.idg}|${d.pst}|${d.eleito || ""}`;
   function aceitar(d) {
     if (est.dados && idgNum(d.idg) < idgNum(est.dados.idg)) return; // mais velho: descarta
+    if (!est.dados || chave(d) !== chave(est.dados)) est.mudouEm = AGORA();
     est.dados = d;
   }
 
@@ -111,13 +116,35 @@ export async function vivoExtra(nome, F = (...a) => fetch(...a)) {
 
 /** agora.json de um minuto da noite (/vivo/serie/HHMM.json), com cache LRU de 16 */
 const lru = new Map();
-export async function vivoMinuto(t, F = (...a) => fetch(...a)) {
+export async function vivoMinuto(t, F = (...a) => fetch(...a), signal) {
   const k = String(t).replace(":", "");
   if (lru.has(k)) { const v = lru.get(k); lru.delete(k); lru.set(k, v); return v; }
-  const r = await F(`/vivo/serie/${k}.json`);
+  const r = await F(`/vivo/serie/${k}.json`, signal ? { signal } : undefined);
   if (!r.ok) { const e = new Error(`serie/${k}: HTTP ${r.status}`); e.status = r.status; e.vazio = SEM_DADO.has(r.status); throw e; }
   const d = await r.json();
   if (corpoVazio(d)) { const e = new Error(`serie/${k}: sem dado ainda`); e.vazio = true; throw e; }
   lru.set(k, d); if (lru.size > 16) lru.delete(lru.keys().next().value);
   return d;
+}
+
+/**
+ * Leitor do minuto da linha do tempo: cada pedido novo cancela o anterior (AbortController) e resposta velha é
+ * descartada (devolve null). Falha devolve {t, erro}: quem chama mantém o minuto escolhido e avisa, sem cair no ao vivo.
+ */
+export function criarMinuto(F = (...a) => fetch(...a)) {
+  let n = 0, ctl = null;
+  return {
+    async ler(t) {
+      const id = ++n;
+      ctl?.abort();
+      ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      try {
+        const dados = await vivoMinuto(t, F, ctl?.signal);
+        return id === n ? { t, dados } : null;
+      } catch (erro) {
+        return id === n ? { t, erro } : null;
+      }
+    },
+    cancelar() { n++; ctl?.abort(); ctl = null; },
+  };
 }

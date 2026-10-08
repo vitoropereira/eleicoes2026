@@ -3,7 +3,7 @@ import { avancar, criarTseFake, eleC, fixture, StorageFake } from "./_fakes.ts";
 import { executar, normalizarConcorrencia } from "./executar.ts";
 import { gerarEventos, mesclarFeed } from "./feed.ts";
 import { gravarAtomico } from "./gravar.ts";
-import { extrairCandidatos, linhaDe, montarAgora, nomeExibicao, validarAgora } from "./montar.ts";
+import { eleitos, extrairCandidatos, linhaDe, montarAgora, nomeExibicao, validarAgora } from "./montar.ts";
 import { criarArmazenamentoSupabase } from "./gravar.ts";
 import { tratar } from "./index.ts";
 import { acharEleicaoFederal2T, descobrirEleicao, LimiteTse } from "./tse.ts";
@@ -356,7 +356,9 @@ Deno.test("429 do TSE: disjuntor para as buscas, mantém o último agora.json e 
   tse.buscar = (c, e) => /pr\d+-c0001/.test(c) ? Promise.reject(new LimiteTse(c, 429)) : original(c, e);
   const r = await executar({ tse, st, agora: relogio().agora });
   assertEquals(r.status, "sem-mudanca");
-  assertEquals(st.objetos.get("agora.json"), antes);
+  // números e idg intactos; só o pend passa a contar que PR ficou atrás do TSE
+  assertEquals({ ...st.json("agora.json"), pend: [] }, JSON.parse(antes!));
+  assertEquals(st.json("agora.json").pend, ["PR"]);
   assertEquals(st.json("_estado.json").pendentes, ["PR"]);
   assertEquals(st.json("_estado.json").travaAte, 0);
   // TSE fora do ar já na descoberta (estado vazio)
@@ -532,11 +534,11 @@ Deno.test("menor: conjunto de candidatos mudou -> recomeça com os novos candida
   assert(a.cand.some((c: any) => c.n === "99") && !a.cand.some((c: any) => c.n === "27"));
 });
 
-Deno.test("menor: concorrência 0 ou inválida vira pelo menos 1 (padrão 12) e a rodada termina", async () => {
+Deno.test("menor: concorrência 0 ou inválida vira pelo menos 1 (padrão 16) e a rodada termina", async () => {
   assertEquals(normalizarConcorrencia(0), 1);
   assertEquals(normalizarConcorrencia(-5), 1);
-  assertEquals(normalizarConcorrencia(undefined), 12);
-  assertEquals(normalizarConcorrencia(NaN), 12);
+  assertEquals(normalizarConcorrencia(undefined), 16);
+  assertEquals(normalizarConcorrencia(NaN), 16);
   assertEquals(normalizarConcorrencia(7.9), 7);
   const st = new StorageFake();
   const r = await executar({ tse: criarTseFake(ELE), st, agora: relogio().agora, concorrencia: 0 });
@@ -572,4 +574,122 @@ Deno.test("menor: descoberta usa cdt2 do federal de 1º turno só se a config do
   assertEquals(await descobrirEleicao(sem), null);
   // entrada explícita de turno 2 tem prioridade
   assertEquals(await descobrirEleicao(criarTseFake(ELE, true, false)), "6258");
+});
+
+// ---------------------------------------------------------------- resultado oficial e pend atrasado
+
+Deno.test("eleito: formato real do TSE (e:'s' + st 'Eleito'); '2º turno' também vem com e:'s' e NÃO é eleito", () => {
+  const dados = new URL("../../../relatorio/dados/", import.meta.url);
+  const ler = (n: string) => JSON.parse(Deno.readTextFileSync(new URL(n, dados)));
+  // governador 1º turno, arquivos reais: PR elegeu (Sergio Moro), RJ foi ao 2º turno
+  assertEquals(eleitos(ler("pr-c0003.json"), "3").map((c) => c.nome), ["Sergio Moro"]);
+  assertEquals(eleitos(ler("rj-c0003.json"), "3"), []);
+  // presidente 1º turno (fixture real): Flávio e Lula com e:"s" e st "2º turno" -> ninguém eleito
+  assertEquals(eleitos(fixture("uf-pr")), []);
+});
+
+const comEleito = (j: any, n: string) => {
+  const c = structuredClone(j);
+  for (const a of c.carg[0].agr) {
+    for (const p of a.par) {
+      for (const k of p.cand) Object.assign(k, k.n === n ? { e: "s", st: "Eleito" } : { e: "n", st: "Não eleito" });
+    }
+  }
+  return c;
+};
+
+Deno.test("eleito: agora.json só traz `eleito` quando o TSE marca; sem marca, a chave não existe", async () => {
+  const { st, tse } = await rodada1();
+  assertEquals("eleito" in st.json("agora.json"), false); // fixtures do 1º turno: "2º turno", ninguém eleito
+  // TSE marca o eleito numa nova totalização
+  tse.arquivos.set(p("pr"), comEleito(avancar(fixture("uf-pr"), 50, 9_000_000), "22"));
+  const r = await executar({ tse, st, agora: relogio().agora });
+  assertEquals(r.status, "gravado");
+  const a = st.json("agora.json");
+  assertEquals(a.eleito, "22");
+  assertEquals(validarAgora(a), []);
+  assert(st.json("feed.json").some((e: any) => e.t === "eleito"));
+  // e continua nas publicações seguintes
+  tse.arquivos.set(p("df"), avancar(fixture("uf-df"), 10, 9_100_000));
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").eleito, "22");
+});
+
+Deno.test("eleito: número fora da lista de candidatos é recusado pelo contrato", () => {
+  const a = montarAgora({
+    ele: "6258",
+    cand: [{ n: "22", nome: "A", sg: "PL" }],
+    uf: { DF: [1, 1, 1, 0, 0, [1]] },
+    mu: {},
+    ex: {},
+    pu: {},
+    pm: {},
+    meta: {},
+    eleito: "13",
+  });
+  assertEquals("eleito" in a, false);
+  assert(validarAgora({ ...a, eleito: "13" }).includes("eleito fora de cand"));
+  assert(!validarAgora({ ...a, eleito: "22" }).includes("eleito fora de cand"));
+});
+
+Deno.test("pend atrasado: rodada sem nada novo ainda atualiza o pend do agora.json publicado (mesmo idg)", async () => {
+  const { st, tse } = await rodada1();
+  const antes = st.json("agora.json");
+  assertEquals(antes.pend, []);
+  // PR e ZZ mudam no TSE; a 1ª leitura de município já consome o orçamento: nenhuma UF fecha nesta rodada
+  for (const [u, f] of [["pr", "uf-pr"], ["zz", "uf-zz"]]) tse.arquivos.set(p(u), avancar(fixture(f), 300, 9_000_000));
+  for (
+    const [u, f, cd] of [["pr", "mun-pr-curitiba", "75353"], ["pr", "mun-pr-adrianopolis", "74039"], [
+      "zz",
+      "mun-zz-abidja",
+      "29254",
+    ]]
+  ) {
+    tse.arquivos.set(p(u, cd), avancar(fixture(f), 300, 9_000_000));
+  }
+  const rel = relogio(101_000);
+  tse.aoLerMunicipio = rel.avancar;
+  const r = await executar({ tse, st, agora: rel.agora, concorrencia: 1 });
+  assertEquals(r.status, "sem-mudanca");
+  const a = st.json("agora.json");
+  assertEquals(a.pend, ["PR", "ZZ"]);
+  assertEquals({ ...a, pend: [] }, antes); // números, idg e t intactos
+  assertEquals(st.json("_estado.json").travaAte, 0);
+  // rodada seguinte fecha tudo: pend volta a []
+  tse.aoLerMunicipio = undefined;
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, []);
+});
+
+Deno.test("pend: UF cuja leitura falhou nesta rodada (429/erro no arquivo da UF) continua em pend", async () => {
+  const { st, tse } = await rodada1();
+  const idg = Number(fixture("uf-pr").idg);
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 5, idg + 5));
+  const original = tse.buscar;
+  // rodada A: PR mudou, municípios de PR com 429 -> PR fica em pend
+  tse.buscar = (c, e) => /pr\d+-c0001/.test(c) ? Promise.reject(new LimiteTse(c, 429)) : original(c, e);
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, ["PR"]);
+  // rodada B (depois da pausa): agora é o próprio arquivo da UF PR que falha -> PR continua atrás do TSE
+  const est = st.json("_estado.json");
+  st.objetos.set("_estado.json", JSON.stringify({ ...est, pausaAte: 0 }));
+  tse.buscar = (c, e) => /\/pr-c0001/.test(c) ? Promise.reject(new Error("timeout")) : original(c, e);
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, ["PR"]);
+  assertEquals(st.json("_estado.json").pendentes, ["PR"]);
+  // rodada C: tudo responde -> PR fecha e sai do pend
+  tse.buscar = original;
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, []);
+});
+
+Deno.test("concorrência pela variável de ambiente: vazia/inválida = padrão 16; número válido vale, mínimo 1", () => {
+  assertEquals(normalizarConcorrencia(""), 16); // Number("") seria 0 -> 1 conexão: lento demais na noite
+  assertEquals(normalizarConcorrencia("   "), 16);
+  assertEquals(normalizarConcorrencia("abc"), 16);
+  assertEquals(normalizarConcorrencia(undefined), 16);
+  assertEquals(normalizarConcorrencia("12"), 12);
+  assertEquals(normalizarConcorrencia(" 8 "), 8);
+  assertEquals(normalizarConcorrencia("0"), 1);
+  assertEquals(normalizarConcorrencia(12), 12);
 });

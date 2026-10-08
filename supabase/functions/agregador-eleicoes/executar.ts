@@ -64,7 +64,7 @@ export interface Deps {
   agora: () => number; // epoch ms (injetável nos testes)
   orcamentoMs?: number; // padrão 120 s
   margemMs?: number; // parar de buscar municípios com menos que isto sobrando (padrão 20 s)
-  concorrencia?: number; // padrão 12, mínimo 1
+  concorrencia?: number; // padrão 16, mínimo 1
   /** Ensaio: usa este código em vez de descobrir o de 2º turno. Nunca em produção. */
   eleicaoForcada?: string;
   log?: (...a: unknown[]) => void;
@@ -113,9 +113,13 @@ function limitador(n: number) {
   };
 }
 
-export const CONCORRENCIA_PADRAO = 12;
-export const normalizarConcorrencia = (n: number | undefined): number =>
-  n !== undefined && Number.isFinite(n) ? Math.max(1, Math.floor(n)) : CONCORRENCIA_PADRAO;
+export const CONCORRENCIA_PADRAO = 16; // medido em 08/10: 16 conexões, ~145 req/s, 0 respostas 429 (PROPOSTA.md, Riscos)
+/** Conexões simultâneas ao TSE. Vazio/inválido (inclusive `""` vindo do env, que Number() viraria 0) = padrão; mínimo 1. */
+export const normalizarConcorrencia = (n: number | string | undefined | null): number => {
+  if (typeof n === "string" && n.trim() === "") return CONCORRENCIA_PADRAO;
+  const x = typeof n === "string" ? Number(n.trim()) : n;
+  return typeof x === "number" && Number.isFinite(x) ? Math.max(1, Math.floor(x)) : CONCORRENCIA_PADRAO;
+};
 
 const PAUSA_INICIAL_MS = 120_000;
 const PAUSA_MAXIMA_MS = 480_000;
@@ -219,6 +223,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
     }
 
     // 5) arquivos de UF (+ZZ), com ETag
+    const semLeitura = new Set<string>(); // UFs cujo arquivo não deu para ler nesta rodada (429/erro)
     const lidos = await Promise.all(ufs.map((uf) =>
       limite(async () => {
         try {
@@ -227,6 +232,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
         } catch (e) {
           if (e instanceof LimiteTse) limitado = true;
           log(`UF ${uf}: erro ${e}`);
+          semLeitura.add(uf);
           return { uf, r: { status: 304 as const } };
         }
       })
@@ -324,7 +330,14 @@ export async function executar(deps: Deps): Promise<Resultado> {
       confirmadas.push(u);
     }));
     Object.assign(estado.mun, etagsMun);
-    estado.pendentes = mudadas.filter((u) => !confirmadas.includes(u));
+    // atrasadas: as que mudaram e não fecharam, mais as que já estavam atrasadas e nem deu para ler nesta rodada
+    const pendAntes = new Set([...estado.pendentes, ...(publicado?.pend ?? [])]);
+    estado.pendentes = [
+      ...new Set([
+        ...mudadas.filter((u) => !confirmadas.includes(u)),
+        ...[...semLeitura].filter((u) => pendAntes.has(u)),
+      ]),
+    ].sort();
     if (estado.pendentes.length > 0) {
       log(
         `orçamento/erro: ${estado.pendentes.length} UF(s) ficam para a próxima rodada: ${estado.pendentes.join(",")}`,
@@ -336,6 +349,17 @@ export async function executar(deps: Deps): Promise<Resultado> {
     const republicar = confirmadas.length === 0 && !!prev && faltando.length === 0 &&
       big(prev.idg) > big(estado.ultimoIdg);
     if (confirmadas.length === 0 && !republicar) {
+      // nada novo para publicar, mas se o conjunto de UFs atrasadas mudou, o agora.json publicado passa a dizer isso
+      // (mesmos números e mesmo idg; o HUD mostra "UFs atualizando" e a hora `t` da última leitura)
+      const pendNovo = estado.pendentes.filter((u) => publicado && u in publicado.uf).sort();
+      if (publicado && faltando.length === 0 && pendNovo.join() !== [...(publicado.pend ?? [])].sort().join()) {
+        const atual = parse(await st.ler("_estado.json"));
+        if (!atual || atual.dono !== dono || atual.travaAte < deps.agora()) {
+          log("trava perdida para outra rodada; abortando sem gravar");
+          return { status: "trava-perdida" };
+        }
+        await gravarAtomico(st, "agora.json", JSON.stringify({ ...publicado, pend: pendNovo }));
+      }
       await salvar(estado);
       return faltando.length > 0 && (prev || mudadas.length > 0)
         ? { status: "sem-dados", motivo: `UFs faltando: ${faltando.join(",")}` }
@@ -347,7 +371,9 @@ export async function executar(deps: Deps): Promise<Resultado> {
     // 7) montar e validar
     const meta: Record<string, ResumoArquivo> = {};
     for (const u of Object.keys(uf)) if (estado.uf[u]) meta[u] = estado.uf[u];
-    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta, pend: estado.pendentes });
+    // resultado oficial: só quando o TSE marca (nunca deduzido de %); depois de marcado, segue nas próximas publicações
+    const eleito = eleitoNovo?.n ?? estado.eleito;
+    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta, pend: estado.pendentes, eleito });
     if (!/^\d\d:\d\d$/.test(agora.t)) agora.t = hhmmBrasilia(deps.agora());
     const erros = validarAgora(agora);
     if (erros.length > 0) throw new Error(`agora.json inválido: ${erros.slice(0, 3).join("; ")}`);

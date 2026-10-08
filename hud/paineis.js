@@ -1,22 +1,23 @@
 // Painéis do HUD (Preact + htm): esquerdo (manchete, placar, totais, gráfico) e direito (regiões, feed).
 import { html, useState } from "/vendor/preact-htm.module.js";
-import { pct, int, linha, somar, oficial, duelo, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
+import { pct, int, linha, somar, oficial, duelo, senadoEleitos, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
 
 const CORES_MARCA = new Set(["PL", "PT"]);
 /** nome com a cor do partido: PL/PT usam o token (contraste testado); os demais, sublinhado na cor */
 export const Nome = ({ c, curto }) => html`<span class=${CORES_MARCA.has(c.sg) ? "nm-c" : "nm-u"} style=${{ "--c": cor(c.sg) }}>${curto ? primeiroNome(c.nome) : c.nome}</span>`;
 export const Sw = ({ sg }) => html`<i class="sw" style=${{ "--c": cor(sg) }} aria-hidden="true"></i>`;
 
-function manchete(cargo, r, onde, turno, pst, parcial, of) {
+function manchete(cargo, r, onde, turno, pst, parcial, of, eleito) {
   const [a, b] = r.cands;
   if (!a) return null;
   const lidera = html`<${Nome} c=${a} /> lidera com ${pct(a.p * 100, 1)}%${onde}`;
   if (parcial) return html`<${Nome} c=${a} /> lidera com ${pct(parcial.pst, 1)}% das seções`;
-  // 2º turno: sem situação oficial no agora.json, então nunca "eleito" — só quem lidera e com quanto apurado
-  if (turno === 2) return html`<${Nome} c=${a} /> lidera com ${pct(pst ?? 0, 1)}% das seções${onde}`;
+  // 2º turno: "eleito" SÓ quando o TSE marcou (agora.json `eleito`); senão, quem lidera e com quanto apurado
+  if (turno === 2) return eleito ? html`<${Nome} c=${eleito} /> é eleito presidente` : html`<${Nome} c=${a} /> lidera com ${pct(pst ?? 0, 1)}% das seções${onde}`;
   // 1º turno: só a situação oficial diz quem foi eleito ou quem vai ao 2º turno
-  if (cargo === "senador" && of?.eleitos?.length) {
-    const el = of.eleitos;
+  // Senado: "eleito" só com a situação oficial E 100% apurado (senadoEleitos); leitura parcial nunca anuncia eleito
+  const el = cargo === "senador" ? senadoEleitos(of, pst) : null;
+  if (el) {
     return el.length > 1 ? html`<${Nome} c=${el[0]} /> e <${Nome} c=${el[1]} /> são eleitos para o Senado${onde}` : html`<${Nome} c=${el[0]} /> é eleito para o Senado${onde}`;
   }
   if (of?.status === "eleito" && of.a) return html`<${Nome} c=${of.a} /> é eleito no 1º turno${onde}`;
@@ -27,9 +28,17 @@ function manchete(cargo, r, onde, turno, pst, parcial, of) {
 export const TagSJ = ({ c }) => (c.sj ? html` · <span class="tag-sj">sub judice</span>` : null);
 
 // ---------------- placar (presidente, governador, senador)
-export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of, pend }) {
+export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of, pend, eleito, atualizado }) {
   const [todos, setTodos] = useState(false);
   if (!r || !r.cands.length) return html`<p class="vazio-txt">Sem dados para este recorte.</p>`;
+  if (r.vazio) return html`
+    <div class="cab">
+      <p class="kicker">${kicker}</p>
+      ${onVoltar && html`<button type="button" class="link" onClick=${onVoltar}>← Brasil</button>`}
+    </div>
+    <h1 class="manchete pequena">Nenhuma seção apurada ainda</h1>
+    ${pend?.length > 0 && html`<p class="mais pend">UFs atualizando: ${pend.join(", ")}</p>`}
+    <p class="vazio-txt">O TSE já publicou ${turno === 2 ? "o 2º turno" : "a eleição"}, mas ainda sem votos totalizados${pst != null ? ` (${pct(pst, 1)}% das seções)` : ""}. Os números aparecem aqui assim que as primeiras urnas forem apuradas.</p>`;
   const [a, b] = r.cands;
   const outros = r.cands.slice(2);
   const visiveis = todos ? outros : outros.slice(0, 3);
@@ -48,7 +57,8 @@ export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, tu
       ${onVoltar && html`<button type="button" class="link" onClick=${onVoltar}>← Brasil</button>`}
       ${selo && html`<span class="selo">${selo}</span>`}
     </div>
-    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of)}</h1>
+    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of, eleito)}</h1>
+    ${atualizado && html`<p class="mais">${atualizado}</p>`}
     ${pend?.length > 0 && html`<p class="mais pend">UFs atualizando: ${pend.join(", ")}</p>`}
     <div class="placar">${lado(a, "l1")}${b && lado(b, "l2")}</div>
     ${b && html`<div class="duelo" aria-hidden="true">
@@ -107,19 +117,19 @@ export function GraficoNoite({ serie, idx }) {
 }
 
 // ---------------- resumo por UF (governador, senador)
-export function ResumoUFs({ cargo, res, meta, onUF, status }) {
+export function ResumoUFs({ cargo, res, meta, onUF, status, pst }) {
   if (!res) return html`<p class="vazio-txt">Carregando…</p>`;
   const linhas = UFS.map((uf) => ({ uf, r: linha(cargo, res.uf?.[uf], meta.cand[cargo]?.[uf]), of: oficial(status, cargo, uf, meta.cand[cargo]?.[uf]) })).filter((x) => x.r && x.r.lider);
   const cont = {};
   // senador: vagas pelos eleitos oficiais (sem situação oficial, pelos 2 mais votados); governador: 1º colocado
-  const senadores = (x) => (x.of?.eleitos?.length ? x.of.eleitos : x.r.cands.slice(0, 2));
+  const senadores = (x) => senadoEleitos(x.of, pst) || x.r.cands.slice(0, 2);
   if (cargo === "senador") linhas.forEach((x) => senadores(x).forEach((c) => { cont[c.sg] = (cont[c.sg] || 0) + 1; }));
   else linhas.forEach(({ r }) => { cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; });
   const ranking = Object.entries(cont).sort((a, b) => b[1] - a[1]);
   const max = ranking[0]?.[1] || 1;
   const com = linhas.filter((x) => x.of?.status);
   const eleitos = com.filter((x) => x.of.status === "eleito").length, t2 = com.filter((x) => x.of.status === "2turno").length;
-  const oficialSen = linhas.every((x) => x.of?.eleitos?.length);
+  const oficialSen = linhas.every((x) => senadoEleitos(x.of, pst));
   const titulo = cargo === "senador"
     ? html`${ranking[0]?.[0]} ${oficialSen ? "elegeu" : "lidera em"} ${ranking[0]?.[1]} das ${linhas.length * 2} vagas do Senado`
     : com.length === linhas.length
@@ -175,8 +185,8 @@ export function ResumoDep({ cargo, res, uf, onUF, onVoltar, geo }) {
 }
 
 // ---------------- painel direito
-export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno }) {
-  if (!res) return html`<p class="vazio-txt">${turno === 2 ? "Aparece quando o TSE publicar o 2º turno." : "Carregando…"}</p>`;
+export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno, msg }) {
+  if (!res) return html`<p class="vazio-txt">${msg || (turno === 2 ? "Aparece quando o TSE publicar o 2º turno." : "Carregando…")}</p>`;
   let rows;
   if (cargo === "presidente") {
     rows = REGIOES.map(([nome, ufs]) => {
@@ -190,7 +200,7 @@ export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno }) {
     });
     const zz = res.uf?.ZZ && linha(cargo, res.uf.ZZ, lista);
     if (zz) rows.push({ nome: "Exterior", r: zz });
-    return html`<ul class="regioes">${rows.filter(({ r }) => r && r.cands.length >= 2).map(({ nome, r }) => {
+    return html`<ul class="regioes">${rows.filter(({ r }) => r && r.lider && r.cands.length >= 2).map(({ nome, r }) => {
       const [a, b] = r.cands; const sald = (a.p - b.p) * 100;
       return html`<li><span class="rn">${nome}</span><span class="ld"><${Sw} sg=${a.sg} /><small>${a.sg}</small> <b>${pct(a.p * 100, 1)}%</b><small class="dv">+${pct(sald, 1)}</small></span>
         <span class="duelo mini" aria-hidden="true"><i style=${{ width: a.p * 100 + "%", "--c": cor(a.sg) }}></i><i class="meio"></i><i style=${{ width: b.p * 100 + "%", "--c": cor(b.sg) }}></i></span></li>`;

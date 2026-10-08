@@ -20,6 +20,12 @@ CLARITY_ID = "tp8n6kanob"
 PRIVACIDADE = "https://vitorpereira.ia.br/privacidade"
 NOME_EXIBICAO = {"Flavio Bolsonaro": "Flávio Bolsonaro"}  # o TSE publica sem acento
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# "Pessoas agora" no HUD (presença no Supabase Realtime, hud/presenca.js). A publishable key é PÚBLICA por desenho:
+# vai para o navegador de todo visitante e só faz o que o papel anon pode fazer. Nunca pôr aqui service_role/secret
+# (tests/test_hud.py confere o prefixo sb_publishable_).
+SUPABASE_URL = "https://qzczyicspbizosjogmlq.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_OBOstHIYUXpk_NvJFtYrVQ_NcOz4XUI"
+HUD_PRESENCE = {"url": SUPABASE_URL, "key": SUPABASE_PUBLISHABLE_KEY, "canal": "eleicoes-hud"}
 R = Path(__file__).parent
 OUT = R / "site"
 BUILD = R / ".build"
@@ -291,6 +297,14 @@ def copiar_hud(dest):
         shutil.copytree(geo, dest / "geo", dirs_exist_ok=True)
 
 
+def injetar_presenca(h):
+    """window.HUD_PRESENCE = {url, key, canal} antes do app do HUD (o contador "pessoas agora" lê daí)"""
+    tag = '<script type="module" src="/hud/app.js"></script>'
+    assert h.count(tag) == 1, "template_hud.html: script do app não encontrado"
+    cfg = json.dumps(HUD_PRESENCE, separators=(",", ":"))
+    return h.replace(tag, f"<script>window.HUD_PRESENCE={cfg};</script>\n{tag}", 1)
+
+
 def status_hud():
     """Situação oficial para as manchetes do HUD (eleito / 2º turno), tirada do relatorio.json.
     O HUD nunca deduz isso de porcentagem. Candidatos são identificados pelo NÚMERO, achado pelos votos
@@ -521,6 +535,7 @@ def main():
     # e, no 2º turno, de /vivo/agora.json. O template antigo está arquivado em docs/old/template_aovivo.html.
     copiar_hud(BUILD); copiar_hud(OUT)
     raw = brand.aplicar((R / "template_hud.html").read_text()).replace("<!--__RESUMO__-->", resumo_hud(), 1)
+    raw = injetar_presenca(raw)
     titulo = "Mapa da apuração por município | Eleições 2026"
     desc = ("Mapa da apuração por município: presidente, governadores, Senado e deputados nos 5.570 municípios, "
             "com a linha do tempo da noite do 1º turno. No 2º turno (25/10), atualizado ao vivo com os dados do TSE.")

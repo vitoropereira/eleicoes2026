@@ -4,7 +4,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY  injetada pelo runtime; única credencial com escrita no bucket `vivo`
 //   AGREGADOR_SEGREDO          segredo compartilhado; chamadas sem `x-agregador: <segredo>` recebem 401
 //   TSE_BASE                   opcional; padrão https://resultados.tse.jus.br (o simulador usa outro)
-//   AGREGADOR_CONCORRENCIA     opcional; padrão 12, mínimo 1 (requisições simultâneas ao TSE)
+//   AGREGADOR_CONCORRENCIA     opcional; padrão 16, mínimo 1 (requisições simultâneas ao TSE)
 //   ELEICAO_FORCADA            só ensaio (ex.: 6257 = 1º turno). NUNCA definir em produção
 import { executar, normalizarConcorrencia } from "./executar.ts";
 import { criarArmazenamentoSupabase } from "./gravar.ts";
@@ -30,7 +30,7 @@ export async function tratar(req: Request): Promise<Response> {
     tse: criarTse(Deno.env.get("TSE_BASE") ?? TSE_BASE_PADRAO, { timeoutMs: 10_000, tentativas: 2 }),
     st: criarArmazenamentoSupabase(url, chave),
     agora: () => Date.now(),
-    concorrencia: normalizarConcorrencia(Number(Deno.env.get("AGREGADOR_CONCORRENCIA"))),
+    concorrencia: normalizarConcorrencia(Deno.env.get("AGREGADOR_CONCORRENCIA")),
     eleicaoForcada: Deno.env.get("ELEICAO_FORCADA") || undefined,
     log: (...a: unknown[]) => console.log(...a),
   };

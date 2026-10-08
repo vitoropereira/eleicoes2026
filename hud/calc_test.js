@@ -43,3 +43,126 @@ Deno.test("situação oficial vem do status.json, pelo número", () => {
   ok(oficial(st, "senador", "PR", LISTA).eleitos.map((c) => c.nome).join() === "Paes,Ruas");
   ok(oficial(null, "governador", "RJ", LISTA) === null, "sem status → null (manchete neutra)");
 });
+
+Deno.test("zero voto apurado: ninguém lidera e o mapa não pinta (2º turno antes das primeiras seções)", async () => {
+  const { corPara } = await import("./calc.js");
+  const r = linha("presidente", [1000, 0, 0, 0, 0, [0, 0, 0]], LISTA);
+  ok(r.vazio === true && r.lider === null && r.segundo === null, "sem líder");
+  ok(r.p1 === 0 && r.margem === 0, "p1/margem zerados");
+  ok(corPara("municipios", r, "presidente") === null && corPara("vantagem", r, "presidente") === null, "sem cor de partido");
+  const r1 = linha("presidente", [1000, 10, 10, 0, 0, [0, 1, 9]], LISTA);
+  ok(!r1.vazio && r1.lider.nome === "Garotinho", "um voto já define o líder");
+});
+
+// ---------- 2º turno, itens da revisão (a–d)
+import { resumoLeitor, fonteTurno2, modoValido, senadoEleitos } from "./calc.js";
+
+const PRES = [{ n: "22", nome: "Flávio Bolsonaro", sg: "PL" }, { n: "13", nome: "Lula", sg: "PT" }];
+const META = { cand: { presidente: PRES } };
+
+Deno.test("a. resumo do leitor de tela usa a leitura da UF escolhida durante a linha do tempo", () => {
+  const ponto = { ht: "18:32", pst: 36.6, f: 50.63, l: 41.23, uf: { PR: [83.37, 62.1, 30.2] } };
+  const base = { turno: 1, temVivo: false, fonte: { br: [1, 1, 1, 0, 0, [1, 0]] }, meta: META, cargo: "presidente", lista: PRES };
+  const br = resumoLeitor({ ...base, ponto, pontoUF: ponto, ufSel: null });
+  ok(br.includes("36,6%") && br.includes("50,63%"), br);
+  const pr = resumoLeitor({ ...base, ponto, pontoUF: ponto, ufSel: "PR" });
+  ok(pr.includes("Paraná") && pr.includes("83,4%") && pr.includes("62,10%") && !pr.includes("50,63"), pr);
+  const sem = resumoLeitor({ ...base, ponto, pontoUF: ponto, ufSel: "BA" });
+  ok(sem.includes("Bahia") && sem.includes("não tinha publicado"), sem);
+  // fora da linha do tempo, com UF escolhida: a linha da UF, não a nacional
+  const fonte = { br: [0, 0, 100, 0, 0, [60, 40]], uf: { PR: [0, 0, 10, 0, 0, [9, 1]] }, pst: 50, pu: { PR: 80 }, t: "19:06" };
+  const t2 = resumoLeitor({ ...base, turno: 2, temVivo: true, fonte, ponto: null, pontoUF: null, ufSel: "PR" });
+  ok(t2.includes("Paraná") && t2.includes("90,00%") && t2.includes("80,0%") && t2.includes("19:06"), t2);
+  const zero = resumoLeitor({ ...base, turno: 2, temVivo: true, fonte: { br: [9, 0, 0, 0, 0, [0, 0]], pst: 0 }, ponto: null, ufSel: null });
+  ok(zero.includes("nenhum voto apurado"), zero);
+});
+
+Deno.test("b. minuto da linha do tempo: nunca mostra o ao vivo no lugar do minuto escolhido", () => {
+  const vivo = { idg: "9" }, m1 = { t: "18:32", dados: { idg: "1" } };
+  ok(fonteTurno2(null, null, m1, vivo).fonte === vivo, "sem minuto: ao vivo");
+  ok(fonteTurno2(3, "18:32", m1, vivo).fonte === m1.dados, "minuto carregado");
+  const carregando = fonteTurno2(4, "19:06", m1, vivo);
+  ok(carregando.fonte === null && carregando.carregando, "minuto novo carregando: nada, nem o anterior nem o ao vivo");
+  const falhou = fonteTurno2(4, "19:06", { t: "19:06", erro: new Error("x") }, vivo);
+  ok(falhou.fonte === null && falhou.erro === true, "falhou: erro, sem cair no ao vivo");
+});
+
+Deno.test("c. Apurado sem pm volta para Municípios (só no 2º turno)", () => {
+  ok(modoValido("apurado", 2, { pst: 10 }) === "municipios", "sem pm");
+  ok(modoValido("apurado", 2, { pm: {} }) === "apurado", "com pm");
+  ok(modoValido("apurado", 1, {}) === "apurado", "1º turno não muda");
+  ok(modoValido("estados", 2, { pst: 1 }) === "estados", "outros modos intactos");
+  ok(modoValido("apurado", 2, null) === "apurado", "sem dado ainda: não mexe");
+});
+
+Deno.test("d. Senado: 'são eleitos' só com status.json E 100% apurado", () => {
+  const of = { eleitos: [PRES[0], PRES[1]] };
+  ok(senadoEleitos(of, 100)?.length === 2, "oficial + 100%");
+  ok(senadoEleitos(of, 99.99) === null, "parcial: nunca eleito");
+  ok(senadoEleitos(of, undefined) === null, "sem pst: nunca eleito");
+  ok(senadoEleitos({ eleitos: [] }, 100) === null && senadoEleitos(null, 100) === null, "sem status: nunca eleito");
+});
+
+Deno.test("série do 2º turno: leitura sem voto (0%) fica de fora; Flávio e Lula pelo número", async () => {
+  const { serieTurno2 } = await import("./calc.js");
+  const cand = [{ n: "13", nome: "Lula", sg: "PT" }, { n: "22", nome: "Flávio Bolsonaro", sg: "PL" }];
+  const s = serieTurno2([
+    { t: "17:00", pst: 0, br: [10, 0, 0, 0, 0, [0, 0]] },
+    { t: "18:32", pst: 45.6, br: [10, 8, 100, 0, 0, [40, 60]] },
+  ], cand);
+  ok(s.length === 1 && s[0].ht === "18:32", JSON.stringify(s));
+  perto(s[0].f, 60, "Flávio pelo número 22"); perto(s[0].l, 40, "Lula pelo número 13");
+  ok(serieTurno2(null, cand).length === 0, "sem índice");
+});
+
+Deno.test("2º turno: 'eleito' só do agora.json (`eleito` do TSE), nunca de porcentagem", async () => {
+  const { eleitoTurno2, resumoLeitor: rl } = await import("./calc.js");
+  const fonte = { br: [0, 0, 100, 0, 0, [60, 40]], pst: 100, t: "22:40" };
+  ok(eleitoTurno2(fonte, PRES) === null, "60% a 100% apurado, sem marca do TSE: ninguém eleito");
+  ok(eleitoTurno2({ ...fonte, eleito: "22" }, PRES)?.nome === "Flávio Bolsonaro", "marca do TSE pelo número");
+  ok(eleitoTurno2({ ...fonte, eleito: "99" }, PRES) === null, "número fora da lista: ignora");
+  const base = { turno: 2, temVivo: true, meta: META, cargo: "presidente", lista: PRES, ponto: null, pontoUF: null };
+  ok(!rl({ ...base, fonte, ufSel: null }).includes("eleito"), "resumo sem marca: sem eleito");
+  ok(rl({ ...base, fonte: { ...fonte, eleito: "22" }, ufSel: null }).startsWith("Flávio Bolsonaro é eleito presidente"), "resumo com marca");
+});
+
+Deno.test("2º turno: leitura parada há mais de 5 min com apuração aberta → 'aguardando nova leitura do TSE', sem 'ao vivo'", async () => {
+  const { situacaoVivo, PARADO_MS } = await import("./calc.js");
+  const lida = Date.UTC(2026, 9, 25, 23, 47); // 20:47 em Brasília
+  let agora = lida + 60_000;
+  const vivo = { status: "ok", dados: { t: "20:47", dg: "25/10/2026", pst: 93.2 }, mudouEm: agora };
+  const s1 = situacaoVivo(vivo, agora);
+  ok(s1.aoVivo && s1.longo === "atualizado às 20h47" && s1.txt.includes("93,2%"), JSON.stringify(s1));
+  agora = lida + PARADO_MS + 1;
+  const s2 = situacaoVivo(vivo, agora);
+  ok(!s2.aoVivo && s2.longo === "atualizado às 20h47 · aguardando nova leitura do TSE" && s2.txt.includes("aguardando"), JSON.stringify(s2));
+  const s3 = situacaoVivo({ ...vivo, dados: { t: "20:47", dg: "25/10/2026", pst: 100 } }, lida + 3_600_000);
+  ok(s3.aoVivo && !s3.longo.includes("aguardando"), "100%: não fica 'aguardando'");
+  ok(!situacaoVivo({ status: "atrasado", dados: vivo.dados }, agora).aoVivo, "TSE sem resposta: sem ao vivo");
+});
+
+Deno.test("leitura parada: idade pela hora do TSE (t + dg, Brasília), não pela hora em que a aba viu", async () => {
+  const { situacaoVivo, idadeLeitura } = await import("./calc.js");
+  const utc = (h, m) => Date.UTC(2026, 9, 25, h, m); // 25/10/2026; Brasília = UTC-3
+  const dados = { t: "20:47", dg: "25/10/2026", pst: 90 };
+  ok(idadeLeitura(dados, utc(23, 53)) === 6 * 60_000, `idade: ${idadeLeitura(dados, utc(23, 53))}`);
+  // a aba acabou de abrir (mudouEm agora), mas a leitura do TSE é de 6 min atrás: parada
+  const s1 = situacaoVivo({ status: "ok", dados, mudouEm: utc(23, 53) }, utc(23, 53));
+  ok(!s1.aoVivo && s1.longo.includes("aguardando nova leitura do TSE"), JSON.stringify(s1));
+  // leitura do TSE de 2 min atrás, mesmo com a aba sem ver mudança há muito tempo: não está parada
+  const s2 = situacaoVivo({ status: "ok", dados, mudouEm: utc(22, 0) }, utc(23, 49));
+  ok(s2.aoVivo, JSON.stringify(s2));
+  // sem dg: usa a data de hoje em Brasília (e ontem se a hora ainda não chegou hoje)
+  ok(idadeLeitura({ t: "23:58" }, Date.UTC(2026, 9, 26, 3, 3)) === 5 * 60_000 + 0, "virada do dia");
+  ok(idadeLeitura({ t: "xx" }, utc(23, 0)) === null, "t inválido: sem idade");
+});
+
+Deno.test("Exterior: cidade sem voto válido fica fora do ranking, mas é contada", async () => {
+  const { exteriorCidades } = await import("./calc.js");
+  const meta = { exterior: [["ABUJA", "1"], ["LISBOA", "2"], ["TÓQUIO", "3"], ["NOVA", "4"]] };
+  const res = { ex: { "1": [10, 0, 0, 0, 0, [0, 0]], "2": [99, 90, 80, 5, 5, [50, 30]], "3": [50, 40, 40, 0, 0, [10, 30]] } };
+  const { itens, semVoto } = exteriorCidades(meta, res, PRES);
+  ok(itens.map((x) => x.nome).join() === "LISBOA,TÓQUIO", itens.map((x) => x.nome).join());
+  ok(semVoto === 2, `Abuja (zero) e Nova (sem linha): ${semVoto}`);
+  ok(exteriorCidades(meta, null, PRES).semVoto === 0, "sem dado nenhum: nada a contar");
+});

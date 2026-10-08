@@ -13,7 +13,7 @@ O que está pronto no repo: `supabase/functions/agregador-eleicoes/` (função +
 | `SUPABASE_SERVICE_ROLE_KEY` | injetada pelo runtime | única credencial que grava em `vivo` |
 | `AGREGADOR_SEGREDO` | `supabase secrets set` (passo 4) | sem `x-agregador: <segredo>` a função responde 401 |
 | `TSE_BASE` | opcional | padrão `https://resultados.tse.jus.br`; o simulador usa outro |
-| `AGREGADOR_CONCORRENCIA` | opcional | padrão 12, mínimo 1 (ver "Riscos", item 1) |
+| `AGREGADOR_CONCORRENCIA` | opcional | padrão 16, mínimo 1 (ver "Riscos", item 1) |
 | `ELEICAO_FORCADA` | só ensaio | ex. `6257`; **nunca em produção** (publicaria o 1º turno como se fosse o 2º) |
 
 ## 1. Bucket público `vivo` (Storage API, chave service role)
@@ -156,6 +156,8 @@ extensão pode afetar o que já usa. Só derrube com `drop extension pg_net` se 
 | Objeto em `vivo/` | Quando muda |
 |---|---|
 | `agora.json` | **só quando as 28 UFs (27 + ZZ) estão presentes**. Carrega `pend: [UFs]`, as UFs cujo dado ficou atrás do TSE nesta publicação (o front mostra "UFs atualizando") |
+| `agora.json` → `eleito` | número do candidato que o TSE marcou como eleito (`e: "s"` **e** `st: "Eleito"` no arquivo; `e: "s"` sozinho também aparece em quem vai ao 2º turno). Sem marca, a chave não existe. O HUD só diz "é eleito" a partir dela |
+| `agora.json` → `pend` sem dado novo | rodada que não fecha nenhuma UF mas mudou o conjunto de UFs atrasadas regrava o `agora.json` publicado só com o `pend` novo (mesmos números, mesmo `idg` e `t`) |
 | `_parcial.json` | rascunho gravado a cada rodada com o progresso (mesmo formato do `agora.json`). A rodada seguinte parte dele (cai para `agora.json` se não existir). Na primeira carga, várias rodadas curtas convergem aqui e só então publicam |
 | `serie/HHMM.json`, `serie/index.json`, `feed.json` | junto com o `agora.json` |
 | `_estado.json` | ETags, idg por UF, trava (`dono`/`travaAte`) e pausa (`pausaAte`/`pausaMs`) |
@@ -164,13 +166,47 @@ Rodada sem as 28 UFs devolve `{"status":"sem-dados","motivo":"UFs faltando: ..."
 que o já aceito é ignorado. Depois de um 429 do TSE a função fica em pausa de 2, depois 4, depois 8 minutos
 (`{"status":"pausa"}`), e zera numa rodada limpa. Rodada que perde a trava para outra aborta sem gravar.
 
+## 6c. "Pessoas agora" (presença no Realtime): ligar e desligar
+
+O org está no plano **FREE** e o projeto é compartilhado com o vitorpereira.ia.br: a presença nunca pode pôr o projeto
+em risco. Proteções no `hud/presenca.js`:
+- **chave geral**: antes de conectar (e a cada reconexão) o HUD lê `/vivo/config.json` sem cache; só conecta com
+  `{"presenca": true}`. Arquivo ausente, 404/400 ou erro = **desligado**;
+- **teto de 100**: com 100 pessoas no canal a aba faz `untrack`, sai do canal, fecha o socket, mostra "100+ pessoas
+  agora" e não volta por 10 min (marcado no `sessionStorage`);
+- **desistência**: 5 falhas seguidas na mesma página e não tenta mais; backoff 2 s → 60 s com sorteio (0,5× a 1,5×),
+  zerado só depois de uma conexão boa (recebeu `presence_state` e ficou 30 s no ar).
+
+Ligar / desligar (service role na sua shell, nunca em arquivo do repo; vale em até ~15 s pelo cache da Vercel):
+```bash
+# ligar
+curl -sS -X POST "$SUPABASE_URL/storage/v1/object/vivo/config.json" -H "x-upsert: true" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" -H "Content-Type: application/json" -H "cache-control: max-age=15" \
+  -d '{"presenca":true}'
+# desligar (as abas abertas param na próxima reconexão; abas novas não conectam)
+curl -sS -X POST "$SUPABASE_URL/storage/v1/object/vivo/config.json" -H "x-upsert: true" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" -H "Content-Type: application/json" -H "cache-control: max-age=15" \
+  -d '{"presenca":false}'
+# conferir
+curl -sS "https://eleicoes2026.vitorpereira.ia.br/vivo/config.json"
+```
+O controlador vai ligar agora (`{"presenca":true}`). O agregador nunca grava `config.json`.
+
+## 6d. Decisões de comportamento do agregador
+
+- **`estado.eleito` é pegajoso, de propósito**: depois que o TSE marca um eleito (`e:"s"` + `st:"Eleito"`), o número
+  fica em `_estado.json` e sai em todo `agora.json` seguinte, mesmo que um arquivo posterior venha sem a marca (o TSE
+  não desfaz proclamação). Para desfazer à mão: apagar `eleito` de `vivo/_estado.json` com o cron pausado.
+- UF cujo arquivo não deu para ler na rodada (429/erro) e que já estava atrasada continua em `pend`.
+- `AGREGADOR_CONCORRENCIA` vazia ou inválida = padrão (16), mínimo 1.
+
 ## 7. Ensaio geral com o simulador (tudo local, nada em produção)
 
 ```bash
 # baixa o 1º turno do TSE uma vez (~5,8 mil arquivos; retomável; fora do git)
-deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .build/tse-1t
+deno run --allow-net --allow-write --allow-read supabase/simular.ts baixar .ensaio/tse-1t
 # serve como se fosse o 2º turno (eleição 6258); --sem-turno2 ensaia o caminho "ainda não existe"
-deno run --allow-net --allow-read supabase/simular.ts servir .build/tse-1t --porta 8787 --host 0.0.0.0
+deno run --allow-net --allow-read supabase/simular.ts servir .ensaio/tse-1t --porta 8787 --host 0.0.0.0
 ```
 Função local contra o Supabase local (Docker), em outro terminal:
 ```bash
@@ -181,16 +217,30 @@ printf 'AGREGADOR_SEGREDO=ensaio\nTSE_BASE=http://host.docker.internal:8787\n' >
 supabase functions serve agregador-eleicoes --no-verify-jwt --env-file supabase/.env.local
 curl -sS -X POST "http://127.0.0.1:54321/functions/v1/agregador-eleicoes?sincrono=1" -H "x-agregador: ensaio"
 ```
-Limite do simulador: é estático (entrega o 1º turno já em 100%); não reproduz a noite progressiva. Para isso seria preciso
-um modo que fatie `snapshots/` por UF, o que não foi feito.
+A noite progressiva (0% → leituras do 1º turno por UF → 100%) tem modo próprio (`servir --progressivo`) e um roteiro
+completo sem Docker, com o agregador gravando em `.ensaio/vivo/` e o HUD servido localmente: `supabase/ensaio.md`.
 
 ## Riscos e decisões que dependem de você
 
-1. **O TSE bloqueia rajada.** Num download de teste com 16 conexões simultâneas (~130 req/s) o `resultados.tse.jus.br` passou
-   a responder **429** depois de ~1,5 mil arquivos, e o bloqueio durou vários minutos (o limite anunciado é 2000/s por
-   janela, mas o corte real veio antes). A função trata 429 como disjuntor (para de buscar na rodada, mantém o último
-   `agora.json` e entra em pausa crescente), mas a carga completa ainda pode ser bloqueada. Por isso o padrão agora é 12. Medir antes do dia 25 com
-   `ELEICAO_FORCADA=6257` e ajustar `AGREGADOR_CONCORRENCIA`. Esta medição não foi feita.
+1. **Limite do TSE (medido em 08/10/2026, 15h22-15h44 de Brasília, a partir da máquina local do Vitor, não da Edge Function).**
+   `deno run --allow-net --allow-read --allow-write supabase/simular.ts medir <dir> --concorrencia N [--condicional <dir>]`
+   baixou o 1º turno inteiro de presidente (eleição 6257: 28 arquivos de UF + 5.757 de município = 5.785, ~9 KB cada, 52,7 MB):
+
+   | Passada | Conexões | Tempo | req/s | Respostas | 429/403 | Latência p50 / p95 |
+   |---|---|---|---|---|---|---|
+   | 1. carga completa | 8 | 80,4 s | 71,9 | 5.784 × 200, 1 timeout (20 s) | 0 | 86 / 221 ms |
+   | 2. revalidação com ETag (`If-None-Match`) | 12 | 38,0 s | 152,2 | 5.784 × 304, 1 × 200 (o do timeout) | 0 | 60 / 150 ms |
+   | 3. carga completa, pasta nova | 16 | 40,0 s | 144,6 | 5.785 × 200 | 0 | 93 / 202 ms |
+   | 4. repetição da 3 (15h43) | 16 | 45,8 s | 126,2 | 5.785 × 200 | 0 | 117 / 256 ms |
+
+   O TSE anuncia `x-ratelimit-limit: 2000, 2000;w=1` (2.000 por segundo); o menor `x-ratelimit-remaining` visto foi 1.513.
+   O `medir` grava o resumo bruto de cada passada em `<dir>/_medicao-cN[-etag].json` (fora do git).
+   **Decisão:** padrão da função = 16 (o maior que rodou sem nenhum 429). Ressalvas: (a) num teste anterior, também com 16
+   conexões, o TSE respondeu 429 depois de ~1,5 mil arquivos e bloqueou por vários minutos, então o limite real varia
+   (carga do TSE/Akamai, IP); (b) a função roda nos EUA (us-east-1), com latência maior e outro IP, e na noite da eleição o
+   TSE está sob carga. Por isso o secret de produção `AGREGADOR_CONCORRENCIA=12` pode ficar como está: com 12 a carga
+   completa leva ~50 s, dentro do orçamento de 100 s por rodada, e as rodadas seguintes são quase só 304. A função trata
+   429 como disjuntor (para de buscar na rodada, mantém o último `agora.json` e entra em pausa de 2, 4, 8 min).
 2. **Código do 2º turno desconhecido.** A descoberta lê `ele-c.json` e só aceita entrada `ele2026`, `t=2`, nome com "Federal".
    Fallback: usa o `cdt2` da entrada federal de 1º turno (hoje `6258`) apenas se o arquivo de municípios dessa eleição já responde 200.
 3. **Gravação.** Cada arquivo vai com um único POST `x-upsert: true` (o Storage troca o objeto de uma vez; o leitor vê o

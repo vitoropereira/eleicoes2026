@@ -97,3 +97,70 @@ Deno.test("sondar: bucket inexistente → false sem virar erro; leitores de feed
   try { await vivoMinuto("1800", F200err); } catch (e) { erro = e; }
   ok(erro && erro.vazio === true, "minuto: corpo de erro rejeita como vazio");
 });
+
+Deno.test("produção hoje: HTTP 400 + NoSuchKey (bucket existe, agora.json não) → vazio, sem virar erro", async () => {
+  // corpo real de /vivo/agora.json em 08/10 (bucket `vivo` criado, objeto ainda não gravado)
+  const corpo = { statusCode: "404", error: "not_found", message: "Object not found", code: "NoSuchKey" };
+  const timers = [];
+  const estados = [];
+  const v = criarVivo((e) => estados.push(e), {
+    fetch: async () => ({ ok: false, status: 400, json: async () => corpo }),
+    setTimeout: (f, ms) => { timers.push({ f, ms }); return timers.length; }, clearTimeout() {},
+    doc: { hidden: false, addEventListener() {} },
+  });
+  v.ativar(); await esperar();
+  ok(estados.at(-1).status === "vazio", estados.at(-1).status);
+  ok(timers.at(-1).ms === INTERVALO_VAZIO, "60 s sem dado");
+  const F = async () => ({ ok: false, status: 400, json: async () => corpo });
+  ok((await v.sondar()) === false, "sondar false: não abre no 2º turno");
+  ok((await vivoExtra("serie/index.json", F)) === null, "série null");
+  // mesmo corpo vindo com 200 (proxy que reescreve status) também é vazio
+  const F200 = async () => ({ ok: true, status: 200, json: async () => corpo });
+  ok((await vivoExtra("feed.json", F200)) === null, "feed 200+NoSuchKey → null");
+});
+
+Deno.test("b. minuto: pedido novo cancela o anterior e resposta velha é descartada; falha devolve erro", async () => {
+  const { criarMinuto } = await import("./dados.js");
+  const pendentes = [];
+  const F = (url, opts) => new Promise((ok_, falha) => {
+    pendentes.push({ url, ok_, falha });
+    opts?.signal?.addEventListener("abort", () => falha(new DOMException("abortado", "AbortError")));
+  });
+  const m = criarMinuto(F);
+  const a = m.ler("17:01"), b = m.ler("17:02");
+  ok(pendentes.length === 2 && pendentes[1].url.includes("1702"), "dois pedidos");
+  pendentes[1].ok_({ ok: true, status: 200, json: async () => ({ idg: "2" }) });
+  ok((await a) === null, "o primeiro (cancelado/velho) volta null");
+  const rb = await b;
+  ok(rb.t === "17:02" && rb.dados.idg === "2", "o último vale");
+  // falha: devolve erro com o minuto escolhido
+  const c = m.ler("17:03");
+  pendentes[2].ok_({ ok: false, status: 503, json: async () => ({}) });
+  const rc = await c;
+  ok(rc.t === "17:03" && rc.erro && !rc.dados, "erro sem dado");
+  // resposta que chega depois de um pedido mais novo é ignorada mesmo sem abort
+  const semAbort = criarMinuto((url) => new Promise((ok_) => pendentes.push({ url, ok_ })));
+  const d1 = semAbort.ler("17:04"), d2 = semAbort.ler("17:05");
+  pendentes.at(-1).ok_({ ok: true, status: 200, json: async () => ({ idg: "5" }) });
+  pendentes.at(-2).ok_({ ok: true, status: 200, json: async () => ({ idg: "4" }) });
+  ok((await d1) === null && (await d2).dados.idg === "5", "resposta velha descartada");
+});
+
+Deno.test("mudouEm só anda quando a leitura muda (idg/pst/eleito); consulta repetida ou só o pend mudando não contam", async () => {
+  let t = 1000;
+  const respostas = [AGORA("10", 50), AGORA("10", 50), { ...AGORA("10", 50), pend: ["SP"] }, AGORA("11", 51)];
+  const timers = [], estados = [];
+  const v = criarVivo((e) => estados.push(e), {
+    fetch: async () => ({ ok: true, status: 200, json: async () => respostas.shift() }),
+    setTimeout: (f, ms) => { timers.push({ f, ms }); return timers.length; }, clearTimeout() {},
+    doc: { hidden: false, addEventListener() {} }, agora: () => t,
+  });
+  v.ativar(); await esperar();
+  ok(estados.at(-1).mudouEm === 1000, "1ª leitura");
+  t = 400_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 1000, "mesma leitura: não mexe");
+  t = 500_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 1000, "só o pend mudou: não conta como leitura nova");
+  t = 600_000; await timers.shift().f(); await esperar();
+  ok(estados.at(-1).mudouEm === 600_000, "idg/pst mudaram: leitura nova");
+});

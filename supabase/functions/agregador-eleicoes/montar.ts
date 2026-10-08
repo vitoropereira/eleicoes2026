@@ -24,6 +24,8 @@ export interface Agora {
   pu: Record<string, number>; // extra: % de seções por UF
   pm: Record<string, number>; // extra: % de seções por município (cdi)
   pend: string[]; // UFs cujo dado nesta publicação está atrás do TSE (a UF mudou e ainda não foi relida)
+  /** número do candidato que o TSE marcou como eleito (`e: "s"` + `st` "Eleito"); ausente enquanto não houver */
+  eleito?: string;
 }
 
 export interface ResumoArquivo {
@@ -53,8 +55,8 @@ export function nomeExibicao(nmu: string): string {
   return NOME_EXIBICAO[t] ?? t;
 }
 
-function candidatosBrutos(json: any): any[] {
-  const carg = (json?.carg ?? []).find((c: any) => String(c?.cd) === "1");
+function candidatosBrutos(json: any, cargo = "1"): any[] {
+  const carg = (json?.carg ?? []).find((c: any) => String(c?.cd) === cargo);
   const out: any[] = [];
   for (const agr of carg?.agr ?? []) {
     for (const par of agr?.par ?? []) {
@@ -71,13 +73,16 @@ export function extrairCandidatos(json: any): Cand[] {
     .map((c) => ({ n: String(c.n), nome: nomeExibicao(String(c.nmu ?? c.nm)), sg: String(c._sg ?? "") }));
 }
 
-/** Candidatos com status "eleito" no arquivo (o TSE marca `e: "s"` e `st` começando com "Eleito"). */
-export function eleitos(json: any): Cand[] {
-  const ordem = extrairCandidatos(json);
-  return candidatosBrutos(json)
+/**
+ * Candidatos com status "eleito" no arquivo. O TSE marca `e: "s"` E `st: "Eleito"`; `e: "s"` sozinho não basta,
+ * porque no 1º turno quem vai ao 2º turno também vem com `e: "s"` (`st: "2º turno"`). `cargo` = código do TSE
+ * (1 presidente, 3 governador), só para conferir o formato nos arquivos reais.
+ */
+export function eleitos(json: any, cargo = "1"): Cand[] {
+  const brutos = candidatosBrutos(json, cargo);
+  return brutos
     .filter((c) => c.e === "s" && /^eleit/i.test(String(c.st ?? "")))
-    .map((c) => ordem.find((o) => o.n === String(c.n))!)
-    .filter(Boolean);
+    .map((c) => ({ n: String(c.n), nome: nomeExibicao(String(c.nmu ?? c.nm)), sg: String(c._sg ?? "") }));
 }
 
 /** Uma linha do contrato a partir de um arquivo de UF/município. Nulos = `tvn` (inclui nulos técnicos), para fechar com o comparecimento. */
@@ -137,6 +142,8 @@ export interface Entrada {
   pu: Record<string, number>;
   pm: Record<string, number>;
   pend?: string[];
+  /** número do eleito segundo o TSE (ver `eleitos`); só entra no agora.json se estiver em `cand` */
+  eleito?: string | null;
   /** metadados por UF (inclui ZZ) que compõem o país */
   meta: Record<string, ResumoArquivo>;
 }
@@ -177,6 +184,7 @@ export function montarAgora(e: Entrada): Agora {
     pu: ordenar(e.pu),
     pm: ordenar(e.pm),
     pend: [...(e.pend ?? [])].filter((u) => u in e.uf).sort(),
+    ...(e.eleito && e.cand.some((c) => c.n === e.eleito) ? { eleito: e.eleito } : {}),
   };
 }
 
@@ -195,6 +203,9 @@ export function validarAgora(a: any): string[] {
   const n = Array.isArray(a.cand) ? a.cand.length : 0;
   if (!ehLinha(a.br, n)) erros.push("br inválido");
   if (a.pend !== undefined && !Array.isArray(a.pend)) erros.push("pend inválido");
+  if (a.eleito !== undefined && !(Array.isArray(a.cand) && a.cand.some((c: any) => c?.n === a.eleito))) {
+    erros.push("eleito fora de cand");
+  }
   for (const k of ["uf", "mu", "ex"]) {
     if (!a[k] || typeof a[k] !== "object") erros.push(`${k} ausente`);
     else for (const [c, l] of Object.entries(a[k])) if (!ehLinha(l, n)) erros.push(`${k}.${c} inválido`);
