@@ -1,5 +1,5 @@
 // deno test hud/  — leitura do 2º turno com fetch e relógio falsos
-import { criarVivo, INTERVALO, INTERVALO_VAZIO } from "./dados.js";
+import { criarVivo, vivoExtra, vivoMinuto, INTERVALO, INTERVALO_VAZIO } from "./dados.js";
 
 const ok = (c, m) => { if (!c) throw new Error(m || "falhou"); };
 const AGORA = (idg, pst) => ({ idg, pst, t: "18:00", cand: [{ n: "22" }, { n: "13" }], br: [1, 1, 1, 0, 0, [1, 0]], uf: {}, mu: {} });
@@ -9,6 +9,8 @@ function ambiente(respostas) {
   const deps = {
     fetch: async () => {
       const r = respostas.shift();
+      if (r === 400) return { ok: false, status: 400, json: async () => ({ statusCode: "404", error: "Bucket not found", message: "Bucket not found" }) };
+      if (r === 503) return { ok: false, status: 503, json: async () => ({}) };
       if (r === 404) return { ok: false, status: 404, json: async () => ({}) };
       if (r === "quebrado") return { ok: true, status: 200, json: async () => { throw new SyntaxError("JSON quebrado"); } };
       return { ok: true, status: 200, json: async () => r };
@@ -64,4 +66,34 @@ Deno.test("aba do navegador escondida não consulta; volta a consultar ao reapar
   ok(n === 1, "escondida: só reagenda");
   doc.hidden = false; aoVoltar(); await esperar();
   ok(n === 2, "voltou à aba: busca na hora");
+});
+
+Deno.test("400 + Bucket not found (rewrite do Supabase) → vazio e segue a cada 60 s", async () => {
+  const a = ambiente([400, 400, AGORA("10", 1)]);
+  a.v.ativar(); await esperar();
+  ok(a.ultimo().status === "vazio", a.ultimo().status);
+  ok(a.timers.at(-1).ms === INTERVALO_VAZIO, "60 s sem dado");
+  await a.tick();
+  ok(a.ultimo().status === "vazio" && a.timers.at(-1).ms === INTERVALO_VAZIO, "segue tentando");
+  await a.tick();
+  ok(a.ultimo().status === "ok", "pegou quando apareceu");
+});
+
+Deno.test("503 → erro (TSE sem resposta de verdade), também a cada 60 s", async () => {
+  const a = ambiente([503]);
+  a.v.ativar(); await esperar();
+  ok(a.ultimo().status === "erro", a.ultimo().status);
+  ok(a.timers.at(-1).ms === INTERVALO_VAZIO, "60 s");
+});
+
+Deno.test("sondar: bucket inexistente → false sem virar erro; leitores de feed/minuto tratam como vazio", async () => {
+  const a = ambiente([400]);
+  ok((await a.v.sondar()) === false, "sondar false");
+  const F400 = async () => ({ ok: false, status: 400, json: async () => ({ statusCode: "404", error: "Bucket not found" }) });
+  ok((await vivoExtra("feed.json", F400)) === null, "feed null");
+  const F200err = async () => ({ ok: true, status: 200, json: async () => ({ statusCode: "404", error: "not_found" }) });
+  ok((await vivoExtra("feed.json", F200err)) === null, "feed 200 com corpo de erro → null");
+  let erro = null;
+  try { await vivoMinuto("1800", F200err); } catch (e) { erro = e; }
+  ok(erro && erro.vazio === true, "minuto: corpo de erro rejeita como vazio");
 });

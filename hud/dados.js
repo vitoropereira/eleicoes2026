@@ -23,13 +23,17 @@ export function malha() {
 }
 
 // ---------------- 2º turno: /vivo/agora.json
-// Regras: só faz polling com a aba do 2º turno ativa; 15 s com dado, 60 s enquanto não há dado (404/erro);
+// Regras: só faz polling com a aba do 2º turno ativa; 15 s com dado, 60 s enquanto não há dado (400/403/404/erro);
 // pausa com a aba do navegador escondida e busca na hora ao voltar; mantém o último estado bom;
 // descarta resposta com idg menor ou inválida.
 export const VIVO_URL = "/vivo/agora.json";
 export const INTERVALO = 15000, INTERVALO_VAZIO = 60000;
 
 const idgNum = (x) => { try { return BigInt(String(x ?? "").replace(/\D/g, "") || "0"); } catch { return 0n; } };
+/** "ainda não há dado": 400/403/404 (o rewrite do Storage devolve 400 + "Bucket not found"/NoSuchBucket) ou corpo de erro 404 */
+const SEM_DADO = new Set([400, 403, 404]);
+const corpoVazio = (d) => !!d && typeof d === "object" && !Array.isArray(d) && (
+  String(d.statusCode) === "404" || /NoSuchBucket|not[_ ]found/i.test(`${d.error ?? ""} ${d.code ?? ""} ${d.message ?? ""}`));
 const valido = (d) => d && typeof d === "object" && Array.isArray(d.br) && d.mu && typeof d.mu === "object";
 
 /** deps injetáveis para teste: fetch, setTimeout, clearTimeout, doc (document) */
@@ -43,8 +47,9 @@ export function criarVivo(aoMudar, deps = {}) {
 
   async function baixar() {
     const r = await F(`${VIVO_URL}?t=${Math.floor(Date.now() / 15000)}`, { cache: "no-store" });
-    if (!r.ok) { const e = new Error(`agora.json: HTTP ${r.status}`); e.status = r.status; throw e; }
+    if (!r.ok) { const e = new Error(`agora.json: HTTP ${r.status}`); e.status = r.status; e.vazio = SEM_DADO.has(r.status); throw e; }
     const d = await r.json();
+    if (corpoVazio(d)) { const e = new Error("agora.json: sem dado ainda"); e.vazio = true; throw e; }
     if (!valido(d)) throw new Error("agora.json inválido");
     return d;
   }
@@ -65,7 +70,7 @@ export function criarVivo(aoMudar, deps = {}) {
       est.falhas++;
       est.erro = e;
       // sem dado nenhum ainda: estado vazio ("aguardando o TSE"); com dado: mantém o último bom
-      est.status = est.dados ? "atrasado" : (e.status === 404 ? "vazio" : "erro");
+      est.status = est.dados ? "atrasado" : (e.vazio ? "vazio" : "erro");
     } finally {
       carregando = false;
       emitir();
@@ -98,7 +103,9 @@ export function criarVivo(aoMudar, deps = {}) {
 export async function vivoExtra(nome, F = (...a) => fetch(...a)) {
   try {
     const r = await F(`/vivo/${nome}?t=${Math.floor(Date.now() / 15000)}`, { cache: "no-store" });
-    return r.ok ? await r.json() : null;
+    if (!r.ok) return null;
+    const d = await r.json();
+    return corpoVazio(d) ? null : d;
   } catch { return null; }
 }
 
@@ -108,8 +115,9 @@ export async function vivoMinuto(t, F = (...a) => fetch(...a)) {
   const k = String(t).replace(":", "");
   if (lru.has(k)) { const v = lru.get(k); lru.delete(k); lru.set(k, v); return v; }
   const r = await F(`/vivo/serie/${k}.json`);
-  if (!r.ok) throw new Error(`serie/${k}: HTTP ${r.status}`);
+  if (!r.ok) { const e = new Error(`serie/${k}: HTTP ${r.status}`); e.status = r.status; e.vazio = SEM_DADO.has(r.status); throw e; }
   const d = await r.json();
+  if (corpoVazio(d)) { const e = new Error(`serie/${k}: sem dado ainda`); e.vazio = true; throw e; }
   lru.set(k, d); if (lru.size > 16) lru.delete(lru.keys().next().value);
   return d;
 }
