@@ -181,8 +181,8 @@ printf 'AGREGADOR_SEGREDO=ensaio\nTSE_BASE=http://host.docker.internal:8787\n' >
 supabase functions serve agregador-eleicoes --no-verify-jwt --env-file supabase/.env.local
 curl -sS -X POST "http://127.0.0.1:54321/functions/v1/agregador-eleicoes?sincrono=1" -H "x-agregador: ensaio"
 ```
-Limite do simulador: é estático (entrega o 1º turno já em 100%); não reproduz a noite progressiva. Para isso seria preciso
-um modo que fatie `snapshots/` por UF, o que não foi feito.
+A noite progressiva (0% → leituras do 1º turno por UF → 100%) tem modo próprio (`servir --progressivo`) e um roteiro
+completo sem Docker, com o agregador gravando em `.build/vivo/` e o HUD servido localmente: `supabase/ensaio.md`.
 
 ## Riscos e decisões que dependem de você
 
