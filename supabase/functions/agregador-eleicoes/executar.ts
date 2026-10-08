@@ -19,6 +19,7 @@ import {
   caminhoUf,
   descobrirEleicao,
   extrairMunicipios,
+  LimiteTse,
   type ListaMunicipios,
   type Tse,
 } from "./tse.ts";
@@ -58,6 +59,8 @@ export interface Deps {
   orcamentoMs?: number; // padrão 120 s
   margemMs?: number; // parar de buscar municípios com menos que isto sobrando (padrão 20 s)
   concorrencia?: number; // padrão 32
+  /** Ensaio: usa este código em vez de descobrir o de 2º turno. Nunca em produção. */
+  eleicaoForcada?: string;
   log?: (...a: unknown[]) => void;
 }
 
@@ -111,10 +114,18 @@ export async function executar(deps: Deps): Promise<Resultado> {
   const margem = deps.margemMs ?? 20_000;
   const limite = limitador(deps.concorrencia ?? 32);
   const t0 = deps.agora();
-  const estourou = () => deps.agora() - t0 > orcamento - margem;
+  let limitado = false; // o TSE mandou 429: para de buscar nesta rodada (disjuntor)
+  const estourou = () => limitado || deps.agora() - t0 > orcamento - margem;
 
   // 1) eleição
-  const ele = await descobrirEleicao(tse);
+  let ele: string | null;
+  try {
+    ele = deps.eleicaoForcada ?? await descobrirEleicao(tse);
+    if (deps.eleicaoForcada) log(`ATENÇÃO: eleição forçada para ${ele} (ensaio)`);
+  } catch (err) {
+    log(`TSE indisponível ao descobrir a eleição: ${err}`);
+    return { status: "sem-dados", motivo: `TSE indisponível: ${err}` };
+  }
   if (!ele) {
     log("2º turno federal ainda não publicado em ele-c.json; nada a fazer");
     return { status: "sem-eleicao" };
@@ -163,6 +174,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
           const r = await tse.buscar(caminhoUf(ele, uf), estado.uf[uf]?.etag);
           return { uf, r };
         } catch (e) {
+          if (e instanceof LimiteTse) limitado = true;
           log(`UF ${uf}: erro ${e}`);
           return { uf, r: { status: 304 as const } };
         }
@@ -234,6 +246,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
               log(`município ${u}/${m.cd}: ainda não publicado`);
             }
           } catch (e) {
+            if (e instanceof LimiteTse) limitado = true;
             log(`município ${u}/${m.cd}: erro ${e}`);
             completo = false;
           }

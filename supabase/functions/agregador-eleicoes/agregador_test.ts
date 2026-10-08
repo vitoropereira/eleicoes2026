@@ -5,7 +5,7 @@ import { gerarEventos, mesclarFeed } from "./feed.ts";
 import { gravarAtomico } from "./gravar.ts";
 import { extrairCandidatos, linhaDe, montarAgora, nomeExibicao, validarAgora } from "./montar.ts";
 import { tratar } from "./index.ts";
-import { acharEleicaoFederal2T, descobrirEleicao } from "./tse.ts";
+import { acharEleicaoFederal2T, descobrirEleicao, LimiteTse } from "./tse.ts";
 
 const ELE = "6258";
 const p = (u: string, cd?: string) =>
@@ -332,4 +332,22 @@ Deno.test("index: sem o segredo certo é 401; sem configuração é 500", async 
   } finally {
     for (const [k, v] of antes) v === undefined ? Deno.env.delete(k) : Deno.env.set(k, v);
   }
+});
+
+Deno.test("429 do TSE: disjuntor para as buscas, mantém o último agora.json e não derruba a rodada", async () => {
+  const { st, tse } = await rodada1();
+  const antes = st.objetos.get("agora.json");
+  const idg = Number(fixture("uf-pr").idg);
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 5, idg + 5));
+  const original = tse.buscar;
+  tse.buscar = (c, e) => /pr\d+-c0001/.test(c) ? Promise.reject(new LimiteTse(c, 429)) : original(c, e);
+  const r = await executar({ tse, st, agora: relogio().agora });
+  assertEquals(r.status, "sem-mudanca");
+  assertEquals(st.objetos.get("agora.json"), antes);
+  assertEquals(st.json("_estado.json").pendentes, ["PR"]);
+  assertEquals(st.json("_estado.json").travaAte, 0);
+  // TSE fora do ar já na descoberta
+  tse.buscar = () => Promise.reject(new LimiteTse("x", 429));
+  assertEquals((await executar({ tse, st, agora: relogio().agora })).status, "sem-dados");
+  assertEquals(st.objetos.get("agora.json"), antes);
 });

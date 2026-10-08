@@ -13,6 +13,14 @@ export interface Tse {
   buscar(caminho: string, etag?: string | null): Promise<Leitura>;
 }
 
+/** O TSE (Akamai) respondeu 429/403: está limitando este IP. Quem recebe deve parar de buscar nesta rodada. */
+export class LimiteTse extends Error {
+  constructor(caminho: string, status: number) {
+    super(`TSE limitou o acesso (${status}) em ${caminho}`);
+    this.name = "LimiteTse";
+  }
+}
+
 /** Cliente real: `fetch` com timeout, If-None-Match e 2 novas tentativas em erro transitório. */
 export function criarTse(base = TSE_BASE_PADRAO, opcoes: { timeoutMs?: number; tentativas?: number } = {}): Tse {
   const timeoutMs = opcoes.timeoutMs ?? 15_000;
@@ -30,12 +38,17 @@ export function criarTse(base = TSE_BASE_PADRAO, opcoes: { timeoutMs?: number; t
             await r.body?.cancel();
             return { status: 404 };
           }
+          if (r.status === 429 || r.status === 403) {
+            await r.body?.cancel();
+            throw new LimiteTse(caminho, r.status); // sem nova tentativa: insistir prolonga o bloqueio
+          }
           if (!r.ok) {
             await r.body?.cancel();
             throw new Error(`TSE ${r.status} em ${caminho}`);
           }
           return { status: 200, json: JSON.parse(await r.text()), etag: r.headers.get("etag") };
         } catch (e) {
+          if (e instanceof LimiteTse) throw e;
           ultimoErro = e;
           if (i < tentativas - 1) await new Promise((ok) => setTimeout(ok, 250 * (i + 1)));
         }
