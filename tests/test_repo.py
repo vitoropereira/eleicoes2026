@@ -23,6 +23,7 @@ class Repo(unittest.TestCase):
         texto = (R / "AGENTS.md").read_text()
         self.assertNotIn("sbp_", texto)
         self.assertNotIn("eyJhbGci", texto)
+        self.assertNotRegex(texto, r"[\w.+-]+@[\w-]+\.\w+")
         self.assertNotIn("service_role\":", texto)
         self.assertIn("qzczyicspbizosjogmlq", texto)
 
