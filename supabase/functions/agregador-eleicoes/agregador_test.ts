@@ -532,11 +532,11 @@ Deno.test("menor: conjunto de candidatos mudou -> recomeça com os novos candida
   assert(a.cand.some((c: any) => c.n === "99") && !a.cand.some((c: any) => c.n === "27"));
 });
 
-Deno.test("menor: concorrência 0 ou inválida vira pelo menos 1 (padrão 12) e a rodada termina", async () => {
+Deno.test("menor: concorrência 0 ou inválida vira pelo menos 1 (padrão 16) e a rodada termina", async () => {
   assertEquals(normalizarConcorrencia(0), 1);
   assertEquals(normalizarConcorrencia(-5), 1);
-  assertEquals(normalizarConcorrencia(undefined), 12);
-  assertEquals(normalizarConcorrencia(NaN), 12);
+  assertEquals(normalizarConcorrencia(undefined), 16);
+  assertEquals(normalizarConcorrencia(NaN), 16);
   assertEquals(normalizarConcorrencia(7.9), 7);
   const st = new StorageFake();
   const r = await executar({ tse: criarTseFake(ELE), st, agora: relogio().agora, concorrencia: 0 });

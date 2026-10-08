@@ -97,3 +97,24 @@ Deno.test("sondar: bucket inexistente → false sem virar erro; leitores de feed
   try { await vivoMinuto("1800", F200err); } catch (e) { erro = e; }
   ok(erro && erro.vazio === true, "minuto: corpo de erro rejeita como vazio");
 });
+
+Deno.test("produção hoje: HTTP 400 + NoSuchKey (bucket existe, agora.json não) → vazio, sem virar erro", async () => {
+  // corpo real de /vivo/agora.json em 08/10 (bucket `vivo` criado, objeto ainda não gravado)
+  const corpo = { statusCode: "404", error: "not_found", message: "Object not found", code: "NoSuchKey" };
+  const timers = [];
+  const estados = [];
+  const v = criarVivo((e) => estados.push(e), {
+    fetch: async () => ({ ok: false, status: 400, json: async () => corpo }),
+    setTimeout: (f, ms) => { timers.push({ f, ms }); return timers.length; }, clearTimeout() {},
+    doc: { hidden: false, addEventListener() {} },
+  });
+  v.ativar(); await esperar();
+  ok(estados.at(-1).status === "vazio", estados.at(-1).status);
+  ok(timers.at(-1).ms === INTERVALO_VAZIO, "60 s sem dado");
+  const F = async () => ({ ok: false, status: 400, json: async () => corpo });
+  ok((await v.sondar()) === false, "sondar false: não abre no 2º turno");
+  ok((await vivoExtra("serie/index.json", F)) === null, "série null");
+  // mesmo corpo vindo com 200 (proxy que reescreve status) também é vazio
+  const F200 = async () => ({ ok: true, status: 200, json: async () => corpo });
+  ok((await vivoExtra("feed.json", F200)) === null, "feed 200+NoSuchKey → null");
+});

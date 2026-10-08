@@ -74,6 +74,98 @@ async function baixar(dir: string, origem: string) {
   console.log(`pronto: ${tarefas.length} arquivos em ${dir}`);
 }
 
+/**
+ * Mede o limite do TSE: baixa o 1º turno inteiro (UFs + municípios) com `conc` conexões e registra req/s,
+ * latência, 429/403 (com horário) e o menor `x-ratelimit-remaining` visto. Para na hora no primeiro 429
+ * (não insiste: insistir prolonga o bloqueio). `--condicional <dir>` reenvia os ETags de uma medição anterior
+ * (esperado: 304). Grava os arquivos em `dir` (mesmo layout do `baixar`) e o resumo em `dir/_medicao-cN.json`.
+ */
+async function medir(dir: string, origem: string, conc: number, condicional: string | null) {
+  const base = "https://resultados.tse.jus.br";
+  const etagsAntes: Record<string, string> = condicional
+    ? JSON.parse(await Deno.readTextFile(`${condicional}/_etags.json`))
+    : {};
+  const etags: Record<string, string> = {};
+  const salvar = async (c: string, txt: string) => {
+    const destino = aqui(dir, c);
+    await Deno.mkdir(destino.slice(0, destino.lastIndexOf("/")), { recursive: true });
+    await Deno.writeTextFile(destino, txt);
+  };
+  const cfgTxt = await (await fetch(base + caminhoMunicipios(origem))).text();
+  await salvar(caminhoMunicipios(origem), cfgTxt);
+  await salvar(caminhoEleicoes(), await (await fetch(base + caminhoEleicoes())).text());
+  const lista = extrairMunicipios(JSON.parse(cfgTxt));
+  const tarefas: string[] = [];
+  for (const [uf, muns] of Object.entries(lista)) {
+    tarefas.push(caminhoUf(origem, uf));
+    for (const m of muns) tarefas.push(caminhoMunicipio(origem, uf, m.cd));
+  }
+  const porStatus: Record<string, number> = {};
+  const limites: { t: string; status: number; caminho: string; feitos: number }[] = [];
+  const lat: number[] = [];
+  let minRestante = Infinity, feitos = 0, parar = false, bytes = 0;
+  const fila = [...tarefas];
+  const t0 = performance.now();
+  const inicio = new Date().toISOString();
+  await Promise.all(Array.from({ length: conc }, async () => {
+    for (let c = fila.shift(); c && !parar; c = fila.shift()) {
+      const h: Record<string, string> = { accept: "application/json" };
+      if (etagsAntes[c]) h["if-none-match"] = etagsAntes[c];
+      const ti = performance.now();
+      let status = 0;
+      try {
+        const r = await fetch(base + c, { headers: h, signal: AbortSignal.timeout(20_000) });
+        status = r.status;
+        const rest = Number((r.headers.get("x-ratelimit-remaining") ?? "").split(",")[0]);
+        if (r.headers.has("x-ratelimit-remaining") && Number.isFinite(rest)) minRestante = Math.min(minRestante, rest);
+        const tag = r.headers.get("etag");
+        if (tag) etags[c] = tag;
+        else if (status === 304 && etagsAntes[c]) etags[c] = etagsAntes[c];
+        if (status === 200) {
+          const txt = await r.text();
+          bytes += txt.length;
+          await salvar(c, txt);
+        } else await r.body?.cancel();
+        if (status === 429 || status === 403) {
+          limites.push({ t: new Date().toISOString(), status, caminho: c, feitos });
+          console.warn(`${new Date().toISOString()} ${status} em ${c} (após ${feitos}); parando`);
+          parar = true;
+        }
+      } catch (e) {
+        status = -1;
+        console.warn(c, String(e));
+      }
+      lat.push(performance.now() - ti);
+      porStatus[status] = (porStatus[status] ?? 0) + 1;
+      if (++feitos % 1000 === 0) {
+        const s = (performance.now() - t0) / 1000;
+        console.log(`${feitos}/${tarefas.length} · ${(feitos / s).toFixed(1)} req/s · restante mín ${minRestante}`);
+      }
+    }
+  }));
+  const seg = (performance.now() - t0) / 1000;
+  lat.sort((a, b) => a - b);
+  const q = (p: number) => Math.round(lat[Math.min(lat.length - 1, Math.floor(p * lat.length))] ?? 0);
+  const resumo = {
+    inicio,
+    fim: new Date().toISOString(),
+    concorrencia: conc,
+    condicional: !!condicional,
+    arquivos: tarefas.length,
+    feitos,
+    porStatus,
+    segundos: Math.round(seg * 10) / 10,
+    reqPorSeg: Math.round((feitos / seg) * 10) / 10,
+    latenciaMs: { p50: q(0.5), p95: q(0.95), max: Math.round(lat.at(-1) ?? 0) },
+    mb: Math.round(bytes / 1e5) / 10,
+    menorRatelimitRestante: Number.isFinite(minRestante) ? minRestante : null,
+    limites,
+  };
+  await Deno.writeTextFile(`${dir}/_etags.json`, JSON.stringify(etags));
+  await Deno.writeTextFile(`${dir}/_medicao-c${conc}${condicional ? "-etag" : ""}.json`, JSON.stringify(resumo, null, 1));
+  console.log(JSON.stringify(resumo, null, 1));
+}
+
 async function sha(txt: string) {
   const h = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(txt));
   return `"${
@@ -145,7 +237,14 @@ if (import.meta.main) {
   };
   const origem = op("--origem", "6257");
   if (cmd === "baixar") await baixar(dir.replace(/\/$/, ""), origem);
-  else if (cmd === "servir") {
+  else if (cmd === "medir") {
+    await medir(
+      dir.replace(/\/$/, ""),
+      origem,
+      Math.max(1, Number(op("--concorrencia", "8"))),
+      resto.includes("--condicional") ? op("--condicional", dir).replace(/\/$/, "") : null,
+    );
+  } else if (cmd === "servir") {
     servir(
       dir.replace(/\/$/, ""),
       op("--host", "127.0.0.1"),

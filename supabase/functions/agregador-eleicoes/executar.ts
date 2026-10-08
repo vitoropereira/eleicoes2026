@@ -64,7 +64,7 @@ export interface Deps {
   agora: () => number; // epoch ms (injetável nos testes)
   orcamentoMs?: number; // padrão 120 s
   margemMs?: number; // parar de buscar municípios com menos que isto sobrando (padrão 20 s)
-  concorrencia?: number; // padrão 12, mínimo 1
+  concorrencia?: number; // padrão 16, mínimo 1
   /** Ensaio: usa este código em vez de descobrir o de 2º turno. Nunca em produção. */
   eleicaoForcada?: string;
   log?: (...a: unknown[]) => void;
@@ -113,7 +113,7 @@ function limitador(n: number) {
   };
 }
 
-export const CONCORRENCIA_PADRAO = 12;
+export const CONCORRENCIA_PADRAO = 16; // medido em 08/10: 16 conexões, ~145 req/s, 0 respostas 429 (PROPOSTA.md, Riscos)
 export const normalizarConcorrencia = (n: number | undefined): number =>
   n !== undefined && Number.isFinite(n) ? Math.max(1, Math.floor(n)) : CONCORRENCIA_PADRAO;
 
