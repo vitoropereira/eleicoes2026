@@ -4,19 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Apuração 2026 — Projeções</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD" crossorigin="anonymous"></script>
 <style>
-:root{
-  --bg:#fcfcfb;--card:#ffffff;--ink:#1b1c1e;--ink2:#55595f;--muted:#8a8f98;--line:#e6e6e3;
-  --flavio:#2563c9;--lula:#d1453b;--outros:#8a8f98;--neutral:#c9cbcf;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1a1a19;--card:#232322;--ink:#ececea;--ink2:#b4b6ba;--muted:#8d9096;--line:#353533;
-  --flavio:#5b8def;--lula:#e35a4f;--outros:#8d9096;--neutral:#4a4b4d;}}
-:root[data-theme="dark"]{--bg:#1a1a19;--card:#232322;--ink:#ececea;--ink2:#b4b6ba;--muted:#8d9096;--line:#353533;
-  --flavio:#5b8def;--lula:#e35a4f;--outros:#8d9096;--neutral:#4a4b4d;}
+/* Brand vitorpereira.ia.br: única fonte de cores e fontes do site. Escuro por padrão. */
+@font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url(/fonts/inter-latin-wght-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;src:url(/fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2")}
+:root{color-scheme:dark;--bg:#070B12;--card:#0C121D;--ink:#E9EEF7;--ink2:#AEB8CA;--muted:#8593AB;--line:#1E2A3D;--soft:#111A28;--brand:#24C8FF;--flavio:#5B7FE8;--lula:#E35A4F;--outros:#8593AB;--neutral:#3A4558;--amber:#E0A530;--live:#3ECF7C;--b1:#1E2A55;--b2:#2D4596;--b3:#4466D6;--b4:#8AA5F5;--r1:#5A2E2A;--r2:#8F3A31;--r3:#D0564A;--r4:#F29185;--g0:#1A2334;--font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light;--bg:#FBFCFE;--card:#FFFFFF;--ink:#0B1220;--ink2:#3B4558;--muted:#566072;--line:#E2E8F1;--soft:#F1F5FA;--brand:#0A76AD;--flavio:#2F5BD3;--lula:#D1453B;--outros:#566072;--neutral:#A3ABB8;--amber:#C98A12;--live:#1F9D55;--b1:#D6DFF7;--b2:#9DB2EF;--b3:#4F72DD;--b4:#2443A8;--r1:#F7D3CE;--r2:#EFA198;--r3:#E0604F;--r4:#A8322A;--g0:#E9EDF3}}
+:root[data-theme="light"]{color-scheme:light;--bg:#FBFCFE;--card:#FFFFFF;--ink:#0B1220;--ink2:#3B4558;--muted:#566072;--line:#E2E8F1;--soft:#F1F5FA;--brand:#0A76AD;--flavio:#2F5BD3;--lula:#D1453B;--outros:#566072;--neutral:#A3ABB8;--amber:#C98A12;--live:#1F9D55;--b1:#D6DFF7;--b2:#9DB2EF;--b3:#4F72DD;--b4:#2443A8;--r1:#F7D3CE;--r2:#EFA198;--r3:#E0604F;--r4:#A8322A;--g0:#E9EDF3}
+h1,h2,.kicker,.tile .v,.prob .v{font-family:var(--font-mono);letter-spacing:-.02em}
+.tile .k,header p.kicker{font-family:var(--font-mono);letter-spacing:.1em}
+a{color:var(--brand)}
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-sans)}
 main{max-width:1120px;margin:0 auto;padding:28px 16px 60px}
 h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
 h2{font-size:17px;margin:0 0 4px}
@@ -29,7 +30,7 @@ h2{font-size:17px;margin:0 0 4px}
 .tile .d{font-size:12.5px;color:var(--muted)}
 .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:baseline}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.card{margin-bottom:14px}.grid .card{margin-bottom:0}
+.card{margin-bottom:14px}.grid .card{margin-bottom:0}.grid>*{min-width:0}
 .ch{position:relative;height:320px}.ch.tall{height:720px}
 .bar{height:22px;border-radius:6px;overflow:hidden;display:flex;gap:2px;background:var(--card);margin:6px 0 4px}
 .bar>div{height:100%}
@@ -144,6 +145,7 @@ document.getElementById('prob').innerHTML=[
 document.getElementById('mcrange').textContent=`Vantagem final de Flávio sobre Lula: mediana ${fmt(mc.p50)} pt · intervalo 80% de ${fmt(mc.p10)} a ${fmt(mc.p90)} pt.`;
 
 // trajetória (snapshots antigos não têm hist/traj)
+if(!(D.traj&&D.hist))cTraj.closest('.card').style.display='none';
 if(D.traj&&D.hist){
 const T=D.traj,xy=(a,k)=>a.map(p=>({x:p.x??p.pst,y:p[k]}));
 const band=(k,c)=>[{label:'_lo'+k,data:xy(T.lo,k),borderWidth:0,pointRadius:0,fill:false},
