@@ -60,6 +60,9 @@ python3 supabase/ensaio_site.py --porta 8790      # http://127.0.0.1:8790/ao-viv
 Serve `site/` como na Vercel, `/vivo/*` de `.ensaio/vivo/` e `/hud/*.js` direto de `hud/` (testa mudança no HUD sem
 rodar o build). Objeto que não existe em `/vivo/` responde como o Storage responde hoje (HTTP 400 + `NoSuchKey`).
 Recarregue a página depois de cada passo (ou espere o polling de 15 s).
+"Pessoas agora" só conecta com `.ensaio/vivo/config.json` = `{"presenca": true}` (a chave geral de produção, 6c da
+PROPOSTA.md); sem o arquivo, o contador não aparece. O `--zerar` apaga esse arquivo junto. Aberto em Chrome headless
+(captura) a presença nunca conecta.
 
 Capturas (desktop e celular):
 

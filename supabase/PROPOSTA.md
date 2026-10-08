@@ -166,6 +166,40 @@ Rodada sem as 28 UFs devolve `{"status":"sem-dados","motivo":"UFs faltando: ..."
 que o já aceito é ignorado. Depois de um 429 do TSE a função fica em pausa de 2, depois 4, depois 8 minutos
 (`{"status":"pausa"}`), e zera numa rodada limpa. Rodada que perde a trava para outra aborta sem gravar.
 
+## 6c. "Pessoas agora" (presença no Realtime): ligar e desligar
+
+O org está no plano **FREE** e o projeto é compartilhado com o vitorpereira.ia.br: a presença nunca pode pôr o projeto
+em risco. Proteções no `hud/presenca.js`:
+- **chave geral**: antes de conectar (e a cada reconexão) o HUD lê `/vivo/config.json` sem cache; só conecta com
+  `{"presenca": true}`. Arquivo ausente, 404/400 ou erro = **desligado**;
+- **teto de 100**: com 100 pessoas no canal a aba faz `untrack`, sai do canal, fecha o socket, mostra "100+ pessoas
+  agora" e não volta por 10 min (marcado no `sessionStorage`);
+- **desistência**: 5 falhas seguidas na mesma página e não tenta mais; backoff 2 s → 60 s com sorteio (0,5× a 1,5×),
+  zerado só depois de uma conexão boa (recebeu `presence_state` e ficou 30 s no ar).
+
+Ligar / desligar (service role na sua shell, nunca em arquivo do repo; vale em até ~15 s pelo cache da Vercel):
+```bash
+# ligar
+curl -sS -X POST "$SUPABASE_URL/storage/v1/object/vivo/config.json" -H "x-upsert: true" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" -H "Content-Type: application/json" -H "cache-control: max-age=15" \
+  -d '{"presenca":true}'
+# desligar (as abas abertas param na próxima reconexão; abas novas não conectam)
+curl -sS -X POST "$SUPABASE_URL/storage/v1/object/vivo/config.json" -H "x-upsert: true" \
+  -H "Authorization: Bearer $SERVICE_ROLE_KEY" -H "Content-Type: application/json" -H "cache-control: max-age=15" \
+  -d '{"presenca":false}'
+# conferir
+curl -sS "https://eleicoes2026.vitorpereira.ia.br/vivo/config.json"
+```
+O controlador vai ligar agora (`{"presenca":true}`). O agregador nunca grava `config.json`.
+
+## 6d. Decisões de comportamento do agregador
+
+- **`estado.eleito` é pegajoso, de propósito**: depois que o TSE marca um eleito (`e:"s"` + `st:"Eleito"`), o número
+  fica em `_estado.json` e sai em todo `agora.json` seguinte, mesmo que um arquivo posterior venha sem a marca (o TSE
+  não desfaz proclamação). Para desfazer à mão: apagar `eleito` de `vivo/_estado.json` com o cron pausado.
+- UF cujo arquivo não deu para ler na rodada (429/erro) e que já estava atrasada continua em `pend`.
+- `AGREGADOR_CONCORRENCIA` vazia ou inválida = padrão (16), mínimo 1.
+
 ## 7. Ensaio geral com o simulador (tudo local, nada em produção)
 
 ```bash

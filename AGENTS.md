@@ -19,11 +19,16 @@ Repo **público**: nada de segredo em commit.
 - "Pessoas agora" (presença no Realtime, `hud/presenca.js`): usa a **publishable key** (`sb_publishable_…`), que é
   pública por desenho e fica como constante em `build_site.py` (`SUPABASE_PUBLISHABLE_KEY`), injetada no HUD como
   `window.HUD_PRESENCE`. Nunca trocar por `service_role`/`sb_secret_`: `tests/test_hud.py` barra isso.
+  Só conecta com `vivo/config.json` = `{"presenca": true}` (chave geral; ver `supabase/PROPOSTA.md`, 6c).
 - Ensaio geral do 2º turno, todo local: `supabase/ensaio.md`.
 
 ## Comandos
 - Testes: `python3 -m unittest discover -s tests -v`
 - Testes do HUD (JS): `deno test hud/`
+- Testes do agregador: `cd supabase/functions/agregador-eleicoes && deno test --allow-read --allow-env .`
+- Testes do simulador: `deno test --allow-read supabase/simular_test.ts`
+- `supabase/simular.ts medir` bate no TSE de verdade (milhares de requisições): **nunca rodar em 25/10**, nem perto da
+  noite da apuração; o agregador de produção usa o mesmo IP de saída do TSE que todo mundo.
 - Relatório: `cd relatorio && python3 montar.py && cd ..`
 - Site: `python3 build_site.py`
 - PR: `/ship`
