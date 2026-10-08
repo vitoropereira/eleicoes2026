@@ -1,13 +1,13 @@
 // HUD da apuração: estado da página, cabeçalho, mapa, linha do tempo, busca, Exterior e acessibilidade.
 import { html, render, useState, useEffect, useMemo, useRef, useCallback, useErrorBoundary } from "/vendor/preact-htm.module.js";
-import { t1, malha, criarVivo } from "./dados.js";
+import { t1, malha, criarVivo, vivoExtra, vivoMinuto } from "./dados.js";
 import { decodificar, decodificarUFs } from "./topo.js";
 import { Mapa } from "./mapa.js";
 import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
-import { oficial } from "./calc.js";
+import { oficial, duelo } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -59,15 +59,15 @@ function Topo({ turno, setTurno, cargo, setCargo, status, onBusca, onExterior, o
       <div class="seg turnos" role="group" aria-label="Turno">
         ${[1, 2].map((t) => html`<button type="button" aria-pressed=${turno === t} onClick=${() => setTurno(t)}>${t}º turno</button>`)}
       </div>
-      <nav class="seg cargos" aria-label="Cargo">
+      <div class="seg cargos" role="group" aria-label="Cargo">
         ${CARGOS.map(([k, nome]) => {
           const off = turno === 2 && k !== "presidente";
           return html`<button type="button" aria-pressed=${cargo === k} disabled=${off} title=${off ? "No 2º turno só há votação para presidente e, em alguns estados, governador" : null} onClick=${() => setCargo(k)}>${nome}</button>`;
         })}
-      </nav>
+      </div>
       <div class="acoes">
         <button type="button" class="bt busca" onClick=${onBusca} aria-keyshortcuts="Meta+K Control+K">${Ic.busca}<span>Buscar</span><kbd>⌘K</kbd></button>
-        <span class=${"status " + status.cls} role="status"><i class="dot" aria-hidden="true"></i><span class=${status.curto ? "st-l" : ""}>${status.txt}</span>${status.curto && html`<span class="st-c" aria-hidden="true">${status.curto}</span>`}</span>
+        <span class=${"status " + status.cls}><i class="dot" aria-hidden="true"></i><span class=${status.curto ? "st-l" : ""}>${status.txt}</span>${status.curto && html`<span class="st-c" aria-hidden="true">${status.curto}</span>`}</span>
         <button type="button" class="bt" onClick=${onExterior}>${Ic.globo}<span>Exterior</span></button>
         <button type="button" class="bt ic" onClick=${onCheia} aria-label=${cheia ? "Sair da tela cheia" : "Tela cheia"} title=${cheia ? "Sair da tela cheia" : "Tela cheia"}>${Ic.cheia}</button>
       </div>
@@ -75,11 +75,11 @@ function Topo({ turno, setTurno, cargo, setCargo, status, onBusca, onExterior, o
 }
 
 // ---------------- barra de modos + legenda
-function Modos({ modo, setModo, legenda, travado }) {
+function Modos({ modo, setModo, legenda, travado, semApurado }) {
   return html`
     <div class="modos">
       <div class="seg" role="group" aria-label="Modo do mapa">
-        ${MODOS.map(([k, nome]) => html`<button type="button" aria-pressed=${modo === k} onClick=${() => setModo(k)}>${nome}</button>`)}
+        ${MODOS.map(([k, nome]) => html`<button type="button" aria-pressed=${modo === k} disabled=${k === "apurado" && semApurado} title=${k === "apurado" && semApurado ? "O % apurado por município ainda não veio nesta leitura" : null} onClick=${() => setModo(k)}>${nome}</button>`)}
       </div>
       ${legenda && html`<p class="legenda">${legenda}</p>`}
       ${travado && html`<p class="legenda nota">${travado}</p>`}
@@ -221,6 +221,8 @@ function App() {
     const fs = () => setCheia(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", fs);
     vivoCtl.current = criarVivo(setVivo);
+    // abre direto no 2º turno quando o agora.json já existe
+    vivoCtl.current.sondar().then((ok) => { if (ok && !st.current.turnoEscolhido) setTurnoX(2, true); });
     const tecla = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setBusca(true); }
       else if (e.key === "/" && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) { e.preventDefault(); setBusca(true); }
@@ -247,20 +249,41 @@ function App() {
     malha().then((t) => setGeo(decodificar(t))).catch((e) => { st.current.malhaPedida = false; setErro(e); });
   }
 
-  const setTurnoX = (t) => { setTurno(t); setIdxS(null); setUfSel(null); setDica(null); if (t === 2) { setCargoS("presidente"); if (modo !== "municipios" && modo !== "estados") setModoS("municipios"); } };
+  const setTurnoX = (t, auto) => { if (!auto) st.current.turnoEscolhido = true; setTurno(t); setIdxS(null); setUfSel(null); setDica(null); if (t === 2) { setCargoS("presidente"); if (modo !== "municipios" && modo !== "estados") setModoS("municipios"); } };
   const setCargo = (c) => { setCargoS(c); setDica(null); if (c !== "presidente") setIdxS(null); };
   const setModo = (m) => { if (m !== "estados") pedirMalha(); setModoS(m); if (m === "municipios" && idx != null) setIdxS(null); };
   const setIdx = (i) => {
     setIdxS(i);
+    if (turno === 2) return; // no 2º turno a linha do tempo troca o minuto, o mapa segue por município
     if (i == null) { if (modo === "estados" && st.current.modoAntes) setModoS(st.current.modoAntes); st.current.modoAntes = null; }
     else if (modo === "municipios" || modo === "vantagem") { st.current.modoAntes = modo; setModoS("estados"); }
   };
 
+  // 2º turno: feed, série (índice) e o minuto escolhido na linha do tempo
+  const [feed2, setFeed2] = useState(null), [serie2b, setSerie2b] = useState(null), [minuto, setMinuto] = useState(null);
+  useEffect(() => {
+    if (turno !== 2 || !vivo.dados) return;
+    vivoExtra("feed.json").then((f) => f && setFeed2(f));
+    vivoExtra("serie/index.json").then((x) => Array.isArray(x) && setSerie2b(x));
+  }, [turno, vivo.dados?.idg]);
+  const serie2 = useMemo(() => (serie2b || []).map((e) => {
+    const c = vivo.dados?.cand || [], { F, L } = duelo(c), tot = (e.br?.[2] || 0) + (e.br?.[6] || 0) || 1;
+    const v = (x) => { const i = c.indexOf(x); return i >= 0 ? (e.br?.[5]?.[i] || 0) : 0; };
+    return { ht: e.t, pst: e.pst, f: (100 * v(F)) / tot, l: (100 * v(L)) / tot };
+  }), [serie2b, vivo.dados?.cand]);
+  useEffect(() => {
+    if (turno !== 2 || idx == null || !serie2[idx]) { setMinuto(null); return; }
+    vivoMinuto(serie2[idx].ht).then(setMinuto).catch(() => setMinuto(null));
+  }, [turno, idx, serie2]);
+
   // fonte de dados do recorte atual
-  const fonte = turno === 2 ? (cargo === "presidente" ? vivo.dados : null) : res[cargo];
+  const fonte = turno === 2 ? (cargo === "presidente" ? (idx != null && minuto ? minuto : vivo.dados) : null) : res[cargo];
+  // % apurado por UF / município (2º turno: pu/pm do agregador; 1º turno final: 100%)
+  const pstUF = (uf) => (turno === 2 ? (fonte?.pu?.[uf] ?? fonte?.pst ?? 0) : 100);
+  const pstMun = (cod) => (turno === 2 ? (fonte?.pm?.[cod] ?? fonte?.pst ?? 0) : 100);
   const listaPres = useMemo(() => {
     if (turno === 2 && vivo.dados) {
-      if (Array.isArray(vivo.dados.cand)) return vivo.dados.cand;
+      if (Array.isArray(vivo.dados.cand)) return vivo.dados.cand; // contrato: votos seguem agora.cand
       const n = vivo.dados.br?.[5]?.length || 2;
       return (meta?.cand?.presidente || []).slice(0, n);
     }
@@ -287,18 +310,17 @@ function App() {
     if (!geo) return null;
     const bg = token("--bg");
     if (!fonte) { const n = misturar(token("--neutral"), bg, 0.45); return geo.muns.map(() => n); }
-    const pstGeral = turno === 2 ? (vivo.dados?.pst ?? 0) / 100 : 1;
     if (modo === "estados" || pontoUF || geo.soUF) {
       const porUF = {};
       for (const uf of Object.keys(geo.ufs)) {
         const r = resultadoUF(uf);
-        porUF[uf] = r ? corPara(modo === "apurado" ? "apurado" : modo === "vantagem" ? "vantagem" : "municipios", r, cargo, r.pst != null ? r.pst / 100 : pstGeral) : null;
+        porUF[uf] = r ? corPara(modo === "apurado" ? "apurado" : modo === "vantagem" ? "vantagem" : "municipios", r, cargo, (r.pst ?? pstUF(uf)) / 100) : null;
       }
       return geo.muns.map((m) => porUF[m.uf]);
     }
     return geo.muns.map((m) => {
       const r = linha(cargo, fonte.mu?.[m.cod], lista(m.uf));
-      return r ? corPara(modo, r, cargo, pstGeral) : null;
+      return r ? corPara(modo, r, cargo, pstMun(m.cod) / 100) : null;
     });
   }, [geo, fonte, cargo, modo, pontoUF, tema, turno, resultadoUF, lista, vivo.dados]);
 
@@ -307,7 +329,7 @@ function App() {
     return Object.keys(geo.ufs).map((uf) => {
       const r = fonte ? resultadoUF(uf) : null;
       if (!r || !r.lider) return { uf, cor: "var(--neutral)", txt: "", aria: `${UF_NOME[uf]}: sem dados` };
-      const txt = ehDep(cargo) ? curta(r.sg) : modo === "apurado" ? `${pct(r.pst ?? (turno === 2 ? vivo.dados?.pst : 100), 0)}%` : `${pct(r.p1 * 100, 0)}%`;
+      const txt = ehDep(cargo) ? curta(r.sg) : modo === "apurado" ? `${pct(r.pst ?? pstUF(uf), 0)}%` : `${pct(r.p1 * 100, 0)}%`;
       return { uf, cor: cor(r.lider.sg), txt, aria: `${UF_NOME[uf]}: ${ehDep(cargo) ? r.sg + " mais votado" : `${r.lider.nome} (${r.lider.sg}) ${pct(r.p1 * 100, 1)}%`}. Aproximar.` };
     });
   }, [geo, fonte, resultadoUF, cargo, modo, turno, vivo.dados]);
@@ -332,7 +354,7 @@ function App() {
       onUF: (uf) => escolherUF(uf),
       onZoom: (z) => { setZoom(z); if (z > 1.5) pedirMalha(); },
     });
-    window.__hudMapa = mapa.current; // diagnóstico (medição de quadro)
+    if (new URLSearchParams(location.search).has("diag")) window.__hudMapa = mapa.current; // só para medição/QA (?diag)
     const ins = () => mapa.current?.setInsets(medirInsets());
     ins(); addEventListener("resize", ins);
   }, [geo]);
@@ -456,17 +478,25 @@ function App() {
   else if (!meta || !fonte) esq = html`<p class="vazio-txt">Carregando resultados…</p>`;
   else if (cargo === "presidente") {
     const r0 = ufSel ? linha("presidente", fonte.uf?.[ufSel], listaPres) : linha("presidente", fonte.br, listaPres);
-    const r = ponto ? linhaSerie([ponto.pst, ponto.f, ponto.l], listaPres) : r0;
-    esq = html`<${Placar} cargo="presidente" r=${r} turno=${turno} pst=${turno === 2 ? vivo.dados?.pst ?? 0 : 100} ponto=${ponto && !ufSel ? ponto : null}
+    // linha do tempo: com UF escolhida, a leitura daquela UF (nunca o número nacional com o nome da UF)
+    let r = r0, pontoP = null, semLeitura = false;
+    if (ponto && ufSel) {
+      const u = pontoUF?.uf?.[ufSel];
+      if (u) { r = linhaSerie(u, listaPres); pontoP = { ...ponto, pst: u[0], ht: pontoUF.ufDe || ponto.ht }; } else semLeitura = true;
+    } else if (ponto) { r = linhaSerie([ponto.pst, ponto.f, ponto.l], listaPres); pontoP = ponto; }
+    else if (turno === 2) pontoP = null;
+    esq = semLeitura ? html`<div class="cab"><p class="kicker">Presidente · ${UF_NOME[ufSel]}</p><button type="button" class="link" onClick=${voltar}>← Brasil</button></div>
+      <h1 class="manchete pequena">Sem leitura desta UF neste momento</h1><p class="vazio-txt">O TSE não tinha publicado ${UF_NOME[ufSel]} às ${ponto.ht}. Arraste a linha do tempo para outra leitura.</p>` : html`<${Placar} cargo="presidente" r=${r} turno=${turno} pst=${turno === 2 ? (ufSel ? pstUF(ufSel) : fonte?.pst ?? 0) : 100} ponto=${pontoP}
+      pend=${turno === 2 ? fonte?.pend : null}
       kicker=${`Presidente · ${turno}º turno · ${ufSel ? UF_NOME[ufSel] : "Brasil"}`} selo=${turno === 1 ? "2º turno em 25/10" : null}
       of=${turno === 1 && !ufSel ? oficial(situacao, "presidente", null, listaPres) : null}
-      onVoltar=${ufSel ? voltar : null} serie=${turno === 1 && !ufSel ? serie : null} idx=${idx} />`;
+      onVoltar=${ufSel ? voltar : null} serie=${!ufSel ? (turno === 1 ? serie : serie2) : null} idx=${idx} />`;
   } else if (ehDep(cargo)) esq = html`<${ResumoDep} cargo=${cargo} res=${fonte} uf=${ufSel} onUF=${escolherUF} onVoltar=${voltar} geo=${geo} />`;
   else if (ufSel) esq = html`<${Placar} cargo=${cargo} r=${linha(cargo, fonte.uf?.[ufSel], lista(ufSel))} of=${oficial(situacao, cargo, ufSel, lista(ufSel))} kicker=${`${CARGO_NOME[cargo]} · ${UF_NOME[ufSel]}`} onVoltar=${voltar} />`;
   else esq = html`<${ResumoUFs} cargo=${cargo} res=${fonte} meta=${meta} onUF=${escolherUF} status=${situacao} />`;
 
-  const linhaAtiva = turno === 1 && cargo === "presidente" && serie.length > 1;
-  const motivoLinha = turno === 2 ? "A linha do tempo do 2º turno começa em 25/10" : "Linha do tempo: só para presidente (o TSE não publica a noite dos outros cargos)";
+  const linhaAtiva = cargo === "presidente" && (turno === 1 ? serie.length > 1 : serie2.length > 1);
+  const motivoLinha = turno === 2 ? "A linha do tempo do 2º turno começa com as primeiras leituras do TSE" : "Linha do tempo: só para presidente (o TSE não publica a noite dos outros cargos)";
   const travado = pontoUF && modo === "estados" ? `Por estado: o TSE não publica a noite por município${pontoUF.ufDe && pontoUF.ufDe !== pontoUF.ht ? ` · estados às ${pontoUF.ufDe}` : ""}` : null;
 
   // tabela alternativa (leitor de tela)
@@ -488,7 +518,7 @@ function App() {
       <main id="conteudo" class="palco">
         <aside class="esq painel" aria-label="Resultado"><${Seguro}>${esq}<//></aside>
         <section class="centro" aria-label="Mapa">
-          <${Modos} modo=${modo} setModo=${setModo} legenda=${legenda} travado=${travado} />
+          <${Modos} modo=${modo} setModo=${setModo} semApurado=${turno === 2 && fonte && !fonte.pm} legenda=${legenda} travado=${travado} />
           <div class="mapa" ref=${mapaEl}>
             ${!geo && html`<p class="mapa-msg">${erro ? "Mapa indisponível no momento." : "Carregando o mapa dos 5.570 municípios…"}</p>`}
           </div>
@@ -503,10 +533,10 @@ function App() {
           <section class="bloco"><div class="cab"><h2 class="kicker">Por região</h2><span class="sub">${cargo === "presidente" ? "quem lidera" : "partido na frente"}${ponto ? ` · aprox. ${ponto.d ? ponto.d + " " : ""}${ponto.ht}` : ""}</span></div>
             <${Seguro}><${PorRegiao} cargo=${cargo} res=${meta ? fonte : null} meta=${meta} lista=${listaPres} ponto=${pontoUF} geo=${geo} turno=${turno} /><//></section>
           <section class="bloco feed-b"><div class="cab"><h2 class="kicker">Últimas atualizações</h2></div>
-            ${turno === 2 ? html`<p class="vazio-txt">O feed do 2º turno começa quando o TSE publicar as primeiras seções.</p>` : html`<${Feed} itens=${feed} onUF=${(uf) => { escolherUF(uf); }} />`}</section>
+            ${turno === 2 ? (feed2?.length ? html`<${Feed} itens=${feed2} onUF=${(uf) => { escolherUF(uf); }} />` : html`<p class="vazio-txt">O feed do 2º turno começa quando o TSE publicar as primeiras seções.</p>`) : html`<${Feed} itens=${feed} onUF=${(uf) => { escolherUF(uf); }} />`}</section>
           <p class="fonte">Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do IBGE. Não é site oficial da Justiça Eleitoral. <a href="/">Resultado final</a> · <a href="/apuracao/">Histórico</a> · <a href="/#metodo">Método</a> · <a href="https://vitorpereira.ia.br/privacidade">Privacidade</a> · <button type="button" class="link" onClick=${() => window.dispatchEvent(new CustomEvent("consent:reopen"))}>Cookies</button></p>
         </aside>
-        <${LinhaDoTempo} serie=${serie} idx=${idx} setIdx=${setIdx} ativa=${linhaAtiva} motivo=${motivoLinha} turno=${turno} vivo=${vivo.status} />
+        <${LinhaDoTempo} serie=${turno === 1 ? serie : serie2} idx=${idx} setIdx=${setIdx} ativa=${linhaAtiva} motivo=${motivoLinha} turno=${turno} vivo=${vivo.status} />
       </main>
       <p class="sr-only" aria-live="polite">${resumo}</p>
       <footer class="hud-pe"><span>Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do <a href="https://www.ibge.gov.br/" rel="noopener">IBGE</a>. Não é um site oficial da Justiça Eleitoral.</span>

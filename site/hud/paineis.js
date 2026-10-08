@@ -1,6 +1,6 @@
 // Painéis do HUD (Preact + htm): esquerdo (manchete, placar, totais, gráfico) e direito (regiões, feed).
 import { html, useState } from "/vendor/preact-htm.module.js";
-import { pct, int, linha, somar, oficial, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
+import { pct, int, linha, somar, oficial, duelo, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
 
 const CORES_MARCA = new Set(["PL", "PT"]);
 /** nome com a cor do partido: PL/PT usam o token (contraste testado); os demais, sublinhado na cor */
@@ -12,7 +12,8 @@ function manchete(cargo, r, onde, turno, pst, parcial, of) {
   if (!a) return null;
   const lidera = html`<${Nome} c=${a} /> lidera com ${pct(a.p * 100, 1)}%${onde}`;
   if (parcial) return html`<${Nome} c=${a} /> lidera com ${pct(parcial.pst, 1)}% das seções`;
-  if (turno === 2) return pst >= 100 ? html`<${Nome} c=${a} /> é eleito${onde}` : html`<${Nome} c=${a} /> lidera${onde}`;
+  // 2º turno: sem situação oficial no agora.json, então nunca "eleito" — só quem lidera e com quanto apurado
+  if (turno === 2) return html`<${Nome} c=${a} /> lidera com ${pct(pst ?? 0, 1)}% das seções${onde}`;
   // 1º turno: só a situação oficial diz quem foi eleito ou quem vai ao 2º turno
   if (cargo === "senador" && of?.eleitos?.length) {
     const el = of.eleitos;
@@ -26,7 +27,7 @@ function manchete(cargo, r, onde, turno, pst, parcial, of) {
 export const TagSJ = ({ c }) => (c.sj ? html` · <span class="tag-sj">sub judice</span>` : null);
 
 // ---------------- placar (presidente, governador, senador)
-export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of }) {
+export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of, pend }) {
   const [todos, setTodos] = useState(false);
   if (!r || !r.cands.length) return html`<p class="vazio-txt">Sem dados para este recorte.</p>`;
   const [a, b] = r.cands;
@@ -48,6 +49,7 @@ export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, tu
       ${selo && html`<span class="selo">${selo}</span>`}
     </div>
     <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of)}</h1>
+    ${pend?.length > 0 && html`<p class="mais pend">UFs atualizando: ${pend.join(", ")}</p>`}
     <div class="placar">${lado(a, "l1")}${b && lado(b, "l2")}</div>
     ${b && html`<div class="duelo" aria-hidden="true">
       <i style=${{ width: (a.p * 100).toFixed(2) + "%", "--c": cor(a.sg) }}></i>
@@ -182,7 +184,7 @@ export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno }) {
       if (ponto?.uf) { // aproximação na linha do tempo: média das UFs ponderada pelos válidos finais
         let w = 0, f = 0, l = 0;
         ufs.forEach((u) => { const p = ponto.uf[u], vv = res.uf?.[u]?.[2] || 0; if (p) { w += vv; f += p[1] * vv; l += p[2] * vv; } });
-        if (w) { const c2 = [{ ...lista[0], p: f / w / 100 }, { ...lista[1], p: l / w / 100 }].sort((a, b) => b.p - a.p); r = { ...r, cands: c2, val: c2 }; }
+        if (w) { const { F, L } = duelo(lista); const c2 = [{ ...F, p: f / w / 100 }, { ...L, p: l / w / 100 }].sort((a, b) => b.p - a.p); r = { ...r, cands: c2, val: c2 }; }
       }
       return { nome, r };
     });
