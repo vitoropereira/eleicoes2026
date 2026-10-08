@@ -70,7 +70,9 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 /* ---------- painéis */
 .painel{position:absolute;z-index:10;background:color-mix(in srgb,var(--card) 88%,transparent);border:1px solid var(--line);border-radius:10px;overflow:auto;scrollbar-width:thin;backdrop-filter:blur(6px)}
 .painel.esq{left:16px;top:12px;bottom:12px;width:340px;padding:16px 18px}
-.painel.dir{right:16px;top:12px;bottom:12px;width:300px;padding:0}
+.painel.dir{right:16px;top:12px;bottom:12px;width:300px;padding:0;display:flex;flex-direction:column;overflow:hidden}
+.painel.dir .feed-b{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+.painel.dir .fonte{flex:none}
 .painel.dir .bloco{padding:14px 16px}
 .painel.dir .bloco+.bloco{border-top:1px solid var(--line)}
 .cab{display:flex;align-items:baseline;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
@@ -148,6 +150,9 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 .feed .link{font-size:12.5px;text-decoration:none;color:var(--ink2)}
 .feed+.link{margin-top:8px}
 .feed .link:hover{color:var(--ink);text-decoration:underline}
+.tag-sj{display:inline-block;font:500 10px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);border:1px solid var(--amber);border-radius:999px;padding:0 6px}
+.outros.sj .p{color:var(--muted)}
+.feed .rf{display:block;font:10.5px var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
 .vazio-txt{color:var(--muted);font-size:13px;margin:6px 0}
 .vazio .aguarda .dot{background:var(--amber)}
 .vazio .aguarda{display:flex;align-items:center;gap:8px;font:500 14px var(--font-mono);color:var(--ink);margin:0 0 10px}
@@ -155,6 +160,7 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
 
 /* ---------- linha do tempo */
 .linha{position:absolute;z-index:10;left:372px;right:332px;bottom:12px;min-height:56px;display:flex;align-items:center;gap:14px;padding:8px 16px;background:color-mix(in srgb,var(--card) 88%,transparent);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(6px)}
+.linha .hora small{display:block;font-size:10px;color:var(--muted);line-height:1}
 .linha .hora,.linha .pst{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);min-width:44px}
 .trilho{flex:1;position:relative;padding-bottom:14px;min-width:120px}
 .trilho input{width:100%;margin:0;accent-color:var(--ink);cursor:pointer}
@@ -229,6 +235,7 @@ svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke
   .cargos::-webkit-scrollbar{display:none}
   .palco{display:flex;flex-direction:column;gap:12px;padding:12px 12px 16px}
   .painel,.painel.esq,.painel.dir{position:static;width:auto;backdrop-filter:none;background:var(--card);overflow:visible}
+  .painel.dir{display:block}.painel.dir .feed-b{overflow:visible}
   .painel.esq{padding:16px;order:0}
   .centro{position:relative;inset:auto;height:min(115vw,520px);min-height:360px;border:1px solid var(--line);border-radius:10px;overflow:hidden;order:1}
   .painel.dir{order:2}

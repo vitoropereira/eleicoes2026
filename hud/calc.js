@@ -52,17 +52,21 @@ export function linha(cargo, row, lista) {
   if (ehDep(cargo)) {
     const [vv, sg, vp, top] = row;
     const cands = (top || []).map(([nome, s, v]) => ({ nome, sg: s, v, p: vv ? v / vv : 0 }));
-    return { dep: true, validos: vv, sg, partidoV: vp, partidoP: vv ? vp / vv : 0, cands, lider: { sg }, p1: vv ? vp / vv : 0, margem: null };
+    return { dep: true, val: cands, sj: [], validos: vv, sg, partidoV: vp, partidoP: vv ? vp / vv : 0, cands, lider: { sg }, p1: vv ? vp / vv : 0, margem: null };
   }
-  const [el, comp, vv, vb, vn, votos] = row;
-  const cands = (lista || []).map((c, i) => ({ ...c, v: votos?.[i] || 0 }));
-  const soma = cands.reduce((s, c) => s + c.v, 0);
-  const base = vv || soma || 1;
-  cands.forEach((c) => { c.p = c.v / base; });
-  cands.sort((a, b) => b.v - a.v);
-  const [a, b] = cands;
+  // [eleitores, comparecimento, validos, brancos, nulos, [votos], vansj]
+  // candidato com "sj": true (votos anulados sub judice) não entra nos válidos: sem %, nunca lidera
+  const [el, comp, vv, vb, vn, votos, vansj = 0] = row;
+  const todos = (lista || []).map((c, i) => ({ ...c, v: votos?.[i] || 0 }));
+  const val = todos.filter((c) => !c.sj);
+  const sj = todos.filter((c) => c.sj).sort((a, b) => b.v - a.v);
+  const base = vv || val.reduce((s, c) => s + c.v, 0) || 1;
+  val.forEach((c) => { c.p = c.v / base; });
+  sj.forEach((c) => { c.p = null; });
+  val.sort((a, b) => b.v - a.v);
+  const [a, b] = val;
   return {
-    eleitores: el, comparecimento: comp, validos: vv, brancos: vb, nulos: vn, cands,
+    eleitores: el, comparecimento: comp, validos: vv, brancos: vb, nulos: vn, vansj, cands: [...val, ...sj], val, sj,
     lider: a, segundo: b, p1: a ? a.p : 0, margem: a ? a.p - (b ? b.p : 0) : 0,
     pc: el ? comp / el : 0, pbn: comp ? (vb + vn) / comp : 0,
   };
@@ -94,16 +98,17 @@ export function linhaSerie(uf3, lista) {
   const [pst, f, l] = uf3;
   const F = lista?.[0] || { nome: "Flávio Bolsonaro", sg: "PL" }, L = lista?.[1] || { nome: "Lula", sg: "PT" };
   const cands = [{ ...F, p: f / 100 }, { ...L, p: l / 100 }].sort((a, b) => b.p - a.p);
-  return { cands, lider: cands[0], segundo: cands[1], p1: cands[0].p, margem: cands[0].p - cands[1].p, pst };
+  return { cands, val: cands, sj: [], lider: cands[0], segundo: cands[1], p1: cands[0].p, margem: cands[0].p - cands[1].p, pst };
 }
 
-/** soma linhas no formato [el, comp, vv, vb, vn, [votos]] */
+/** soma linhas no formato [el, comp, vv, vb, vn, [votos], vansj] */
 export function somar(rows) {
-  const out = [0, 0, 0, 0, 0, []];
+  const out = [0, 0, 0, 0, 0, [], 0];
   for (const r of rows) {
     if (!r) continue;
     for (let i = 0; i < 5; i++) out[i] += r[i] || 0;
     r[5].forEach((v, i) => { out[5][i] = (out[5][i] || 0) + v; });
+    out[6] += r[6] || 0;
   }
   return out;
 }

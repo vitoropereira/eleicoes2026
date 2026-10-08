@@ -36,6 +36,16 @@ export class Mapa {
   }
 
   // ---------- API
+  /** troca a malha (UFs → municípios) sem perder o enquadramento do usuário */
+  setGeo(geo) {
+    const antes = { k: this.k, ox: this.ox, oy: this.oy, z: this.zoom };
+    this.geo = geo;
+    const [x0, y0, x1, y1] = geo.bbox;
+    this.bw = x1 - x0; this.bh = y1 - y0;
+    this.contornoUF = null; this.hover = -1; this.sel = -1; this.mundo = null; this.vista = null;
+    this.ajustar(false);
+    if (antes.z > 1.02) { this.k = antes.k; this.ox = antes.ox; this.oy = antes.oy; this._movido(); }
+  }
   setCores(cores) { this.cores = cores; this.mundo = null; this.vista = null; this._pintarMundo(); this.pedir(); this._agendarVista(); }
   setInsets(i) { this.insets = i; this.ajustar(); }
   setRotulos(lista) {

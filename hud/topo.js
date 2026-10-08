@@ -69,33 +69,82 @@ export function decodificar(topo, objeto = "BRMU") {
   const geoms = topo.objects[objeto].geometries;
   const usoArco = new Array(arcs.length); // UFs que usam cada arco
   const muns = [];
-  const B = [Infinity, Infinity, -Infinity, -Infinity];
-  const ufs = {};
-
   geoms.forEach((g) => {
     const cod = String(g.properties.codarea);
     const uf = UF_COD[cod.slice(0, 2)] || "??";
     const polys = g.type === "Polygon" ? [g.arcs] : g.type === "MultiPolygon" ? g.arcs : [];
     const rings = [];
+    polys.forEach((poly) => poly.forEach((idx) => {
+      idx.forEach((ai) => { const k = ai < 0 ? ~ai : ai; (usoArco[k] ||= []).push(uf); });
+      rings.push({ r: anel(idx, arcs), externo: rings.length === 0 || poly[0] === idx });
+    }));
+    muns.push({ cod, uf, aneis: rings });
+  });
+  // bordas: todas (municípios) e só entre UFs diferentes ou com o mar/vizinhos (estados)
+  const bordasMun = new Path2D(), bordasUF = new Path2D();
+  arcs.forEach((a, k) => {
+    const u = usoArco[k] || [];
+    const p = new Path2D();
+    p.moveTo(a[0], a[1]);
+    for (let i = 2; i < a.length; i += 2) p.lineTo(a[i], a[i + 1]);
+    bordasMun.addPath(p);
+    if (u.length < 2 || u[0] !== u[1]) bordasUF.addPath(p);
+  });
+  return montar(muns, bordasMun, bordasUF, false);
+}
+
+/**
+ * Malha leve só com as 27 UFs (modo de aparelho fraco): contornos SVG de relatorio/dados/mapa.json,
+ * projetados por relatorio/montar.py (x = (lon+74,2)·cos(15°)·15, y = (5,5−lat)·15) e trazidos para o mesmo
+ * sistema da malha municipal, para trocar uma pela outra sem mexer no enquadramento.
+ */
+export function decodificarUFs(mapa) {
+  const C15 = Math.cos((15 * Math.PI) / 180);
+  const muns = [];
+  const bordas = new Path2D();
+  for (const [uf, { d }] of Object.entries(mapa)) {
+    if (!UF_NOME_OK.has(uf)) continue;
+    const aneis = [];
+    for (const parte of d.split("M").filter(Boolean)) {
+      const nums = parte.replace(/Z/g, "").split(/[L,]/).map(Number);
+      const r = new Float64Array(nums.length);
+      for (let i = 0; i < nums.length; i += 2) {
+        r[i] = (nums[i] / (C15 * 15) - 74.2) * K;
+        r[i + 1] = nums[i + 1] / 15 - 5.5;
+      }
+      if (r.length >= 6) aneis.push({ r, externo: true });
+    }
+    muns.push({ cod: "UF-" + uf, uf, aneis });
+  }
+  muns.forEach((m) => m.aneis.forEach(({ r }) => {
+    bordas.moveTo(r[0], r[1]);
+    for (let i = 2; i < r.length; i += 2) bordas.lineTo(r[i], r[i + 1]);
+    bordas.closePath();
+  }));
+  return montar(muns, bordas, bordas, true);
+}
+const UF_NOME_OK = new Set(Object.values(UF_COD));
+
+function montar(brutos, bordasMun, bordasUF, soUF) {
+  const muns = [];
+  const B = [Infinity, Infinity, -Infinity, -Infinity];
+  const ufs = {};
+  brutos.forEach(({ cod, uf, aneis }) => {
+    const rings = [];
     const bb = [Infinity, Infinity, -Infinity, -Infinity];
     let area = 0, cx = 0, cy = 0;
     const path = new Path2D();
-    polys.forEach((poly) => poly.forEach((idx, ri) => {
-      idx.forEach((ai) => {
-        const k = ai < 0 ? ~ai : ai;
-        (usoArco[k] ||= []).push(uf);
-      });
-      const r = anel(idx, arcs);
+    aneis.forEach(({ r, externo }) => {
       rings.push(r);
       path.moveTo(r[0], r[1]);
-      for (let i = 2; i < r.length; i += 2) {
+      for (let i = 0; i < r.length; i += 2) {
         const x = r[i], y = r[i + 1];
-        path.lineTo(x, y);
+        if (i) path.lineTo(x, y);
         if (x < bb[0]) bb[0] = x; if (y < bb[1]) bb[1] = y; if (x > bb[2]) bb[2] = x; if (y > bb[3]) bb[3] = y;
       }
       path.closePath();
-      if (ri === 0) { const [a, x, y] = areaCentro(r); area += a; cx += x * a; cy += y * a; }
-    }));
+      if (externo) { const [a, x, y] = areaCentro(r); area += a; cx += x * a; cy += y * a; }
+    });
     const m = { cod, uf, rings, bbox: bb, path, area, cx: area ? cx / area : (bb[0] + bb[2]) / 2, cy: area ? cy / area : (bb[1] + bb[3]) / 2 };
     muns.push(m);
     B[0] = Math.min(B[0], bb[0]); B[1] = Math.min(B[1], bb[1]); B[2] = Math.max(B[2], bb[2]); B[3] = Math.max(B[3], bb[3]);
@@ -105,18 +154,6 @@ export function decodificar(topo, objeto = "BRMU") {
     u.bbox = [Math.min(u.bbox[0], bb[0]), Math.min(u.bbox[1], bb[1]), Math.max(u.bbox[2], bb[2]), Math.max(u.bbox[3], bb[3])];
   });
   Object.values(ufs).forEach((u) => { u.cx = u.sx / u.area; u.cy = u.sy / u.area; });
-
-  // bordas: todas (municípios) e só entre UFs diferentes ou com o mar/vizinhos (estados)
-  const bordasMun = new Path2D(), bordasUF = new Path2D();
-  arcs.forEach((a, k) => {
-    const u = usoArco[k] || [];
-    const ehUF = u.length < 2 || u[0] !== u[1];
-    const p = new Path2D();
-    p.moveTo(a[0], a[1]);
-    for (let i = 2; i < a.length; i += 2) p.lineTo(a[i], a[i + 1]);
-    bordasMun.addPath(p);
-    if (ehUF) bordasUF.addPath(p);
-  });
 
   // grade para hit-test e recorte da área visível
   const G = 128, gw = (B[2] - B[0]) / G, gh = (B[3] - B[1]) / G;
@@ -148,5 +185,5 @@ export function decodificar(topo, objeto = "BRMU") {
   }
 
   const indice = new Map(muns.map((m, i) => [m.cod, i]));
-  return { muns, indice, bbox: B, ufs, bordasMun, bordasUF, hit, visiveis };
+  return { muns, indice, bbox: B, ufs, bordasMun, bordasUF, hit, visiveis, soUF };
 }
