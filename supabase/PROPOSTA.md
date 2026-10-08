@@ -13,7 +13,7 @@ O que está pronto no repo: `supabase/functions/agregador-eleicoes/` (função +
 | `SUPABASE_SERVICE_ROLE_KEY` | injetada pelo runtime | única credencial que grava em `vivo` |
 | `AGREGADOR_SEGREDO` | `supabase secrets set` (passo 4) | sem `x-agregador: <segredo>` a função responde 401 |
 | `TSE_BASE` | opcional | padrão `https://resultados.tse.jus.br`; o simulador usa outro |
-| `AGREGADOR_CONCORRENCIA` | opcional | padrão 32 (ver "Riscos", item 1) |
+| `AGREGADOR_CONCORRENCIA` | opcional | padrão 12, mínimo 1 (ver "Riscos", item 1) |
 | `ELEICAO_FORCADA` | só ensaio | ex. `6257`; **nunca em produção** (publicaria o 1º turno como se fosse o 2º) |
 
 ## 1. Bucket público `vivo` (Storage API, chave service role)
@@ -46,7 +46,12 @@ create policy "vivo: so service role grava (delete)" on storage.objects
   as restrictive for delete to anon, authenticated using (bucket_id <> 'vivo');
 ```
 
-Rollback: `drop policy "vivo: so service role grava (insert)" on storage.objects;` (idem update/delete).
+Rollback (as 3 policies):
+```sql
+drop policy "vivo: so service role grava (insert)" on storage.objects;
+drop policy "vivo: so service role grava (update)" on storage.objects;
+drop policy "vivo: so service role grava (delete)" on storage.objects;
+```
 Aviso: restrictive é AND com as policies permissivas existentes; como `bucket_id <> 'vivo'` é verdadeiro nos outros
 buckets, o comportamento deles não muda. Confirmar com 2a antes e depois.
 
@@ -133,12 +138,31 @@ e `select status_code, created from net._http_response order by created desc lim
 ```sql
 select cron.unschedule('eleicoes-agregador');
 delete from vault.secrets where name = 'agregador_segredo';
-drop policy "vivo: so service role grava (insert)" on storage.objects;  -- idem update e delete, se quiser desfazer o passo 2b
+-- desfazer o passo 2b (opcional):
+drop policy "vivo: so service role grava (insert)" on storage.objects;
+drop policy "vivo: so service role grava (update)" on storage.objects;
+drop policy "vivo: so service role grava (delete)" on storage.objects;
 ```
 ```bash
 supabase secrets unset AGREGADOR_SEGREDO --project-ref qzczyicspbizosjogmlq
+supabase functions delete agregador-eleicoes --project-ref qzczyicspbizosjogmlq
 ```
+A extensão `pg_net` **continua instalada de propósito**: o projeto é compartilhado com o vitorpereira.ia.br e remover
+extensão pode afetar o que já usa. Só derrube com `drop extension pg_net` se você confirmar que nada mais depende dela.
 (O bucket `vivo` fica com os resultados para consulta; esvaziar/apagar só se você quiser.)
+
+## 6b. O que a função publica (e como se comporta)
+
+| Objeto em `vivo/` | Quando muda |
+|---|---|
+| `agora.json` | **só quando as 28 UFs (27 + ZZ) estão presentes**. Carrega `pend: [UFs]`, as UFs cujo dado ficou atrás do TSE nesta publicação (o front mostra "UFs atualizando") |
+| `_parcial.json` | rascunho gravado a cada rodada com o progresso (mesmo formato do `agora.json`). A rodada seguinte parte dele (cai para `agora.json` se não existir). Na primeira carga, várias rodadas curtas convergem aqui e só então publicam |
+| `serie/HHMM.json`, `serie/index.json`, `feed.json` | junto com o `agora.json` |
+| `_estado.json` | ETags, idg por UF, trava (`dono`/`travaAte`) e pausa (`pausaAte`/`pausaMs`) |
+
+Rodada sem as 28 UFs devolve `{"status":"sem-dados","motivo":"UFs faltando: ..."}` e não publica. Um `idg` por UF menor
+que o já aceito é ignorado. Depois de um 429 do TSE a função fica em pausa de 2, depois 4, depois 8 minutos
+(`{"status":"pausa"}`), e zera numa rodada limpa. Rodada que perde a trava para outra aborta sem gravar.
 
 ## 7. Ensaio geral com o simulador (tudo local, nada em produção)
 
@@ -165,10 +189,10 @@ um modo que fatie `snapshots/` por UF, o que não foi feito.
 1. **O TSE bloqueia rajada.** Num download de teste com 16 conexões simultâneas (~130 req/s) o `resultados.tse.jus.br` passou
    a responder **429** depois de ~1,5 mil arquivos, e o bloqueio durou vários minutos (o limite anunciado é 2000/s por
    janela, mas o corte real veio antes). A função trata 429 como disjuntor (para de buscar na rodada, mantém o último
-   `agora.json`, retoma na seguinte), mas a carga completa com concorrência 32 pode ser bloqueada. Medir antes do dia 25 com
-   `ELEICAO_FORCADA=6257` e `AGREGADOR_CONCORRENCIA` menor (8 a 16) e escolher o valor. Esta medição não foi feita.
+   `agora.json` e entra em pausa crescente), mas a carga completa ainda pode ser bloqueada. Por isso o padrão agora é 12. Medir antes do dia 25 com
+   `ELEICAO_FORCADA=6257` e ajustar `AGREGADOR_CONCORRENCIA`. Esta medição não foi feita.
 2. **Código do 2º turno desconhecido.** A descoberta lê `ele-c.json` e só aceita entrada `ele2026`, `t=2`, nome com "Federal".
-   Dica: a entrada 6257 já traz `cdt2: "6258"`, mas nada está publicado sob 6258 hoje.
-3. **Copy sem sobrescrita.** O Storage pode recusar `copy` sobre objeto existente; nesse caso a gravação cai para
-   `upload` com `upsert` (PUT atômico por objeto). Confirmar no ensaio local qual caminho acontece.
+   Fallback: usa o `cdt2` da entrada federal de 1º turno (hoje `6258`) apenas se o arquivo de municípios dessa eleição já responde 200.
+3. **Gravação.** Cada arquivo vai com um único POST `x-upsert: true` (o Storage troca o objeto de uma vez; o leitor vê o
+   antigo ou o novo). Não há mais temporário + copy. A ordem série, feed, `agora.json` por último é mantida.
 4. `_estado.json` fica no bucket público (ETags e idg, sem dado sensível).

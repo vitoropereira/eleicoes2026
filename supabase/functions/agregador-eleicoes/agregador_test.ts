@@ -1,9 +1,10 @@
-import { assert, assertEquals, assertNotEquals, assertRejects } from "@std/assert";
+import { assert, assertEquals, assertRejects } from "@std/assert";
 import { avancar, criarTseFake, eleC, fixture, StorageFake } from "./_fakes.ts";
-import { executar } from "./executar.ts";
+import { executar, normalizarConcorrencia } from "./executar.ts";
 import { gerarEventos, mesclarFeed } from "./feed.ts";
 import { gravarAtomico } from "./gravar.ts";
 import { extrairCandidatos, linhaDe, montarAgora, nomeExibicao, validarAgora } from "./montar.ts";
+import { criarArmazenamentoSupabase } from "./gravar.ts";
 import { tratar } from "./index.ts";
 import { acharEleicaoFederal2T, descobrirEleicao, LimiteTse } from "./tse.ts";
 
@@ -21,7 +22,7 @@ const relogio = (passo = 0) => {
 
 Deno.test("descoberta: só existem códigos de 1º turno -> null (arquivo real do TSE)", async () => {
   assertEquals(acharEleicaoFederal2T(fixture("ele-c-1t")), null);
-  const tse = criarTseFake(ELE, false);
+  const tse = criarTseFake(ELE, false, false); // ele-c real, sem nada publicado sob 6258
   assertEquals(await descobrirEleicao(tse), null);
 });
 
@@ -42,7 +43,7 @@ Deno.test("descoberta: acha turno 2 Federal 2026 e ignora Estadual, turno 1 e ou
 
 Deno.test("sem eleição: devolve sem-eleicao e não escreve nada", async () => {
   const st = new StorageFake();
-  const r = await executar({ tse: criarTseFake(ELE, false), st, agora: relogio().agora });
+  const r = await executar({ tse: criarTseFake(ELE, false, false), st, agora: relogio().agora });
   assertEquals(r.status, "sem-eleicao");
   assertEquals(st.escritas, []);
   assertEquals(st.objetos.size, 0);
@@ -127,7 +128,7 @@ Deno.test("grava série, índice, feed e estado; nada fica em _tmp", async () =>
   assertEquals(st.json("_estado.json").travaAte, 0);
   // agora.json é a última coisa gravada antes do estado
   const iAgora = st.escritas.lastIndexOf("agora.json");
-  assert(st.escritas.indexOf("serie/1251.json") < iAgora || st.escritas.some((e) => e.startsWith("copy:serie/1251")));
+  assert(st.escritas.indexOf("serie/1251.json") < iAgora);
 });
 
 // ---------------------------------------------------------------- incremental / ETag
@@ -161,22 +162,34 @@ Deno.test("UF que mudou: rebusca só os municípios dela, com If-None-Match", as
 
 // ---------------------------------------------------------------- idg monotônico
 
-Deno.test("idg nunca regride: arquivos com idg menor não sobrescrevem agora.json", async () => {
+Deno.test("idg nunca regride (guarda global): estado com idg maior que o dos arquivos não publica", async () => {
   const { st, tse } = await rodada1();
   const antes = st.objetos.get("agora.json");
-  const idgAntes = st.json("agora.json").idg;
-  for (const [u, m] of [["df", "97012"], ["pr", "75353"], ["pr", "74039"], ["zz", "29254"]] as const) {
-    tse.arquivos.set(p(u, m), avancar(tse.arquivos.get(p(u, m)), 10, 100));
-  }
-  for (const u of ["df", "pr", "zz"]) tse.arquivos.set(p(u), avancar(tse.arquivos.get(p(u)), 10, 100));
+  const est = st.json("_estado.json");
+  est.ultimoIdg = "99999999";
+  st.objetos.set("_estado.json", JSON.stringify(est));
+  const idg = Number(fixture("uf-pr").idg);
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 5, idg + 5));
+  tse.arquivos.set(p("pr", "75353"), avancar(fixture("mun-pr-curitiba"), 5, idg + 5));
   const r = await executar({ tse, st, agora: relogio().agora });
   assertEquals(r.status, "idg-regressivo");
   assertEquals(st.objetos.get("agora.json"), antes);
-  assertEquals(st.json("agora.json").idg, idgAntes);
-  const est = st.json("_estado.json");
-  assertEquals(est.ultimoIdg, idgAntes);
-  assertEquals(est.travaAte, 0);
-  assertNotEquals(est.uf.PR.idg, "100"); // estado não absorveu o dado regressivo
+  assertEquals(st.json("_estado.json").ultimoIdg, "99999999");
+  assertEquals(st.json("_estado.json").travaAte, 0);
+});
+
+Deno.test("I1: UF cujo arquivo volta com idg menor é ignorada (sem tocar no ETag nem nos municípios)", async () => {
+  const { st, tse } = await rodada1();
+  const antes = st.objetos.get("agora.json");
+  const estAntes = st.json("_estado.json");
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 999, 100));
+  tse.arquivos.set(p("pr", "75353"), avancar(fixture("mun-pr-curitiba"), 999, 100));
+  tse.chamadas.length = 0;
+  const r = await executar({ tse, st, agora: relogio().agora });
+  assertEquals(r.status, "sem-mudanca");
+  assertEquals(st.objetos.get("agora.json"), antes);
+  assertEquals(st.json("_estado.json").uf.PR, estAntes.uf.PR); // idg e etag antigos
+  assertEquals(tse.chamadas.filter((c) => /pr\d+-c0001/.test(c)), []); // nem buscou municípios
 });
 
 // ---------------------------------------------------------------- orçamento
@@ -251,7 +264,7 @@ Deno.test("trava: rodada sobreposta é recusada", async () => {
 
 Deno.test("falha de escrita libera a trava e propaga o erro", async () => {
   const st = new StorageFake();
-  st.falharEm = "serie__index.json";
+  st.falharEm = "serie/index.json";
   await assertRejects(() => executar({ tse: criarTseFake(ELE), st, agora: relogio().agora }));
   assertEquals(st.json("_estado.json").travaAte, 0);
   assertEquals(st.objetos.has("agora.json"), false); // agora.json só depois de série e feed
@@ -259,16 +272,15 @@ Deno.test("falha de escrita libera a trava e propaga o erro", async () => {
 
 // ---------------------------------------------------------------- gravação atômica e feed
 
-Deno.test("gravarAtomico: temporário some; sobrescrita cai no upsert quando o copy recusa", async () => {
+Deno.test("gravarAtomico: upsert direto no nome final, sem temporário, e recusa JSON inválido", async () => {
   const st = new StorageFake();
-  await gravarAtomico(st, "agora.json", '{"a":1}', 15, () => "x");
-  assertEquals(st.objetos.get("agora.json"), '{"a":1}');
-  assertEquals([...st.objetos.keys()], ["agora.json"]);
-  await gravarAtomico(st, "agora.json", '{"a":2}', 15, () => "y");
+  await gravarAtomico(st, "agora.json", '{"a":1}');
+  await gravarAtomico(st, "agora.json", '{"a":2}');
   assertEquals(st.objetos.get("agora.json"), '{"a":2}');
   assertEquals([...st.objetos.keys()], ["agora.json"]);
-  // o temporário foi escrito antes do definitivo
-  assertEquals(st.escritas[0], "_tmp/agora.json.x");
+  assertEquals(st.escritas, ["agora.json", "agora.json"]);
+  await assertRejects(() => gravarAtomico(st, "agora.json", "{quebrado"));
+  assertEquals(st.objetos.get("agora.json"), '{"a":2}'); // nada foi escrito
 });
 
 Deno.test("feed: virada de líder, +N% de seções e eleito; no máximo 50 eventos", () => {
@@ -286,6 +298,7 @@ Deno.test("feed: virada de líder, +N% de seções e eleito; no máximo 50 event
     ex: {},
     pu: {},
     pm: {},
+    pend: [],
     uf: { PR: [0, 0, 100, 0, 0, pr] as any, ZZ: [0, 0, 1, 0, 0, [1, 0]] as any },
   });
   const ev = gerarEventos(base(10.2, [40, 60]), base(11.4, [55, 45]), cand[0]);
@@ -346,8 +359,217 @@ Deno.test("429 do TSE: disjuntor para as buscas, mantém o último agora.json e 
   assertEquals(st.objetos.get("agora.json"), antes);
   assertEquals(st.json("_estado.json").pendentes, ["PR"]);
   assertEquals(st.json("_estado.json").travaAte, 0);
-  // TSE fora do ar já na descoberta
-  tse.buscar = () => Promise.reject(new LimiteTse("x", 429));
-  assertEquals((await executar({ tse, st, agora: relogio().agora })).status, "sem-dados");
+  // TSE fora do ar já na descoberta (estado vazio)
+  const st2 = new StorageFake();
+  const fora = criarTseFake(ELE);
+  fora.buscar = () => Promise.reject(new LimiteTse("x", 429));
+  assertEquals((await executar({ tse: fora, st: st2, agora: relogio().agora })).status, "sem-dados");
+  assertEquals(st2.objetos.has("agora.json"), false);
+});
+
+// ---------------------------------------------------------------- revisão: C1, I1-I3 e menores
+
+const clock = (t = 1_000_000) => {
+  const c = { t, agora: () => c.t };
+  return c;
+};
+const novosArquivos = (tse: ReturnType<typeof criarTseFake>, delta: number, idg: number) => {
+  const mapa: [string, string, string?][] = [
+    ["df", "uf-df"],
+    ["df", "mun-df-brasilia", "97012"],
+    ["pr", "uf-pr"],
+    ["pr", "mun-pr-curitiba", "75353"],
+    ["pr", "mun-pr-adrianopolis", "74039"],
+    ["zz", "uf-zz"],
+    ["zz", "mun-zz-abidja", "29254"],
+  ];
+  for (const [u, f, cd] of mapa) tse.arquivos.set(p(u, cd), avancar(fixture(f), delta, idg));
+};
+
+Deno.test("C1: primeira rodada cortada pelo orçamento não publica agora.json; _parcial guarda o progresso e a rodada seguinte publica", async () => {
+  const st = new StorageFake();
+  const tse = criarTseFake(ELE);
+  const rel = relogio(60_000);
+  tse.aoLerMunicipio = rel.avancar;
+  const r = await executar({ tse, st, agora: rel.agora, concorrencia: 1 });
+  assertEquals(r.status, "sem-dados");
+  if (r.status === "sem-dados") assertEquals(r.motivo, "UFs faltando: PR,ZZ");
+  assertEquals(st.objetos.has("agora.json"), false);
+  assertEquals(st.objetos.has("feed.json"), false);
+  assertEquals(st.objetos.has("serie/index.json"), false);
+  const parcial = st.json("_parcial.json");
+  assertEquals(Object.keys(parcial.uf), ["DF"]);
+  assertEquals(st.json("_estado.json").pendentes.sort(), ["PR", "ZZ"]);
+  assertEquals(st.json("_estado.json").travaAte, 0);
+
+  tse.aoLerMunicipio = undefined;
+  const r2 = await executar({ tse, st, agora: relogio().agora });
+  assertEquals(r2.status, "gravado");
+  if (r2.status === "gravado") assertEquals(r2.ufsAtualizadas, ["PR", "ZZ"]); // DF veio do parcial
+  const a = st.json("agora.json");
+  assertEquals(Object.keys(a.uf), ["DF", "PR", "ZZ"]);
+  assertEquals(a.pend, []);
+  assertEquals(st.json("_parcial.json"), a);
+});
+
+Deno.test("C1: pend lista as UFs cujo dado ficou para trás na publicação", async () => {
+  const { st, tse } = await rodada1();
+  novosArquivos(tse, 300, 9_000_000);
+  const rel = relogio(60_000);
+  tse.aoLerMunicipio = rel.avancar;
+  await executar({ tse, st, agora: rel.agora, concorrencia: 1 });
+  const a = st.json("agora.json");
+  assertEquals(a.pend.sort(), ["PR", "ZZ"]);
+  assertEquals(validarAgora(a), []);
+});
+
+Deno.test("I2: 429 abre pausa 2 -> 4 -> 8 min; rodada em pausa não toca no TSE; rodada limpa zera", async () => {
+  const { st, tse } = await rodada1();
+  const c = clock();
+  const limitar = (on: boolean) => {
+    const orig = tse.buscar;
+    tse.buscar = on
+      ? (cam, e) => (/pr\d+-c0001/.test(cam) ? Promise.reject(new LimiteTse(cam, 429)) : orig(cam, e))
+      : orig;
+    return orig;
+  };
+  const idg = Number(fixture("uf-pr").idg);
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 5, idg + 5));
+  tse.arquivos.set(p("pr", "75353"), avancar(fixture("mun-pr-curitiba"), 5, idg + 5));
+  const livre = tse.buscar;
+  limitar(true);
+  await executar({ tse, st, agora: c.agora });
+  let e = st.json("_estado.json");
+  assertEquals([e.pausaMs, e.pausaAte], [120_000, c.t + 120_000]);
+  tse.chamadas.length = 0;
+  assertEquals((await executar({ tse, st, agora: c.agora })).status, "pausa");
+  assertEquals(tse.chamadas, []);
+  c.t += 120_001;
+  await executar({ tse, st, agora: c.agora }); // ainda limitado
+  assertEquals(st.json("_estado.json").pausaMs, 240_000);
+  c.t += 240_001;
+  await executar({ tse, st, agora: c.agora });
+  assertEquals(st.json("_estado.json").pausaMs, 480_000);
+  c.t += 480_001;
+  await executar({ tse, st, agora: c.agora });
+  assertEquals(st.json("_estado.json").pausaMs, 480_000); // teto
+  c.t += 480_001;
+  tse.buscar = livre;
+  const r = await executar({ tse, st, agora: c.agora });
+  assertEquals(r.status, "gravado");
+  e = st.json("_estado.json");
+  assertEquals([e.pausaMs, e.pausaAte], [0, 0]);
+});
+
+Deno.test("I2: reaproveita estado.ele; só redescobre quando ausente", async () => {
+  const { st, tse } = await rodada1();
+  tse.chamadas.length = 0;
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(tse.chamadas.includes("/oficial/comum/config/ele-c.json"), false);
+  assertEquals(st.json("_estado.json").ele, ELE);
+  const e = st.json("_estado.json");
+  e.ele = null;
+  st.objetos.set("_estado.json", JSON.stringify(e));
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(tse.chamadas.includes("/oficial/comum/config/ele-c.json"), true);
+});
+
+Deno.test("I3: rodada que perdeu a trava (dono mudou) aborta sem gravar nada", async () => {
+  const { st, tse } = await rodada1();
+  const antes = new Map(st.objetos);
+  novosArquivos(tse, 100, 9_000_000);
+  tse.aoLerMunicipio = () => {
+    const e = JSON.parse(st.objetos.get("_estado.json")!);
+    e.dono = "outra-rodada";
+    st.objetos.set("_estado.json", JSON.stringify(e));
+  };
+  const r = await executar({ tse, st, agora: relogio().agora });
+  assertEquals(r.status, "trava-perdida");
+  for (const k of ["agora.json", "_parcial.json", "feed.json", "serie/index.json"]) {
+    assertEquals(st.objetos.get(k), antes.get(k), k);
+  }
+  assertEquals(st.json("_estado.json").dono, "outra-rodada"); // não pisou no estado do outro
+});
+
+Deno.test("I3: trava expirada (travaAte < agora) também aborta", async () => {
+  const { st, tse } = await rodada1();
+  const antes = st.objetos.get("agora.json");
+  novosArquivos(tse, 100, 9_000_000);
+  const c = clock();
+  tse.aoLerMunicipio = () => (c.t += 10_000_000);
+  const r = await executar({ tse, st, agora: c.agora, margemMs: -1e12 });
+  assertEquals(r.status, "trava-perdida");
   assertEquals(st.objetos.get("agora.json"), antes);
+});
+
+Deno.test("menor: conjunto de candidatos mudou -> recomeça com os novos candidatos", async () => {
+  const { st, tse } = await rodada1();
+  const mexer = (j: any) => {
+    const c = structuredClone(j);
+    for (const a of c.carg[0].agr) for (const q of a.par) for (const k of q.cand) if (k.n === "27") k.n = "99";
+    return c;
+  };
+  const idg = 9_000_000;
+  for (
+    const [u, f, cd] of [
+      ["df", "uf-df"],
+      ["df", "mun-df-brasilia", "97012"],
+      ["pr", "uf-pr"],
+      ["pr", "mun-pr-curitiba", "75353"],
+      ["pr", "mun-pr-adrianopolis", "74039"],
+      ["zz", "uf-zz"],
+      ["zz", "mun-zz-abidja", "29254"],
+    ] as [string, string, string?][]
+  ) {
+    tse.arquivos.set(p(u, cd), mexer(avancar(fixture(f), 1, idg)));
+  }
+  const logs: unknown[] = [];
+  await executar({ tse, st, agora: relogio().agora, log: (...a) => logs.push(a.join(" ")) });
+  assert(logs.some((l) => String(l).includes("candidatos mudou")));
+  // a rodada seguinte (estado e etags zerados) publica com o novo conjunto
+  await executar({ tse, st, agora: relogio().agora });
+  const a = st.json("agora.json");
+  assert(a.cand.some((c: any) => c.n === "99") && !a.cand.some((c: any) => c.n === "27"));
+});
+
+Deno.test("menor: concorrência 0 ou inválida vira pelo menos 1 (padrão 12) e a rodada termina", async () => {
+  assertEquals(normalizarConcorrencia(0), 1);
+  assertEquals(normalizarConcorrencia(-5), 1);
+  assertEquals(normalizarConcorrencia(undefined), 12);
+  assertEquals(normalizarConcorrencia(NaN), 12);
+  assertEquals(normalizarConcorrencia(7.9), 7);
+  const st = new StorageFake();
+  const r = await executar({ tse: criarTseFake(ELE), st, agora: relogio().agora, concorrencia: 0 });
+  assertEquals(r.status, "gravado");
+});
+
+Deno.test("menor: Storage.ler só trata 400 como ausente se o corpo disser not_found", async () => {
+  const orig = globalThis.fetch;
+  const resp = (status: number, corpo: string) => () => Promise.resolve(new Response(corpo, { status }));
+  const st = criarArmazenamentoSupabase("http://x", "k");
+  try {
+    globalThis.fetch = resp(400, '{"statusCode":"404","error":"not_found","message":"Object not found"}');
+    assertEquals(await st.ler("a.json"), null);
+    globalThis.fetch = resp(404, "x");
+    assertEquals(await st.ler("a.json"), null);
+    globalThis.fetch = resp(400, '{"error":"Bad Request","message":"invalid jwt"}');
+    await assertRejects(() => st.ler("a.json"));
+    globalThis.fetch = resp(500, "boom");
+    await assertRejects(() => st.ler("a.json"));
+    globalThis.fetch = resp(200, '{"ok":1}');
+    assertEquals(await st.ler("a.json"), '{"ok":1}');
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+Deno.test("menor: descoberta usa cdt2 do federal de 1º turno só se a config do 2º turno responde 200", async () => {
+  // ramo 1: cdt2 = 6258 e a config de 6258 existe
+  const com = criarTseFake(ELE, false, true);
+  assertEquals(await descobrirEleicao(com), "6258");
+  // ramo 2: cdt2 existe mas a config ainda dá 404
+  const sem = criarTseFake(ELE, false, false);
+  assertEquals(await descobrirEleicao(sem), null);
+  // entrada explícita de turno 2 tem prioridade
+  assertEquals(await descobrirEleicao(criarTseFake(ELE, true, false)), "6258");
 });

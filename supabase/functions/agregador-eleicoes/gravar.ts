@@ -5,32 +5,24 @@ export interface Armazenamento {
   ler(caminho: string): Promise<string | null>;
   /** Envia (cria ou substitui) um objeto. */
   enviar(caminho: string, conteudo: string, cacheControlSeg?: number): Promise<void>;
-  /** Copia origem -> destino. "existe" quando o Storage se recusa a sobrescrever. */
-  copiar(origem: string, destino: string): Promise<"ok" | "existe">;
-  remover(caminho: string): Promise<void>;
 }
 
 /**
- * Gravação em duas etapas: sobe para um nome temporário e só então coloca no nome final.
- * 1) o conteúdo completo já está no Storage antes de o nome final ser tocado;
- * 2) copy -> se o Storage não sobrescreve ("existe"), cai para um PUT com upsert, que é atômico por objeto.
- * O leitor nunca vê arquivo pela metade nem 404 em objeto que já existia.
+ * Grava um objeto inteiro de uma vez com upsert (um único POST com `x-upsert`).
+ * Por que não "temporário + copy": o Storage grava o objeto no S3 com um PUT e só então troca a linha de
+ * metadados, então o leitor vê o arquivo antigo ou o novo, nunca pela metade, e sem janela de 404; e o `copy` do
+ * Storage pode recusar sobrescrever. Dois passos só aumentariam as chamadas (3 por arquivo).
+ * A única validação extra é recusar JSON quebrado antes de enviar. A ordem entre arquivos (série, feed,
+ * agora.json por último) é responsabilidade de quem chama.
  */
 export async function gravarAtomico(
   st: Armazenamento,
   destino: string,
   conteudo: string,
   cacheControlSeg = 15,
-  sufixo: () => string = () => crypto.randomUUID().slice(0, 8),
 ): Promise<void> {
-  const tmp = `_tmp/${destino.replaceAll("/", "__")}.${sufixo()}`;
-  await st.enviar(tmp, conteudo, cacheControlSeg);
-  try {
-    const r = await st.copiar(tmp, destino);
-    if (r === "existe") await st.enviar(destino, conteudo, cacheControlSeg);
-  } finally {
-    await st.remover(tmp).catch(() => {});
-  }
+  JSON.parse(conteudo);
+  await st.enviar(destino, conteudo, cacheControlSeg);
 }
 
 /** Storage real, via REST (sem dependências). `base` = SUPABASE_URL, `chave` = service role. */
@@ -41,12 +33,16 @@ export function criarArmazenamentoSupabase(base: string, chave: string, bucket =
   return {
     async ler(caminho) {
       const r = await fetch(url(caminho), { headers: auth, signal: AbortSignal.timeout(20_000) });
-      if (r.status === 404 || r.status === 400) {
+      if (r.status === 404) {
         await r.body?.cancel();
-        return null; // o Storage devolve 400 "Object not found" em alguns casos
+        return null;
       }
-      if (!r.ok) throw new Error(`Storage ler ${caminho}: ${r.status}`);
-      return await r.text();
+      const corpo = await r.text();
+      // o Storage devolve 400 com {"error":"not_found","message":"Object not found"} para objeto ausente;
+      // qualquer outro 400 (jwt inválido, bucket errado) é erro de verdade e não pode virar "não existe"
+      if (r.status === 400 && /not_found|object not found/i.test(corpo)) return null;
+      if (!r.ok) throw new Error(`Storage ler ${caminho}: ${r.status} ${corpo.slice(0, 200)}`);
+      return corpo;
     },
     async enviar(caminho, conteudo, cacheControlSeg = 15) {
       const r = await fetch(url(caminho), {
@@ -61,25 +57,6 @@ export function criarArmazenamentoSupabase(base: string, chave: string, bucket =
         signal: AbortSignal.timeout(30_000),
       });
       if (!r.ok) throw new Error(`Storage enviar ${caminho}: ${r.status} ${await r.text()}`);
-      await r.body?.cancel();
-    },
-    async copiar(origem, destino) {
-      const r = await fetch(`${raiz}/object/copy`, {
-        method: "POST",
-        headers: { ...auth, "content-type": "application/json", "x-upsert": "true" },
-        body: JSON.stringify({ bucketId: bucket, sourceKey: origem, destinationKey: destino }),
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (r.ok) {
-        await r.body?.cancel();
-        return "ok";
-      }
-      const txt = await r.text();
-      if (r.status === 409 || /exist|duplicate/i.test(txt)) return "existe";
-      throw new Error(`Storage copiar ${origem}->${destino}: ${r.status} ${txt}`);
-    },
-    async remover(caminho) {
-      const r = await fetch(url(caminho), { method: "DELETE", headers: auth, signal: AbortSignal.timeout(20_000) });
       await r.body?.cancel();
     },
   };

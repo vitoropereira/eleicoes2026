@@ -23,6 +23,7 @@ export interface Agora {
   ex: Record<string, Linha>; // exterior, chave = código TSE da cidade
   pu: Record<string, number>; // extra: % de seções por UF
   pm: Record<string, number>; // extra: % de seções por município (cdi)
+  pend: string[]; // UFs cujo dado nesta publicação está atrás do TSE (a UF mudou e ainda não foi relida)
 }
 
 export interface ResumoArquivo {
@@ -135,6 +136,7 @@ export interface Entrada {
   ex: Record<string, Linha>;
   pu: Record<string, number>;
   pm: Record<string, number>;
+  pend?: string[];
   /** metadados por UF (inclui ZZ) que compõem o país */
   meta: Record<string, ResumoArquivo>;
 }
@@ -174,6 +176,7 @@ export function montarAgora(e: Entrada): Agora {
     ex: ordenar(e.ex),
     pu: ordenar(e.pu),
     pm: ordenar(e.pm),
+    pend: [...(e.pend ?? [])].filter((u) => u in e.uf).sort(),
   };
 }
 
@@ -191,6 +194,7 @@ export function validarAgora(a: any): string[] {
   if (!Array.isArray(a.cand) || a.cand.length === 0) erros.push("cand vazio");
   const n = Array.isArray(a.cand) ? a.cand.length : 0;
   if (!ehLinha(a.br, n)) erros.push("br inválido");
+  if (a.pend !== undefined && !Array.isArray(a.pend)) erros.push("pend inválido");
   for (const k of ["uf", "mu", "ex"]) {
     if (!a[k] || typeof a[k] !== "object") erros.push(`${k} ausente`);
     else for (const [c, l] of Object.entries(a[k])) if (!ehLinha(l, n)) erros.push(`${k}.${c} inválido`);

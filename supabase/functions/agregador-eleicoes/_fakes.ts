@@ -18,16 +18,6 @@ export class StorageFake implements Armazenamento {
     this.objetos.set(c, conteudo);
     return Promise.resolve();
   }
-  copiar(o: string, d: string) {
-    if (this.objetos.has(d)) return Promise.resolve("existe" as const);
-    this.objetos.set(d, this.objetos.get(o)!);
-    this.escritas.push(`copy:${d}`);
-    return Promise.resolve("ok" as const);
-  }
-  remover(c: string) {
-    this.objetos.delete(c);
-    return Promise.resolve();
-  }
   json(c: string) {
     return JSON.parse(this.objetos.get(c)!);
   }
@@ -79,13 +69,17 @@ export interface TseFake extends Tse {
 }
 
 /** TSE fake: ele-c, lista de municípios, UFs DF/PR/ZZ e seus municípios. As demais UFs devolvem 404. */
-export function criarTseFake(ele = "6258", comSegundoTurno = true): TseFake {
+export function criarTseFake(ele = "6258", comSegundoTurno = true, publicado = true): TseFake {
   const arquivos = new Map<string, any>();
   const p = (u: string, cd?: string) =>
     cd
       ? `/oficial/ele2026/${ele}/dados/${u}/${u}${cd}-c0001-e00${ele}-u.json`
       : `/oficial/ele2026/${ele}/dados/${u}/${u}-c0001-e00${ele}-u.json`;
   arquivos.set("/oficial/comum/config/ele-c.json", eleC(comSegundoTurno));
+  if (!publicado) {
+    // só existe o ele-c.json: nada do 2º turno foi publicado ainda
+    return montarFake(arquivos);
+  }
   arquivos.set(`/oficial/ele2026/${ele}/config/mun-e00${ele}-cm.json`, MUNS_FAKE);
   arquivos.set(p("df"), fixture("uf-df"));
   arquivos.set(p("df", "97012"), fixture("mun-df-brasilia"));
@@ -94,6 +88,10 @@ export function criarTseFake(ele = "6258", comSegundoTurno = true): TseFake {
   arquivos.set(p("pr", "74039"), fixture("mun-pr-adrianopolis"));
   arquivos.set(p("zz"), fixture("uf-zz"));
   arquivos.set(p("zz", "29254"), fixture("mun-zz-abidja"));
+  return montarFake(arquivos);
+}
+
+function montarFake(arquivos: Map<string, any>): TseFake {
   const chamadas: string[] = [];
   const fake: TseFake = {
     chamadas,

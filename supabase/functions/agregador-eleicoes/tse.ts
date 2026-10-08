@@ -87,10 +87,33 @@ export function acharEleicaoFederal2T(eleC: any): string | null {
   return null;
 }
 
+/** `cdt2` (código do 2º turno) declarado na entrada federal de 1º turno de 2026, se houver. */
+export function cdt2Federal1T(eleC: any): string | null {
+  for (const ciclo of Array.isArray(eleC?.pl) ? eleC.pl : []) {
+    if (ciclo?.c !== "ele2026") continue;
+    for (const e of ciclo.e ?? []) {
+      if (String(e?.t) === "1" && /federal/i.test(String(e?.nm ?? "")) && /^\d+$/.test(String(e?.cdt2 ?? ""))) {
+        return String(e.cdt2);
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Código do 2º turno federal. 1º: entrada explícita `t=2` em `ele-c.json`.
+ * 2º (fallback): o `cdt2` da entrada federal de 1º turno, mas só se o arquivo de configuração de municípios
+ * dessa eleição já responde 200, ou seja, se o TSE de fato publicou algo sob esse código.
+ */
 export async function descobrirEleicao(tse: Tse): Promise<string | null> {
   const r = await tse.buscar(caminhoEleicoes());
   if (r.status !== 200) return null;
-  return acharEleicaoFederal2T(r.json);
+  const direto = acharEleicaoFederal2T(r.json);
+  if (direto) return direto;
+  const cdt2 = cdt2Federal1T(r.json);
+  if (!cdt2) return null;
+  const cfg = await tse.buscar(caminhoMunicipios(cdt2));
+  return cfg.status === 200 ? cdt2 : null;
 }
 
 /** Lista de municípios por UF: `{ PR: [{cd, cdi}], ZZ: [{cd, cdi: ""}] }` (chaves em maiúsculas). */

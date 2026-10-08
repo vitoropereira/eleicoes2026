@@ -38,6 +38,9 @@ export interface Estado {
   pendentes: string[]; // UFs que mudaram e ficaram para a próxima rodada
   eleito: string | null; // número do candidato já anunciado como eleito
   travaAte: number; // epoch ms; evita rodadas sobrepostas
+  dono: string; // id da rodada que detém a trava
+  pausaAte: number; // epoch ms; enquanto no futuro, nenhuma rodada fala com o TSE (disjuntor entre rodadas)
+  pausaMs: number; // duração da última pausa: 2 -> 4 -> 8 min; zera numa rodada sem 429
 }
 
 export const estadoVazio = (): Estado => ({
@@ -50,6 +53,9 @@ export const estadoVazio = (): Estado => ({
   pendentes: [],
   eleito: null,
   travaAte: 0,
+  dono: "",
+  pausaAte: 0,
+  pausaMs: 0,
 });
 
 export interface Deps {
@@ -58,7 +64,7 @@ export interface Deps {
   agora: () => number; // epoch ms (injetável nos testes)
   orcamentoMs?: number; // padrão 120 s
   margemMs?: number; // parar de buscar municípios com menos que isto sobrando (padrão 20 s)
-  concorrencia?: number; // padrão 32
+  concorrencia?: number; // padrão 12, mínimo 1
   /** Ensaio: usa este código em vez de descobrir o de 2º turno. Nunca em produção. */
   eleicaoForcada?: string;
   log?: (...a: unknown[]) => void;
@@ -67,6 +73,8 @@ export interface Deps {
 export type Resultado =
   | { status: "sem-eleicao" }
   | { status: "ocupado" }
+  | { status: "pausa"; ate: number }
+  | { status: "trava-perdida" }
   | { status: "sem-dados"; motivo: string }
   | { status: "sem-mudanca"; pendentes: string[] }
   | { status: "idg-regressivo"; novo: string; ultimo: string }
@@ -105,6 +113,26 @@ function limitador(n: number) {
   };
 }
 
+export const CONCORRENCIA_PADRAO = 12;
+export const normalizarConcorrencia = (n: number | undefined): number =>
+  n !== undefined && Number.isFinite(n) ? Math.max(1, Math.floor(n)) : CONCORRENCIA_PADRAO;
+
+const PAUSA_INICIAL_MS = 120_000;
+const PAUSA_MAXIMA_MS = 480_000;
+
+const big = (s: unknown): bigint => {
+  try {
+    return BigInt(String(s));
+  } catch {
+    return 0n;
+  }
+};
+
+const mesmoConjunto = (a: Cand[], b: Cand[]) =>
+  a.length === b.length && new Set(a.map((c) => c.n)).size === new Set([...a, ...b].map((c) => c.n)).size;
+
+const valido = (a: any, ele: string): Agora | null => (a && a.ele === ele && validarAgora(a).length === 0 ? a : null);
+
 const hhmmBrasilia = (ms: number) => new Date(ms - 3 * 3600_000).toISOString().slice(11, 16);
 
 export async function executar(deps: Deps): Promise<Resultado> {
@@ -112,56 +140,79 @@ export async function executar(deps: Deps): Promise<Resultado> {
   const log = deps.log ?? (() => {});
   const orcamento = deps.orcamentoMs ?? 120_000;
   const margem = deps.margemMs ?? 20_000;
-  const limite = limitador(deps.concorrencia ?? 32);
+  const limite = limitador(normalizarConcorrencia(deps.concorrencia));
   const t0 = deps.agora();
   let limitado = false; // o TSE mandou 429: para de buscar nesta rodada (disjuntor)
   const estourou = () => limitado || deps.agora() - t0 > orcamento - margem;
 
-  // 1) eleição
-  let ele: string | null;
-  try {
-    ele = deps.eleicaoForcada ?? await descobrirEleicao(tse);
-    if (deps.eleicaoForcada) log(`ATENÇÃO: eleição forçada para ${ele} (ensaio)`);
-  } catch (err) {
-    log(`TSE indisponível ao descobrir a eleição: ${err}`);
-    return { status: "sem-dados", motivo: `TSE indisponível: ${err}` };
+  /** Libera a trava e aplica o disjuntor entre rodadas (pausa 2 -> 4 -> 8 min se houve 429; zera se não). */
+  const salvar = async (e: Estado) => {
+    e.travaAte = 0;
+    e.dono = "";
+    if (limitado) {
+      e.pausaMs = Math.min(e.pausaMs > 0 ? e.pausaMs * 2 : PAUSA_INICIAL_MS, PAUSA_MAXIMA_MS);
+      e.pausaAte = t0 + e.pausaMs;
+      log(`TSE limitou o acesso; pausa de ${e.pausaMs / 60_000} min`);
+    } else {
+      e.pausaMs = 0;
+      e.pausaAte = 0;
+    }
+    await st.enviar("_estado.json", JSON.stringify(e), 0);
+  };
+
+  // 1) estado e pausa
+  let estado: Estado = { ...estadoVazio(), ...(parse(await st.ler("_estado.json")) ?? {}) };
+  if (estado.pausaAte > t0) {
+    log(`em pausa até ${new Date(estado.pausaAte).toISOString()}`);
+    return { status: "pausa", ate: estado.pausaAte };
+  }
+
+  // 2) eleição: usa a do estado; só redescobre quando ausente
+  let ele: string | null = deps.eleicaoForcada ?? estado.ele;
+  if (deps.eleicaoForcada) log(`ATENÇÃO: eleição forçada para ${ele} (ensaio)`);
+  if (!ele) {
+    try {
+      ele = await descobrirEleicao(tse);
+    } catch (err) {
+      log(`TSE indisponível ao descobrir a eleição: ${err}`);
+      if (err instanceof LimiteTse) {
+        limitado = true;
+        await salvar(estado);
+      }
+      return { status: "sem-dados", motivo: `TSE indisponível: ${err}` };
+    }
   }
   if (!ele) {
     log("2º turno federal ainda não publicado em ele-c.json; nada a fazer");
     return { status: "sem-eleicao" };
   }
-
-  // 2) estado + trava
-  let estado: Estado = { ...estadoVazio(), ...(parse(await st.ler("_estado.json")) ?? {}) };
   if (estado.ele !== ele) estado = { ...estadoVazio(), ele };
   if (estado.travaAte > t0) {
     log("rodada anterior ainda em andamento");
     return { status: "ocupado" };
   }
+  const dono = crypto.randomUUID();
   const original = structuredClone(estado);
   estado.travaAte = t0 + orcamento + 30_000;
+  estado.dono = dono;
   await st.enviar("_estado.json", JSON.stringify(estado), 0);
-  const liberar = async (e: Estado) => {
-    e.travaAte = 0;
-    await st.enviar("_estado.json", JSON.stringify(e), 0);
-  };
 
   try {
     // 3) lista de municípios (estática: fica no estado)
     if (!estado.munList) {
       const r = await tse.buscar(caminhoMunicipios(ele));
       if (r.status !== 200) {
-        await liberar(original);
+        await salvar(original);
         return { status: "sem-dados", motivo: "lista de municípios indisponível" };
       }
       estado.munList = extrairMunicipios(r.json);
     }
     const lista = estado.munList;
-    const ufs = Object.keys(lista).sort();
+    const ufs = Object.keys(lista).sort(); // todas as UFs que o TSE lista (27 + ZZ) são obrigatórias para publicar
 
-    // 4) agora.json anterior (base para reaproveitar o que não mudou)
-    let prev: Agora | null = parse(await st.ler("agora.json"));
-    if (prev && (prev.ele !== ele || validarAgora(prev).length > 0)) prev = null;
+    // 4) base: o rascunho (_parcial.json) ou, na falta dele, o publicado. `publicado` serve ao feed.
+    const publicado = valido(parse(await st.ler("agora.json")), ele);
+    let prev: Agora | null = valido(parse(await st.ler("_parcial.json")), ele) ?? publicado;
     if (!prev) {
       estado.uf = {};
       estado.mun = {};
@@ -182,6 +233,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
     ));
     const novos: Record<string, { json: any; resumo: ResumoArquivo; etag: string | null }> = {};
     let cand: Cand[] = prev?.cand ?? [];
+    let frescos: Cand[] | null = null; // candidatos do primeiro arquivo novo
     let eleitoNovo: Cand | null = null;
     for (const { uf, r } of lidos) {
       if (r.status === 404) {
@@ -191,26 +243,33 @@ export async function executar(deps: Deps): Promise<Resultado> {
       if (r.status !== 200) continue;
       const resumo = resumoArquivo(r.json);
       const velho = estado.uf[uf];
+      if (velho && big(resumo.idg) < big(velho.idg)) {
+        log(`UF ${uf}: idg ${resumo.idg} < ${velho.idg} já aceito; arquivo ignorado`);
+        continue;
+      }
       if (velho && velho.idg === resumo.idg && velho.pst === resumo.pst && prev?.uf[uf]) {
         estado.uf[uf] = { ...velho, etag: r.etag }; // só o ETag mudou
         continue;
       }
       novos[uf] = { json: r.json, resumo, etag: r.etag };
       const c = extrairCandidatos(r.json);
-      if (c.length > 0 && cand.length === 0) cand = c;
+      if (c.length > 0 && !frescos) frescos = c;
       const el = eleitos(r.json)[0];
       if (el && estado.eleito !== el.n) eleitoNovo = c.find((x) => x.n === el.n) ?? el;
     }
-    // candidatos mudaram de ordem/conjunto: o que está salvo não serve mais
-    if (prev && cand.length > 0 && JSON.stringify(prev.cand) !== JSON.stringify(cand)) {
-      log("lista de candidatos mudou; recomeçando do zero");
-      prev = null;
-      estado.uf = {};
-      estado.mun = {};
+    // conjunto de candidatos mudou (por número): o que está salvo não serve mais
+    if (frescos) {
+      if (prev && !mesmoConjunto(prev.cand, frescos)) {
+        log("conjunto de candidatos mudou; recomeçando do zero");
+        prev = null;
+        estado.uf = {};
+        estado.mun = {};
+        cand = frescos;
+      } else if (cand.length === 0) cand = frescos;
     }
     const candFinal = cand;
 
-    // 6) trabalho em memória: parte do anterior, troca UF por UF
+    // 6) trabalho em memória: parte da base, troca UF por UF
     const uf: Record<string, Linha> = structuredClone(prev?.uf ?? {});
     const mu: Record<string, Linha> = structuredClone(prev?.mu ?? {});
     const ex: Record<string, Linha> = structuredClone(prev?.ex ?? {});
@@ -272,10 +331,15 @@ export async function executar(deps: Deps): Promise<Resultado> {
       );
     }
 
-    if (confirmadas.length === 0) {
-      estado.travaAte = 0;
-      await st.enviar("_estado.json", JSON.stringify(estado), 0);
-      return prev || mudadas.length === 0
+    const faltando = ufs.filter((u) => !(u in uf));
+    // a base já estava completa e mais nova que o último publicado (ex.: rodada anterior caiu antes de publicar)
+    const republicar = confirmadas.length === 0 && !!prev && faltando.length === 0 &&
+      big(prev.idg) > big(estado.ultimoIdg);
+    if (confirmadas.length === 0 && !republicar) {
+      await salvar(estado);
+      return faltando.length > 0 && (prev || mudadas.length > 0)
+        ? { status: "sem-dados", motivo: `UFs faltando: ${faltando.join(",")}` }
+        : prev || mudadas.length === 0
         ? { status: "sem-mudanca", pendentes: estado.pendentes }
         : { status: "sem-dados", motivo: "nenhuma UF completa dentro do orçamento" };
     }
@@ -283,22 +347,35 @@ export async function executar(deps: Deps): Promise<Resultado> {
     // 7) montar e validar
     const meta: Record<string, ResumoArquivo> = {};
     for (const u of Object.keys(uf)) if (estado.uf[u]) meta[u] = estado.uf[u];
-    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta });
+    const agora = montarAgora({ ele, cand: candFinal, uf, mu, ex, pu, pm, meta, pend: estado.pendentes });
     if (!/^\d\d:\d\d$/.test(agora.t)) agora.t = hhmmBrasilia(deps.agora());
     const erros = validarAgora(agora);
     if (erros.length > 0) throw new Error(`agora.json inválido: ${erros.slice(0, 3).join("; ")}`);
 
-    // 8) guarda: idg nunca regride
-    if (BigInt(agora.idg) < BigInt(original.ultimoIdg)) {
+    // 8) guarda: idg nunca regride (só vale para o que vai ser publicado)
+    if (faltando.length === 0 && big(agora.idg) < big(original.ultimoIdg)) {
       log(`idg ${agora.idg} < último gravado ${original.ultimoIdg}; não grava`);
-      await liberar(original);
+      await salvar(original);
       return { status: "idg-regressivo", novo: agora.idg, ultimo: original.ultimoIdg };
     }
 
-    // 9) gravar: série e feed primeiro, agora.json por último, estado no fim
-    const hhmm = agora.t.replace(":", "");
+    // 8b) ainda somos o dono da trava? Senão outra rodada assumiu e gravar aqui pisaria nela.
+    const atual = parse(await st.ler("_estado.json"));
+    if (!atual || atual.dono !== dono || atual.travaAte < deps.agora()) {
+      log("trava perdida para outra rodada; abortando sem gravar");
+      return { status: "trava-perdida" };
+    }
+
+    // 9) rascunho sempre; publicação só com todas as UFs
     const corpo = JSON.stringify(agora);
-    await gravarAtomico(st, `serie/${hhmm}.json`, corpo, 3600);
+    await gravarAtomico(st, "_parcial.json", corpo, 0);
+    if (faltando.length > 0) {
+      await salvar(estado);
+      return { status: "sem-dados", motivo: `UFs faltando: ${faltando.join(",")}` };
+    }
+
+    // série e feed primeiro, agora.json por último, estado no fim
+    await gravarAtomico(st, `serie/${agora.t.replace(":", "")}.json`, corpo, 3600);
 
     const indice: any[] = parse(await st.ler("serie/index.json")) ?? [];
     const entrada = { t: agora.t, idg: agora.idg, pst: agora.pst, br: agora.br };
@@ -306,7 +383,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
     await gravarAtomico(st, "serie/index.json", JSON.stringify(novoIndice));
 
     const feedAntigo: Evento[] = parse(await st.ler("feed.json")) ?? [];
-    const eventos = gerarEventos(prev, agora, eleitoNovo);
+    const eventos = gerarEventos(publicado, agora, eleitoNovo);
     await gravarAtomico(st, "feed.json", JSON.stringify(mesclarFeed(feedAntigo, eventos)));
 
     await gravarAtomico(st, "agora.json", corpo);
@@ -314,8 +391,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
     estado.ultimoIdg = agora.idg;
     estado.ultimoPst = agora.pst;
     if (eleitoNovo) estado.eleito = eleitoNovo.n;
-    estado.travaAte = 0;
-    await st.enviar("_estado.json", JSON.stringify(estado), 0);
+    await salvar(estado);
 
     return {
       status: "gravado",
@@ -327,7 +403,7 @@ export async function executar(deps: Deps): Promise<Resultado> {
       ms: deps.agora() - t0,
     };
   } catch (e) {
-    await liberar(original).catch(() => {});
+    await salvar(original).catch(() => {});
     throw e;
   }
 }
