@@ -78,6 +78,36 @@ class Build(unittest.TestCase):
             self.assertIn(src, hs)
             self.assertIn({"key": "Cache-Control", "value": "public, max-age=3600"}, hs[src])
 
+    def test_vivo_reescrito_para_o_storage_com_cache_curto(self):
+        rw = {r["source"]: r["destination"] for r in B.VERCEL["rewrites"]}
+        self.assertEqual(rw.get("/vivo/:path*"), "https://qzczyicspbizosjogmlq.supabase.co/storage/v1/object/public/vivo/:path*")
+        hs = {h["source"]: h["headers"] for h in B.VERCEL["headers"]}
+        self.assertIn({"key": "Cache-Control", "value": "public, s-maxage=15, stale-while-revalidate=30"}, hs.get("/vivo/(.*)", []))
+
+    def test_hud_le_vivo_relativo_nunca_o_supabase(self):
+        for js in HUD.glob("*.js"):
+            self.assertNotIn("supabase.co", js.read_text(), js.name)
+        self.assertIn('"/vivo/agora.json"', (HUD / "dados.js").read_text())
+
+    def test_prerender_responde_404_no_vivo(self):
+        import json, urllib.request, urllib.error, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            srv = B.serve(Path(d), port=8797)
+            try:
+                with self.assertRaises(urllib.error.HTTPError) as e:
+                    urllib.request.urlopen("http://127.0.0.1:8797/vivo/agora.json", timeout=5)
+                self.assertEqual(e.exception.code, 404)
+            finally:
+                srv.shutdown(); srv.server_close()
+
+    def test_malha_leve_das_ufs_publicada(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            B.copiar_hud(Path(d))
+            ufs = json.loads((Path(d) / "hud" / "ufs.json").read_text())
+            self.assertEqual(len(ufs), 27)
+            self.assertTrue((Path(d) / "vendor" / "preact-htm.module.js").exists())
+
     def test_resumo_para_buscadores(self):
         r = B.resumo_hud()
         self.assertIn("Mapa da apuração por município", r)

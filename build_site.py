@@ -262,21 +262,26 @@ def montar_pagina(raw_html, title, desc, path, og_img, ld, published, modified, 
 # ---------------- Vercel (gravado em site/vercel.json e na raiz)
 VERCEL = {
     "cleanUrls": True, "trailingSlash": True,
-    "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"}],
+    # /vivo/* = estado do 2º turno no Storage do Supabase; o HUD só lê /vivo/agora.json (relativo), com o CDN na frente
+    "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"},
+                 {"source": "/vivo/:path*", "destination": "https://qzczyicspbizosjogmlq.supabase.co/storage/v1/object/public/vivo/:path*"}],
     "headers": [{"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
                 {"source": "/fonts/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
                 {"source": "/og/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=86400"}]},
                 {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
                 {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
                 {"source": "/geo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
-                {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]}]}
+                {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
+                {"source": "/vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=15, stale-while-revalidate=30"}]}]}
 
 
 # ---------------- HUD (/ao-vivo/)
 def copiar_hud(dest):
-    """hud/ → /hud/, assets/vendor/ → /vendor/, municipios/geo/ → /geo/ (se existir; vem do build dos dados)"""
+    """hud/ → /hud/ (+ ufs.json), assets/vendor/ → /vendor/, municipios/geo/ → /geo/ (se existir; vem do build dos dados)"""
     shutil.copytree(R / "hud", dest / "hud", dirs_exist_ok=True)
     shutil.copytree(R / "assets" / "vendor", dest / "vendor", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
+    # malha leve das 27 UFs para aparelho fraco (spec §9): contornos já gerados por relatorio/montar.py
+    shutil.copy(R / "relatorio" / "dados" / "mapa.json", dest / "hud" / "ufs.json")
     geo = R / "municipios" / "geo"
     if geo.is_dir():
         shutil.copytree(geo, dest / "geo", dirs_exist_ok=True)
@@ -329,6 +334,8 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
     def do_GET(self):
+        if self.path.startswith("/vivo/"):  # pré-render: o 2º turno ainda não existe (o HUD mostra "Aguardando o TSE")
+            self.send_response(404); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(b"{}"); return
         if self.path.startswith("/tse/"):  # mesmo repasse que o vercel.json faz em produção
             import urllib.request
             try:
