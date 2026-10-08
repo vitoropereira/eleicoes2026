@@ -1,41 +1,42 @@
 // Painéis do HUD (Preact + htm): esquerdo (manchete, placar, totais, gráfico) e direito (regiões, feed).
 import { html, useState } from "/vendor/preact-htm.module.js";
-import { pct, int, linha, somar, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
+import { pct, int, linha, somar, oficial, REGIOES, UF_NOME, UFS, cor, ehDep, primeiroNome, CARGO_NOME } from "./calc.js";
 
 const CORES_MARCA = new Set(["PL", "PT"]);
 /** nome com a cor do partido: PL/PT usam o token (contraste testado); os demais, sublinhado na cor */
 export const Nome = ({ c, curto }) => html`<span class=${CORES_MARCA.has(c.sg) ? "nm-c" : "nm-u"} style=${{ "--c": cor(c.sg) }}>${curto ? primeiroNome(c.nome) : c.nome}</span>`;
 export const Sw = ({ sg }) => html`<i class="sw" style=${{ "--c": cor(sg) }} aria-hidden="true"></i>`;
 
-function manchete(cargo, r, onde, turno, pst, parcial) {
-  const [a, b] = r.val;
+function manchete(cargo, r, onde, turno, pst, parcial, of) {
+  const [a, b] = r.cands;
   if (!a) return null;
+  const lidera = html`<${Nome} c=${a} /> lidera com ${pct(a.p * 100, 1)}%${onde}`;
   if (parcial) return html`<${Nome} c=${a} /> lidera com ${pct(parcial.pst, 1)}% das seções`;
   if (turno === 2) return pst >= 100 ? html`<${Nome} c=${a} /> é eleito${onde}` : html`<${Nome} c=${a} /> lidera${onde}`;
-  if (cargo === "senador") return html`<${Nome} c=${a} /> e <${Nome} c=${b} /> lideram para o Senado${onde}`;
-  if (a.p > 0.5) return html`<${Nome} c=${a} /> é eleito no 1º turno${onde}`;
-  return html`<${Nome} c=${a} /> e <${Nome} c=${b} /> vão ao 2º turno${onde}`;
+  // 1º turno: só a situação oficial diz quem foi eleito ou quem vai ao 2º turno
+  if (cargo === "senador" && of?.eleitos?.length) {
+    const el = of.eleitos;
+    return el.length > 1 ? html`<${Nome} c=${el[0]} /> e <${Nome} c=${el[1]} /> são eleitos para o Senado${onde}` : html`<${Nome} c=${el[0]} /> é eleito para o Senado${onde}`;
+  }
+  if (of?.status === "eleito" && of.a) return html`<${Nome} c=${of.a} /> é eleito no 1º turno${onde}`;
+  if (of?.status === "2turno" && of.a && of.b) return html`<${Nome} c=${of.a} /> e <${Nome} c=${of.b} /> vão ao 2º turno${onde}`;
+  return lidera;
 }
 
-/** candidatos com votos anulados sub judice: votos brutos e a etiqueta, nunca % */
-export const SubJudice = ({ lista }) => html`
-  <ul class="outros sj" aria-label="Candidaturas sub judice">
-    ${lista.map((c) => html`<li><${Sw} sg=${c.sg} /><span class="nm">${c.nome}<small>${c.sg}${c.n ? " " + c.n : ""} · <span class="tag-sj">sub judice</span></small></span><span class="p">${int(c.v)} votos</span></li>`)}
-  </ul>
-  <p class="mais">Votos de candidatura sub judice ficam fora dos válidos até o julgamento.</p>`;
+export const TagSJ = ({ c }) => (c.sj ? html` · <span class="tag-sj">sub judice</span>` : null);
 
 // ---------------- placar (presidente, governador, senador)
-export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst }) {
+export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, turno, pst, of }) {
   const [todos, setTodos] = useState(false);
-  if (!r || !r.val.length) return html`<p class="vazio-txt">Sem dados para este recorte.</p>`;
-  const [a, b] = r.val;
-  const outros = r.val.slice(2);
+  if (!r || !r.cands.length) return html`<p class="vazio-txt">Sem dados para este recorte.</p>`;
+  const [a, b] = r.cands;
+  const outros = r.cands.slice(2);
   const visiveis = todos ? outros : outros.slice(0, 3);
   const resto = outros.slice(3);
   const somaResto = resto.reduce((s, c) => s + c.p, 0);
   const lado = (c, dir) => html`
     <div class=${"lado " + dir}>
-      <div class="quem"><b>${c.nome}</b><small>${c.sg}${c.n ? " " + c.n : ""}</small></div>
+      <div class="quem"><b>${c.nome}</b><small>${c.sg}${c.n ? " " + c.n : ""}<${TagSJ} c=${c} /></small></div>
       <div class=${"num " + (CORES_MARCA.has(c.sg) ? "nm-c" : "")} style=${{ "--c": cor(c.sg) }}>${pct(c.p * 100, 2)}<small>%</small></div>
       <div class="votos">${ponto ? "votos válidos" : int(c.v) + " votos"}</div>
     </div>`;
@@ -46,7 +47,7 @@ export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, tu
       ${onVoltar && html`<button type="button" class="link" onClick=${onVoltar}>← Brasil</button>`}
       ${selo && html`<span class="selo">${selo}</span>`}
     </div>
-    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto)}</h1>
+    <h1 class="manchete">${manchete(cargo, r, "", turno, pst, ponto, of)}</h1>
     <div class="placar">${lado(a, "l1")}${b && lado(b, "l2")}</div>
     ${b && html`<div class="duelo" aria-hidden="true">
       <i style=${{ width: (a.p * 100).toFixed(2) + "%", "--c": cor(a.sg) }}></i>
@@ -58,11 +59,11 @@ export function Placar({ cargo, r, kicker, selo, onVoltar, ponto, serie, idx, tu
     </dl>
     ${!ponto && outros.length > 0 && html`
       <ul class="outros">
-        ${visiveis.map((c) => html`<li><${Sw} sg=${c.sg} /><span class="nm">${c.nome}<small>${c.sg}${c.n ? " " + c.n : ""}</small></span><span class="p">${pct(c.p * 100, 1)}%</span></li>`)}
+        ${visiveis.map((c) => html`<li><${Sw} sg=${c.sg} /><span class="nm">${c.nome}<small>${c.sg}${c.n ? " " + c.n : ""}<${TagSJ} c=${c} /></small></span><span class="p">${pct(c.p * 100, 2)}%</span></li>`)}
       </ul>
       ${!todos && resto.length > 0 && html`<p class="mais">Mais ${resto.length} ${resto.length === 1 ? "candidatura soma" : "candidaturas somam"} ${pct(somaResto * 100, 1)}%</p>`}
-      ${outros.length > 3 && html`<button type="button" class="link" aria-expanded=${todos} onClick=${() => setTodos(!todos)}>${todos ? "Mostrar menos" : `Todos os ${r.val.length} candidatos`}</button>`}`}
-    ${!ponto && r.sj?.length > 0 && html`<${SubJudice} lista=${r.sj} />`}
+      ${outros.length > 3 && html`<button type="button" class="link" aria-expanded=${todos} onClick=${() => setTodos(!todos)}>${todos ? "Mostrar menos" : `Todos os ${r.cands.length} candidatos`}</button>`}`}
+    ${!ponto && r.vansj > 0 && html`<p class="mais">Votos de candidatura sub judice contam no total até o julgamento (regra do TSE).</p>`}
     ${!ponto && r.validos != null && html`
       <dl class="totais">
         <div><dt>Votos válidos</dt><dd>${int(r.validos)}</dd></div>
@@ -104,18 +105,24 @@ export function GraficoNoite({ serie, idx }) {
 }
 
 // ---------------- resumo por UF (governador, senador)
-export function ResumoUFs({ cargo, res, meta, onUF }) {
+export function ResumoUFs({ cargo, res, meta, onUF, status }) {
   if (!res) return html`<p class="vazio-txt">Carregando…</p>`;
-  const linhas = UFS.map((uf) => ({ uf, r: linha(cargo, res.uf?.[uf], meta.cand[cargo]?.[uf]) })).filter((x) => x.r && x.r.lider);
+  const linhas = UFS.map((uf) => ({ uf, r: linha(cargo, res.uf?.[uf], meta.cand[cargo]?.[uf]), of: oficial(status, cargo, uf, meta.cand[cargo]?.[uf]) })).filter((x) => x.r && x.r.lider);
   const cont = {};
-  if (cargo === "senador") linhas.forEach(({ r }) => r.val.slice(0, 2).forEach((c) => { cont[c.sg] = (cont[c.sg] || 0) + 1; }));
+  // senador: vagas pelos eleitos oficiais (sem situação oficial, pelos 2 mais votados); governador: 1º colocado
+  const senadores = (x) => (x.of?.eleitos?.length ? x.of.eleitos : x.r.cands.slice(0, 2));
+  if (cargo === "senador") linhas.forEach((x) => senadores(x).forEach((c) => { cont[c.sg] = (cont[c.sg] || 0) + 1; }));
   else linhas.forEach(({ r }) => { cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; });
   const ranking = Object.entries(cont).sort((a, b) => b[1] - a[1]);
   const max = ranking[0]?.[1] || 1;
-  const eleitos = linhas.filter(({ r }) => r.p1 > 0.5).length;
+  const com = linhas.filter((x) => x.of?.status);
+  const eleitos = com.filter((x) => x.of.status === "eleito").length, t2 = com.filter((x) => x.of.status === "2turno").length;
+  const oficialSen = linhas.every((x) => x.of?.eleitos?.length);
   const titulo = cargo === "senador"
-    ? html`${ranking[0]?.[0]} lidera em ${ranking[0]?.[1]} das ${linhas.length * 2} vagas do Senado`
-    : html`${eleitos} estados definiram o governador no 1º turno; ${linhas.length - eleitos} vão ao 2º turno`;
+    ? html`${ranking[0]?.[0]} ${oficialSen ? "elegeu" : "lidera em"} ${ranking[0]?.[1]} das ${linhas.length * 2} vagas do Senado`
+    : com.length === linhas.length
+      ? html`${eleitos} estados definiram o governador no 1º turno; ${t2} vão ao 2º turno${linhas.length - eleitos - t2 ? `; ${linhas.length - eleitos - t2} indefinido` : ""}`
+      : html`Governadores: quem lidera em cada estado`;
   return html`
     <div class="cab"><p class="kicker">${CARGO_NOME[cargo]} · 27 UFs</p></div>
     <h1 class="manchete pequena">${titulo}</h1>
@@ -125,10 +132,10 @@ export function ResumoUFs({ cargo, res, meta, onUF }) {
     </ul>
     <p class="kicker sub">Por estado <small>· toque para ver</small></p>
     <ul class="ufs">
-      ${linhas.map(({ uf, r }) => html`<li><button type="button" onClick=${() => onUF(uf)}>
-        <b>${uf}</b><${Sw} sg=${r.lider.sg} /><span class="nm">${cargo === "senador" ? r.val.slice(0, 2).map((c) => primeiroNome(c.nome)).join(" e ") : primeiroNome(r.lider.nome)}</span>
+      ${linhas.map(({ uf, r, of }) => html`<li><button type="button" onClick=${() => onUF(uf)}>
+        <b>${uf}</b><${Sw} sg=${r.lider.sg} /><span class="nm">${cargo === "senador" ? senadores({ r, of }).map((c) => primeiroNome(c.nome)).join(" e ") : primeiroNome(r.lider.nome)}</span>
         <span class="p">${cargo === "senador" ? r.lider.sg : pct(r.p1 * 100, 1) + "%"}</span>
-        ${cargo === "governador" && html`<span class=${"st " + (r.p1 > 0.5 ? "ok" : "t2")}>${r.p1 > 0.5 ? "eleito" : "2º t."}</span>`}
+        ${cargo === "governador" && of?.status && html`<span class=${"st " + (of.status === "eleito" ? "ok" : "t2")}>${of.status === "eleito" ? "eleito" : of.status === "2turno" ? "2º t." : "indef."}</span>`}
       </button></li>`)}
     </ul>`;
 }
@@ -181,8 +188,8 @@ export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno }) {
     });
     const zz = res.uf?.ZZ && linha(cargo, res.uf.ZZ, lista);
     if (zz) rows.push({ nome: "Exterior", r: zz });
-    return html`<ul class="regioes">${rows.filter(({ r }) => r && r.val.length >= 2).map(({ nome, r }) => {
-      const [a, b] = r.val; const sald = (a.p - b.p) * 100;
+    return html`<ul class="regioes">${rows.filter(({ r }) => r && r.cands.length >= 2).map(({ nome, r }) => {
+      const [a, b] = r.cands; const sald = (a.p - b.p) * 100;
       return html`<li><span class="rn">${nome}</span><span class="ld"><${Sw} sg=${a.sg} /><small>${a.sg}</small> <b>${pct(a.p * 100, 1)}%</b><small class="dv">+${pct(sald, 1)}</small></span>
         <span class="duelo mini" aria-hidden="true"><i style=${{ width: a.p * 100 + "%", "--c": cor(a.sg) }}></i><i class="meio"></i><i style=${{ width: b.p * 100 + "%", "--c": cor(b.sg) }}></i></span></li>`;
     })}</ul>`;
@@ -195,7 +202,7 @@ export function PorRegiao({ cargo, res, meta, lista, ponto, geo, turno }) {
     } else {
       ufs.forEach((u) => {
         const r = linha(cargo, res.uf?.[u], meta.cand[cargo]?.[u]); if (!r?.lider) return;
-        (cargo === "senador" ? r.val.slice(0, 2) : [r.lider]).forEach((c) => { cont[c.sg] = (cont[c.sg] || 0) + 1; tot++; });
+        (cargo === "senador" ? r.cands.slice(0, 2) : [r.lider]).forEach((c) => { cont[c.sg] = (cont[c.sg] || 0) + 1; tot++; });
       });
     }
     const [sg, n] = Object.entries(cont).sort((a, b) => b[1] - a[1])[0] || ["–", 0];

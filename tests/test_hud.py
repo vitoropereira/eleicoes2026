@@ -1,5 +1,5 @@
 """HUD da apuração (/ao-vivo/): regras de brand, cor de partido, scripts locais e cache na Vercel."""
-import colorsys, hashlib, re, sys, unittest
+import colorsys, hashlib, json, re, shutil, subprocess, sys, unittest
 from pathlib import Path
 
 R = Path(__file__).resolve().parent.parent
@@ -71,6 +71,95 @@ class CoresDePartido(unittest.TestCase):
         self.assertIn("--outros", js)
 
 
+GEO_T1 = R / "municipios" / "geo" / "t1"
+
+
+@unittest.skipUnless((GEO_T1 / "governador.json").exists(), "municipios/geo ausente")
+class ResultadoOficial(unittest.TestCase):
+    """% do governador com o denominador do TSE (válidos + anulados sub judice) e situação oficial no status.json."""
+    rel = json.loads((R / "relatorio" / "relatorio.json").read_text())
+
+    def test_percentual_do_governador_bate_com_o_tse(self):
+        meta = json.loads((GEO_T1 / "meta.json").read_text()); gov = json.loads((GEO_T1 / "governador.json").read_text())
+        self.assertEqual(len(self.rel["gov"]), 27)
+        for g in self.rel["gov"]:
+            row = gov["uf"][g["uf"]]
+            vv, votos, vansj = row[2], row[5], row[6]
+            self.assertIn(g["a"]["votos"], votos, g["uf"])
+            p = 100 * g["a"]["votos"] / (vv + vansj)  # mesma conta de hud/calc.js linha()
+            self.assertAlmostEqual(p, g["a"]["p"], delta=0.005, msg=g["uf"])
+        rj = gov["uf"]["RJ"]
+        self.assertAlmostEqual(100 * 4271199 / (rj[2] + rj[6]), 49.27, delta=0.005)
+
+    def test_percentual_igual_ao_pvap_do_tse_gov_e_senado(self):
+        """a conta do HUD (votos / (validos + vansj)) reproduz o pvap publicado pelo TSE em cada arquivo de UF"""
+        for cargo, c in (("governador", 3), ("senador", 5)):
+            dados = json.loads((GEO_T1 / f"{cargo}.json").read_text())
+            for uf, row in dados["uf"].items():
+                bruto = json.loads((R / "relatorio" / "dados" / f"{uf.lower()}-c{c:04d}.json").read_text())
+                for a in bruto["carg"][0]["agr"]:
+                    for p in a["par"]:
+                        for x in p["cand"]:
+                            v = int(x["vap"])
+                            if v < 1000: continue
+                            hud = 100 * v / (row[2] + row[6])
+                            self.assertAlmostEqual(hud, float(x["pvap"].replace(",", ".")), delta=0.005, msg=f"{cargo} {uf} {x['nmu']}")
+
+    def test_calc_js_usa_validos_mais_vansj(self):
+        js = (HUD / "calc.js").read_text()
+        self.assertIn("const base = (vv + vansj)", js)
+        self.assertNotRegex(js, r"p1\s*>\s*0\.5")  # eleito nunca sai de porcentagem
+
+    def test_manchetes_nao_deduzem_eleito_de_porcentagem(self):
+        for f in ("paineis.js", "app.js"):
+            self.assertNotRegex((HUD / f).read_text(), r"(\.p1?|\.p)\s*>\s*0?\.5\b", f)
+
+    def test_status_json_igual_ao_relatorio(self):
+        st = B.status_hud()
+        self.assertIsNotNone(st)
+        oficial = {g["uf"]: g["status"] for g in self.rel["gov"]}
+        self.assertEqual({u: v["status"] for u, v in st["governador"].items()}, oficial)
+        self.assertEqual(len(st["governador"]), 27)
+        self.assertEqual(st["governador"]["RJ"]["status"], "2turno")
+        self.assertEqual(st["governador"]["DF"]["status"], "2turno")
+        self.assertEqual(st["governador"]["PR"]["status"], "eleito")
+        meta = json.loads((GEO_T1 / "meta.json").read_text())
+        nome = lambda uf, n: next(c["nome"] for c in meta["cand"]["governador"][uf] if c["n"] == n)
+        self.assertEqual(nome("RJ", st["governador"]["RJ"]["a"]), "Douglas Ruas")
+        self.assertEqual(len(st["senador"]), 27)
+        for uf, v in st["senador"].items():
+            self.assertEqual(len(v["eleitos"]), 2, uf)
+        self.assertEqual(st["presidente"]["BR"], {"status": "2turno", "a": "22", "b": "13"})
+
+
+@unittest.skipUnless(shutil.which("node") and (GEO_T1 / "governador.json").exists(), "node ou municipios/geo ausente")
+class CalcJS(unittest.TestCase):
+    """Roda o hud/calc.js de verdade (node) com a linha real do RJ: % com sub judice e manchete pela situação oficial."""
+
+    def test_rj_governador_no_js(self):
+        js = f"""
+import {{ readFileSync }} from "node:fs";
+const {{ linha, oficial }} = await import({json.dumps((HUD / "calc.js").as_uri())});
+const meta = JSON.parse(readFileSync({json.dumps(str(GEO_T1 / "meta.json"))}, "utf8"));
+const gov = JSON.parse(readFileSync({json.dumps(str(GEO_T1 / "governador.json"))}, "utf8"));
+const lista = meta.cand.governador.RJ;
+const r = linha("governador", gov.uf.RJ, lista);
+const g = r.cands.find((c) => c.sj);
+const st = {{ governador: {{ RJ: {{ status: "2turno", a: r.cands[0].n, b: r.cands[1].n }} }} }};
+const of = oficial(st, "governador", "RJ", lista);
+console.log(JSON.stringify({{ a: r.cands[0].nome, pa: r.cands[0].p, pb: r.cands[1].p, sj: g && g.nome, psj: g && g.p, st: of.status, ofa: of.a.nome }}));
+"""
+        out = subprocess.run(["node", "--input-type=module", "-e", js], capture_output=True, text=True, timeout=60)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        d = json.loads(out.stdout)
+        self.assertEqual(d["a"], "Douglas Ruas")
+        self.assertAlmostEqual(d["pa"] * 100, 49.27, delta=0.005)
+        self.assertAlmostEqual(d["pb"] * 100, 42.76, delta=0.005)
+        self.assertEqual(d["sj"], "Garotinho")
+        self.assertAlmostEqual(d["psj"] * 100, 3.17, delta=0.005)
+        self.assertEqual((d["st"], d["ofa"]), ("2turno", "Douglas Ruas"))
+
+
 class Build(unittest.TestCase):
     def test_cache_de_geo_e_hud(self):
         hs = {h["source"]: h["headers"] for h in B.VERCEL["headers"]}
@@ -96,7 +185,7 @@ class Build(unittest.TestCase):
             try:
                 with self.assertRaises(urllib.error.HTTPError) as e:
                     urllib.request.urlopen("http://127.0.0.1:8797/vivo/agora.json", timeout=5)
-                self.assertEqual(e.exception.code, 404)
+                self.assertEqual(e.exception.code, 404); e.exception.close()
             finally:
                 srv.shutdown(); srv.server_close()
 

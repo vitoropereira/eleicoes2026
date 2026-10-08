@@ -282,9 +282,38 @@ def copiar_hud(dest):
     shutil.copytree(R / "assets" / "vendor", dest / "vendor", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
     # malha leve das 27 UFs para aparelho fraco (spec §9): contornos já gerados por relatorio/montar.py
     shutil.copy(R / "relatorio" / "dados" / "mapa.json", dest / "hud" / "ufs.json")
+    st = status_hud()
+    if st:
+        (dest / "hud" / "status.json").write_text(json.dumps(st, ensure_ascii=False, separators=(",", ":")))
     geo = R / "municipios" / "geo"
     if geo.is_dir():
         shutil.copytree(geo, dest / "geo", dirs_exist_ok=True)
+
+
+def status_hud():
+    """Situação oficial para as manchetes do HUD (eleito / 2º turno), tirada do relatorio.json.
+    O HUD nunca deduz isso de porcentagem. Candidatos são identificados pelo NÚMERO, achado pelos votos
+    na linha da UF de municipios/geo/t1 (nomes podem divergir na acentuação). Sem a malha de dados, devolve None."""
+    t1 = R / "municipios" / "geo" / "t1"
+    if not (t1 / "meta.json").exists():
+        return None
+    meta = json.loads((t1 / "meta.json").read_text())
+    linhas = {c: json.loads((t1 / f"{c}.json").read_text()) for c in ("presidente", "governador", "senador")}
+
+    def numero(cargo, uf, votos):
+        lista = meta["cand"][cargo] if cargo == "presidente" else meta["cand"][cargo].get(uf, [])
+        row = linhas[cargo]["br"] if cargo == "presidente" else linhas[cargo]["uf"].get(uf)
+        achados = [c["n"] for c, v in zip(lista, row[5] if row else []) if v == votos]
+        assert len(achados) == 1, f"status.json: {cargo} {uf} com {votos} votos casa com {achados}"
+        return achados[0]
+
+    top = sorted(N["cand"], key=lambda c: -c["votos"])
+    pres = {"status": "eleito" if top[0]["p"] > 50 else "2turno",
+            "a": numero("presidente", None, top[0]["votos"]), "b": numero("presidente", None, top[1]["votos"])}
+    gov = {g["uf"]: {"status": g["status"], "a": numero("governador", g["uf"], g["a"]["votos"]), "b": numero("governador", g["uf"], g["b"]["votos"])}
+           for g in rel["gov"]}
+    sen = {x["uf"]: {"eleitos": [numero("senador", x["uf"], e["votos"]) for e in x["eleitos"]]} for x in rel["sen"]}
+    return {"fonte": f"relatorio.json ({N['dg']} {N['ht']})", "presidente": {"BR": pres}, "governador": gov, "senador": sen}
 
 
 def resumo_hud():

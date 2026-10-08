@@ -7,6 +7,7 @@ import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
+import { oficial } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -196,6 +197,7 @@ function App() {
   const [erro, setErro] = useState(null);
   const [tema, setTema] = useState(0);
   const [vivo, setVivo] = useState({ status: "inicial", dados: null });
+  const [situacao, setSituacao] = useState(null); // /hud/status.json: eleito/2º turno oficiais
   const [busca, setBusca] = useState(false);
   const [ext, setExt] = useState(false);
   const [cheia, setCheia] = useState(false);
@@ -207,6 +209,7 @@ function App() {
     Promise.all([t1("meta"), t1("presidente")]).then(([m, p]) => { setMeta(m); setRes((r) => ({ ...r, presidente: p })); })
       .catch((e) => setErro(e));
     t1("serie").then(setSerie).catch(() => setSerie([]));
+    fetch("/hud/status.json").then((r) => (r.ok ? r.json() : null)).then(setSituacao).catch(() => setSituacao(null));
     t1("feed").then(setFeed).catch(() => setFeed([]));
     if (BAIXO) fetch("/hud/ufs.json").then((r) => { if (!r.ok) throw new Error("ufs.json " + r.status); return r.json(); })
       .then((m) => setGeo(decodificarUFs(m))).catch(() => pedirMalha());
@@ -404,13 +407,8 @@ function App() {
       ${listaDica(r)}
       <p class="dk-nota">Comparecimento ${pct(r.pc * 100, 1)}% · ${int(r.validos)} válidos</p>`;
   };
-  /** top 3 válidos; sub judice só com votos brutos e etiqueta, se tiver votos para estar entre eles */
-  const listaDica = (r) => {
-    const top = r.val.slice(0, 3), corte = top[top.length - 1]?.v ?? 0;
-    const sj = (r.sj || []).filter((c) => c.v > 0 && c.v >= corte);
-    return html`<ul class="dk-l">${top.map((c) => html`<li><${Sw} sg=${c.sg} /><span>${c.nome} <small>${c.sg}</small></span><b>${pct(c.p * 100, 1)}%</b><small class="v">${int(c.v)}</small></li>`)}
-      ${sj.map((c) => html`<li><${Sw} sg=${c.sg} /><span>${c.nome} <small>${c.sg} · <span class="tag-sj">sub judice</span></small></span><b>–</b><small class="v">${int(c.v)}</small></li>`)}</ul>`;
-  };
+  /** top 3 por votos (sub judice entra com % e etiqueta, regra do TSE) */
+  const listaDica = (r) => html`<ul class="dk-l">${r.cands.slice(0, 3).map((c) => html`<li><${Sw} sg=${c.sg} /><span>${c.nome} <small>${c.sg}${c.sj ? html` · <span class="tag-sj">sub judice</span>` : null}</small></span><b>${pct(c.p * 100, 1)}%</b><small class="v">${int(c.v)}</small></li>`)}</ul>`;
 
   // textos
   const status = useMemo(() => {
@@ -441,7 +439,7 @@ function App() {
     if (cargo === "presidente") {
       if (ponto) return `Presidente em ${ponto.d ? ponto.d + " " : ""}${ponto.ht}, ${pct(ponto.pst, 1)}% das seções: Flávio ${pct(ponto.f, 2)}%, Lula ${pct(ponto.l, 2)}%.`;
       const r = linha("presidente", fonte.br, listaPres);
-      return `Presidente, ${turno}º turno: ${r.val.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
+      return `Presidente, ${turno}º turno: ${r.cands.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
     }
     return `${CARGO_NOME[cargo]}${ufSel ? " em " + UF_NOME[ufSel] : ""}. Mapa colorido pelo ${ehDep(cargo) ? "partido mais votado" : "partido do 1º colocado"} em cada município.`;
   }, [turno, vivo.dados, fonte, meta, cargo, ponto, listaPres, ufSel]);
@@ -461,10 +459,11 @@ function App() {
     const r = ponto ? linhaSerie([ponto.pst, ponto.f, ponto.l], listaPres) : r0;
     esq = html`<${Placar} cargo="presidente" r=${r} turno=${turno} pst=${turno === 2 ? vivo.dados?.pst ?? 0 : 100} ponto=${ponto && !ufSel ? ponto : null}
       kicker=${`Presidente · ${turno}º turno · ${ufSel ? UF_NOME[ufSel] : "Brasil"}`} selo=${turno === 1 ? "2º turno em 25/10" : null}
+      of=${turno === 1 && !ufSel ? oficial(situacao, "presidente", null, listaPres) : null}
       onVoltar=${ufSel ? voltar : null} serie=${turno === 1 && !ufSel ? serie : null} idx=${idx} />`;
   } else if (ehDep(cargo)) esq = html`<${ResumoDep} cargo=${cargo} res=${fonte} uf=${ufSel} onUF=${escolherUF} onVoltar=${voltar} geo=${geo} />`;
-  else if (ufSel) esq = html`<${Placar} cargo=${cargo} r=${linha(cargo, fonte.uf?.[ufSel], lista(ufSel))} kicker=${`${CARGO_NOME[cargo]} · ${UF_NOME[ufSel]}`} onVoltar=${voltar} />`;
-  else esq = html`<${ResumoUFs} cargo=${cargo} res=${fonte} meta=${meta} onUF=${escolherUF} />`;
+  else if (ufSel) esq = html`<${Placar} cargo=${cargo} r=${linha(cargo, fonte.uf?.[ufSel], lista(ufSel))} of=${oficial(situacao, cargo, ufSel, lista(ufSel))} kicker=${`${CARGO_NOME[cargo]} · ${UF_NOME[ufSel]}`} onVoltar=${voltar} />`;
+  else esq = html`<${ResumoUFs} cargo=${cargo} res=${fonte} meta=${meta} onUF=${escolherUF} status=${situacao} />`;
 
   const linhaAtiva = turno === 1 && cargo === "presidente" && serie.length > 1;
   const motivoLinha = turno === 2 ? "A linha do tempo do 2º turno começa em 25/10" : "Linha do tempo: só para presidente (o TSE não publica a noite dos outros cargos)";
