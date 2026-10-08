@@ -4,6 +4,7 @@ Uso: python3 gerar.py   (rode de novo para atualizar)"""
 import json, time, random, statistics, urllib.request, concurrent.futures as cf
 from datetime import datetime
 from pathlib import Path
+import brand
 
 ELE = "6257"
 B = "https://resultados.tse.jus.br/oficial/ele2026/{e}/dados/{u}/{u}-c0001-e00{e}-u.json"
@@ -114,7 +115,7 @@ def main():
     )
     tpl = (Path(__file__).parent / "template.html").read_text()
     out = Path(__file__).parent / "painel.html"
-    html = tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False))
+    html = brand.aplicar(tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False)))
     out.write_text(html)
     # snapshot imutável desta rodada: snapshots/AAAA-MM-DD_HHMM_<pct>pct/
     snap = Path(__file__).parent / "snapshots" / f"{datetime.now():%Y-%m-%d}_{nat['ht'][:5].replace(':', '')}_{nat['pst']:.1f}pct"

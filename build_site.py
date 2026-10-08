@@ -6,6 +6,7 @@ Uso: python3 relatorio/montar.py && python3 build_site.py"""
 import json, re, shutil, subprocess, threading, functools, html, http.server, socketserver, time
 from datetime import datetime
 from pathlib import Path
+import brand
 
 BASE = "https://eleicoes2026.vitorpereira.ia.br"
 SITE_NAME = "Eleições 2026 · Apuração e resultados"
@@ -374,7 +375,7 @@ def main():
     tpl = (R / "template.html").read_text()
     for i, r in enumerate(rodadas):
         d = r["d"]; pst = fmt(d["pst"], 1); hora = d["ht"][:5]
-        raw = tpl.replace("/*__DATA__*/null", json.dumps(d, ensure_ascii=False))
+        raw = brand.aplicar(tpl.replace("/*__DATA__*/null", json.dumps(d, ensure_ascii=False)))
         raw = raw.replace("<h1>Presidente 2026 · 1º turno — apuração e projeções</h1>", f"<h1>Apuração com {pst}% das urnas: Flávio {fmt(d['f'], 2)}% × Lula {fmt(d['l'], 2)}%</h1>", 1)
         titulo = f"Apuração {pst}%: Flávio × Lula | Eleições 2026"
         mc = d["mc"]
@@ -431,7 +432,7 @@ def main():
 
     # ---- ao vivo (busca o TSE no navegador; o pré-render guarda a leitura do momento do build)
     mapa = (R / "relatorio" / "dados" / "mapa.json").read_text()
-    raw = (R / "template_aovivo.html").read_text().replace("/*__MAPA__*/null", mapa)
+    raw = brand.aplicar((R / "template_aovivo.html").read_text().replace("/*__MAPA__*/null", mapa))
     titulo = "Apuração ao vivo das Eleições 2026 | Resultados do TSE"
     desc = "Resultado das Eleições 2026 em tempo real: presidente e governadores por estado, lidos dos arquivos públicos do TSE e atualizados a cada minuto. Pronto para o 2º turno em 25/10."
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "name": titulo, "description": desc, "url": BASE + "/ao-vivo/", "inLanguage": "pt-BR",

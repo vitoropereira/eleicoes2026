@@ -5,6 +5,8 @@ Uso: python3 baixar.py && python3 montar.py"""
 import json, math, collections
 from datetime import datetime
 from pathlib import Path
+import sys; sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import brand
 
 H = Path(__file__).parent
 D = H / "dados"
@@ -170,7 +172,7 @@ if nac["pst"] > data["hist"][-1]["pst"]:
 (H / "relatorio.json").write_text(json.dumps({k: v for k, v in data.items() if k != "mapa"}, ensure_ascii=False, indent=1))
 tpl = (H / "template_relatorio.html").read_text() if (H / "template_relatorio.html").exists() else None
 if tpl:
-    (H / "relatorio_final.html").write_text(tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False)))
+    (H / "relatorio_final.html").write_text(brand.aplicar(tpl.replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False))))
 print("ok", nac["pst"], nac["ht"], "| gov:", collections.Counter(g["status"] for g in gov),
       "| dep fed", depfed["total"], "| dep est", depest["total"], "| mapa", len(mapa), "UFs",
       f"{len(json.dumps(mapa)) // 1024} KB")

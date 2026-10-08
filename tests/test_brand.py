@@ -61,5 +61,37 @@ class Brand(unittest.TestCase):
             brand.aplicar("<style>body{}</style>")
 
 
+TEMPLATES = [R / "template.html", R / "template_aovivo.html", R / "relatorio" / "template_relatorio.html"]
+
+
+class Templates(unittest.TestCase):
+    def test_um_marcador_e_sem_tokens_proprios(self):
+        for t in TEMPLATES:
+            h = t.read_text()
+            self.assertEqual(h.count("/*__BRAND__*/"), 1, t.name)
+            self.assertNotRegex(h, r"--(bg|ink|card|flavio|lula)\s*:\s*#", f"{t.name} ainda define cor própria")
+
+    def test_todo_token_usado_existe(self):
+        da_brand = set(re.findall(r"(--[\w-]+)\s*:", brand.CSS))
+        for t in TEMPLATES:
+            h = t.read_text()
+            definidos = da_brand | set(re.findall(r"(--[\w-]+)\s*:", h))  # locais, ex.: style="--c:…"
+            # var(--b${i}) é montado em JS; os tokens --b1..4/--r1..4 abaixo cobrem essa família
+            usados = set(re.findall(r"var\((--[\w-]+)(?!\$)", h)) | set(re.findall(r"css\('(--[\w-]+)'\)", h))
+            self.assertEqual(usados - definidos, set(), t.name)
+            if "var(--b${" in h:
+                self.assertLessEqual({f"--{c}{i}" for c in "br" for i in range(1, 5)}, definidos, t.name)
+
+    def test_fonte_do_corpo_tem_fallback(self):
+        self.assertIn("-apple-system", brand.CSS)
+        for t in TEMPLATES:
+            self.assertNotIn("-apple-system", t.read_text(), f"{t.name}: use var(--font-sans)")
+
+    def test_fontes_existem(self):
+        for f in re.findall(r"url\(/fonts/([^)]+)\)", brand.CSS):
+            p = R / "assets" / "fonts" / f
+            self.assertTrue(p.exists() and p.stat().st_size > 10_000, f)
+
+
 if __name__ == "__main__":
     unittest.main()
