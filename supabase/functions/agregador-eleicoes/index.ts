@@ -30,7 +30,7 @@ export async function tratar(req: Request): Promise<Response> {
     tse: criarTse(Deno.env.get("TSE_BASE") ?? TSE_BASE_PADRAO, { timeoutMs: 10_000, tentativas: 2 }),
     st: criarArmazenamentoSupabase(url, chave),
     agora: () => Date.now(),
-    concorrencia: normalizarConcorrencia(Number(Deno.env.get("AGREGADOR_CONCORRENCIA"))),
+    concorrencia: normalizarConcorrencia(Deno.env.get("AGREGADOR_CONCORRENCIA")),
     eleicaoForcada: Deno.env.get("ELEICAO_FORCADA") || undefined,
     log: (...a: unknown[]) => console.log(...a),
   };

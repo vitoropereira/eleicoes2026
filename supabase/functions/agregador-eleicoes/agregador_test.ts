@@ -660,3 +660,36 @@ Deno.test("pend atrasado: rodada sem nada novo ainda atualiza o pend do agora.js
   await executar({ tse, st, agora: relogio().agora });
   assertEquals(st.json("agora.json").pend, []);
 });
+
+Deno.test("pend: UF cuja leitura falhou nesta rodada (429/erro no arquivo da UF) continua em pend", async () => {
+  const { st, tse } = await rodada1();
+  const idg = Number(fixture("uf-pr").idg);
+  tse.arquivos.set(p("pr"), avancar(fixture("uf-pr"), 5, idg + 5));
+  const original = tse.buscar;
+  // rodada A: PR mudou, municípios de PR com 429 -> PR fica em pend
+  tse.buscar = (c, e) => /pr\d+-c0001/.test(c) ? Promise.reject(new LimiteTse(c, 429)) : original(c, e);
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, ["PR"]);
+  // rodada B (depois da pausa): agora é o próprio arquivo da UF PR que falha -> PR continua atrás do TSE
+  const est = st.json("_estado.json");
+  st.objetos.set("_estado.json", JSON.stringify({ ...est, pausaAte: 0 }));
+  tse.buscar = (c, e) => /\/pr-c0001/.test(c) ? Promise.reject(new Error("timeout")) : original(c, e);
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, ["PR"]);
+  assertEquals(st.json("_estado.json").pendentes, ["PR"]);
+  // rodada C: tudo responde -> PR fecha e sai do pend
+  tse.buscar = original;
+  await executar({ tse, st, agora: relogio().agora });
+  assertEquals(st.json("agora.json").pend, []);
+});
+
+Deno.test("concorrência pela variável de ambiente: vazia/inválida = padrão 16; número válido vale, mínimo 1", () => {
+  assertEquals(normalizarConcorrencia(""), 16); // Number("") seria 0 -> 1 conexão: lento demais na noite
+  assertEquals(normalizarConcorrencia("   "), 16);
+  assertEquals(normalizarConcorrencia("abc"), 16);
+  assertEquals(normalizarConcorrencia(undefined), 16);
+  assertEquals(normalizarConcorrencia("12"), 12);
+  assertEquals(normalizarConcorrencia(" 8 "), 8);
+  assertEquals(normalizarConcorrencia("0"), 1);
+  assertEquals(normalizarConcorrencia(12), 12);
+});
