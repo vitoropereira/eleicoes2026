@@ -1,13 +1,13 @@
 // HUD da apuração: estado da página, cabeçalho, mapa, linha do tempo, busca, Exterior e acessibilidade.
 import { html, render, useState, useEffect, useMemo, useRef, useCallback, useErrorBoundary } from "/vendor/preact-htm.module.js";
-import { t1, malha, criarVivo, vivoExtra, vivoMinuto } from "./dados.js";
+import { t1, malha, criarVivo, vivoExtra, criarMinuto } from "./dados.js";
 import { decodificar, decodificarUFs } from "./topo.js";
 import { Mapa } from "./mapa.js";
 import { limparCache, token, misturar } from "./partidos.js";
 import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
-import { oficial, duelo } from "./calc.js";
+import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2 } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -103,7 +103,7 @@ function LinhaDoTempo({ serie, idx, setIdx, ativa, motivo, turno, vivo }) {
         </div>
         <span class="pst mono">${pct(atual.pst, 1)}%</span>` : html`<span class="linha-off">${motivo}</span>`}
       <${PessoasAgora} />
-      <span class=${"aovivo " + (turno === 2 && vivo === "ok" ? "on" : "")}><i class="dot" aria-hidden="true"></i>${turno === 2 ? (vivo === "ok" ? "Ao vivo" : "Aguardando") : final ? "Resultado final" : "Revendo a noite"}</span>
+      <span class=${"aovivo " + (turno === 2 && vivo === "ok" && final ? "on" : "")}><i class="dot" aria-hidden="true"></i>${turno === 2 ? (!final ? "Revendo a noite" : vivo === "ok" ? "Ao vivo" : "Aguardando") : final ? "Resultado final" : "Revendo a noite"}</span>
     </div>`;
 }
 
@@ -171,9 +171,9 @@ function Exterior({ aberto, fechar, meta, res, lista }) {
   useEffect(() => { const d = ref.current; if (!d) return; if (aberto && !d.open) d.showModal(); else if (!aberto && d.open) d.close(); }, [aberto]);
   const itens = useMemo(() => {
     if (!meta || !res?.ex) return [];
-    return (meta.exterior || []).map(([nome, cod]) => ({ nome: titulo(nome), r: linha("presidente", res.ex[cod], lista) })).filter((x) => x.r).sort((a, b) => b.r.validos - a.r.validos);
+    return (meta.exterior || []).map(([nome, cod]) => ({ nome: titulo(nome), r: linha("presidente", res.ex[cod], lista) })).filter((x) => x.r?.lider).sort((a, b) => b.r.validos - a.r.validos);
   }, [meta, res, lista]);
-  const zz = res?.uf?.ZZ && linha("presidente", res.uf.ZZ, lista);
+  const zz0 = res?.uf?.ZZ && linha("presidente", res.uf.ZZ, lista), zz = zz0?.lider && zz0.segundo ? zz0 : null;
   return html`<dialog class="modal ext-dlg" ref=${ref} onClose=${fechar} aria-labelledby="ext-t">
     <div class="cab"><h2 id="ext-t">Exterior · Presidente</h2><button type="button" class="bt ic" aria-label="Fechar" onClick=${fechar}>${Ic.x}</button></div>
     ${zz ? html`<p class="ext-tot"><${Sw} sg=${zz.lider.sg} /><${Nome} c=${zz.lider} /> ${pct(zz.p1 * 100, 1)}% × <${Nome} c=${zz.segundo} /> ${pct(zz.segundo.p * 100, 1)}% · ${int(zz.validos)} votos válidos em ${itens.length} cidades</p>` : html`<p class="vazio-txt">Sem dados do exterior para este turno ainda.</p>`}
@@ -202,7 +202,8 @@ function App() {
   const [ext, setExt] = useState(false);
   const [cheia, setCheia] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const mapaEl = useRef(), mapa = useRef(), vivoCtl = useRef(), st = useRef({});
+  const mapaEl = useRef(), mapa = useRef(), vivoCtl = useRef(), minutoCtl = useRef(null), st = useRef({});
+  if (!minutoCtl.current) minutoCtl.current = criarMinuto();
 
   // dados do 1º turno + malha
   useEffect(() => {
@@ -261,23 +262,27 @@ function App() {
 
   // 2º turno: feed, série (índice) e o minuto escolhido na linha do tempo
   const [feed2, setFeed2] = useState(null), [serie2b, setSerie2b] = useState(null), [minuto, setMinuto] = useState(null);
+  // relê feed e série quando a leitura muda; o idg sozinho não basta (UF pendente que fecha depois mantém o idg)
+  const chaveVivo = vivo.dados ? `${vivo.dados.idg}|${vivo.dados.pst}|${(vivo.dados.pend || []).join()}` : "";
   useEffect(() => {
-    if (turno !== 2 || !vivo.dados) return;
+    if (turno !== 2 || !chaveVivo) return;
     vivoExtra("feed.json").then((f) => f && setFeed2(f));
     vivoExtra("serie/index.json").then((x) => Array.isArray(x) && setSerie2b(x));
-  }, [turno, vivo.dados?.idg]);
-  const serie2 = useMemo(() => (serie2b || []).map((e) => {
-    const c = vivo.dados?.cand || [], { F, L } = duelo(c), tot = (e.br?.[2] || 0) + (e.br?.[6] || 0) || 1;
-    const v = (x) => { const i = c.indexOf(x); return i >= 0 ? (e.br?.[5]?.[i] || 0) : 0; };
-    return { ht: e.t, pst: e.pst, f: (100 * v(F)) / tot, l: (100 * v(L)) / tot };
-  }), [serie2b, vivo.dados?.cand]);
+  }, [turno, chaveVivo]);
+  const serie2 = useMemo(() => serieTurno2(serie2b, vivo.dados?.cand), [serie2b, vivo.dados?.cand]);
+  // minuto escolhido: cancela o pedido anterior, ignora resposta velha; se falhar, fica no minuto com aviso
+  const tSel = turno === 2 && idx != null ? serie2[idx]?.ht ?? null : null;
+  const [tentarMinuto, setTentarMinuto] = useState(0);
   useEffect(() => {
-    if (turno !== 2 || idx == null || !serie2[idx]) { setMinuto(null); return; }
-    vivoMinuto(serie2[idx].ht).then(setMinuto).catch(() => setMinuto(null));
-  }, [turno, idx, serie2]);
+    if (!tSel) { minutoCtl.current.cancelar(); setMinuto(null); return; }
+    minutoCtl.current.ler(tSel).then((r) => { if (r) setMinuto(r); });
+  }, [tSel, tentarMinuto]);
+  const f2 = fonteTurno2(tSel ? idx : null, tSel, minuto, vivo.dados);
 
   // fonte de dados do recorte atual
-  const fonte = turno === 2 ? (cargo === "presidente" ? (idx != null && minuto ? minuto : vivo.dados) : null) : res[cargo];
+  const fonte = turno === 2 ? (cargo === "presidente" ? f2.fonte : null) : res[cargo];
+  // leitura nova sem pm (% por município): Apurado não tem o que mostrar, volta para Municípios
+  useEffect(() => { const m = modoValido(modo, turno, fonte); if (m !== modo) setModoS(m); }, [modo, turno, fonte]);
   // % apurado por UF / município (2º turno: pu/pm do agregador; 1º turno final: 100%)
   const pstUF = (uf) => (turno === 2 ? (fonte?.pu?.[uf] ?? fonte?.pst ?? 0) : 100);
   const pstMun = (cod) => (turno === 2 ? (fonte?.pm?.[cod] ?? fonte?.pst ?? 0) : 100);
@@ -408,6 +413,7 @@ function App() {
       const r = resultadoUF(uf);
       const cab = html`<p class="dk-nome"><b>${UF_NOME[uf]}</b> <span>${uf}</span></p>`;
       if (!r) return html`${cab}<p class="dk-nota">${turno === 2 ? "Aguardando o TSE · 25/10 a partir das 17h" : "Sem dados."}</p>`;
+      if (r.vazio) return html`${cab}<p class="dk-nota">Nenhuma seção apurada ainda</p>`;
       return html`${cab}<p class="dk-nota">${CARGO_NOME[cargo]} · estado</p>${listaDica(r)}<p class="dk-nota">Aproxime para ver os municípios</p>`;
     }
     const nome = meta?.mun?.[cod]?.[0] || cod;
@@ -421,6 +427,7 @@ function App() {
     }
     const r = linha(cargo, fonte.mu?.[cod], lista(uf));
     if (!r) return html`${cab}<p class="dk-nota">Sem dados deste município.</p>`;
+    if (r.vazio) return html`${cab}<p class="dk-nota">Nenhuma seção apurada ainda${turno === 2 ? ` · ${pct(pstMun(cod), 1)}% das seções` : ""}</p>`;
     if (r.dep) return html`${cab}<p class="dk-nota">${CARGO_NOME[cargo]} · partido mais votado</p>
       <p class="dk-part"><${Sw} sg=${r.sg} /><b>${r.sg}</b> ${pct(r.partidoP * 100, 1)}% <small>${int(r.partidoV)} votos nominais</small></p>
       <ul class="dk-l">${r.cands.map((c) => html`<li><${Sw} sg=${c.sg} /><span>${c.nome} <small>${c.sg}</small></span><b>${int(c.v)}</b></li>`)}</ul>
@@ -451,20 +458,15 @@ function App() {
     if (modo === "estados" || pontoUF || geo.soUF) { for (const uf of UFS) { const r = resultadoUF(uf); if (r?.lider) cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; } }
     else geo.muns.forEach((m) => { const r = linha(cargo, fonte.mu?.[m.cod], lista(m.uf)); if (r?.lider) cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; });
     const rk = Object.entries(cont).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    if (!rk.length) return null; // ninguém lidera em lugar nenhum (nenhum voto apurado): sem legenda vazia
     const und = modo === "estados" || pontoUF || geo.soUF ? "estados" : "municípios";
     return html`${rk.map(([sg, n]) => html`<span class="lg"><${Sw} sg=${sg} /><b>${sg}</b> ${int(n)}</span>`)}<span class="und">${und}${modo === "vantagem" ? " · cor forte = vantagem maior" : ""}</span>`;
   }, [geo, fonte, modo, cargo, pontoUF, resultadoUF, lista]);
 
-  const resumo = useMemo(() => {
-    if (turno === 2 && !vivo.dados) return "2º turno: aguardando o TSE, 25 de outubro a partir das 17h.";
-    if (!fonte || !meta) return "Carregando resultados.";
-    if (cargo === "presidente") {
-      if (ponto) return `Presidente em ${ponto.d ? ponto.d + " " : ""}${ponto.ht}, ${pct(ponto.pst, 1)}% das seções: Flávio ${pct(ponto.f, 2)}%, Lula ${pct(ponto.l, 2)}%.`;
-      const r = linha("presidente", fonte.br, listaPres);
-      return `Presidente, ${turno}º turno: ${r.cands.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
-    }
-    return `${CARGO_NOME[cargo]}${ufSel ? " em " + UF_NOME[ufSel] : ""}. Mapa colorido pelo ${ehDep(cargo) ? "partido mais votado" : "partido do 1º colocado"} em cada município.`;
-  }, [turno, vivo.dados, fonte, meta, cargo, ponto, listaPres, ufSel]);
+  const resumo = useMemo(() => (f2.erro && turno === 2
+    ? `Não deu para carregar a leitura das ${tSel}.`
+    : resumoLeitor({ turno, temVivo: !!vivo.dados, fonte, meta, cargo, ponto, pontoUF, ufSel, lista: listaPres })),
+  [turno, vivo.dados, fonte, meta, cargo, ponto, pontoUF, listaPres, ufSel, f2.erro, tSel]);
 
   // ---------- painel esquerdo
   let esq;
@@ -475,7 +477,12 @@ function App() {
       <p class="aguarda"><i class="dot" aria-hidden="true"></i>${vivo.status === "erro" ? "TSE sem resposta" : "Aguardando o TSE"} · 25/10 a partir das 17h</p>
       <p class="vazio-txt">O mapa por município começa a se colorir quando o TSE publicar as primeiras seções apuradas. Esta página atualiza sozinha.</p>
       <button type="button" class="bt" onClick=${() => setTurnoX(1)}>Ver o 1º turno</button></div>`;
-  else if (!meta || !fonte) esq = html`<p class="vazio-txt">Carregando resultados…</p>`;
+  else if (turno === 2 && cargo === "presidente" && f2.erro) esq = html`<div class="vazio">
+      <p class="kicker">Presidente · 2º turno · leitura das ${tSel}</p>
+      <h1 class="manchete pequena">Não deu para carregar a leitura das ${tSel}</h1>
+      <p class="vazio-txt">A linha do tempo continua neste minuto. O resultado ao vivo não foi trocado por ele.</p>
+      <p><button type="button" class="bt" onClick=${() => setTentarMinuto((x) => x + 1)}>Tentar de novo</button> <button type="button" class="link" onClick=${() => setIdx(null)}>Voltar ao ao vivo</button></p></div>`;
+  else if (!meta || !fonte) esq = html`<p class="vazio-txt">${f2.carregando && tSel ? `Carregando a leitura das ${tSel}…` : "Carregando resultados…"}</p>`;
   else if (cargo === "presidente") {
     const r0 = ufSel ? linha("presidente", fonte.uf?.[ufSel], listaPres) : linha("presidente", fonte.br, listaPres);
     // linha do tempo: com UF escolhida, a leitura daquela UF (nunca o número nacional com o nome da UF)
@@ -492,8 +499,8 @@ function App() {
       of=${turno === 1 && !ufSel ? oficial(situacao, "presidente", null, listaPres) : null}
       onVoltar=${ufSel ? voltar : null} serie=${!ufSel ? (turno === 1 ? serie : serie2) : null} idx=${idx} />`;
   } else if (ehDep(cargo)) esq = html`<${ResumoDep} cargo=${cargo} res=${fonte} uf=${ufSel} onUF=${escolherUF} onVoltar=${voltar} geo=${geo} />`;
-  else if (ufSel) esq = html`<${Placar} cargo=${cargo} r=${linha(cargo, fonte.uf?.[ufSel], lista(ufSel))} of=${oficial(situacao, cargo, ufSel, lista(ufSel))} kicker=${`${CARGO_NOME[cargo]} · ${UF_NOME[ufSel]}`} onVoltar=${voltar} />`;
-  else esq = html`<${ResumoUFs} cargo=${cargo} res=${fonte} meta=${meta} onUF=${escolherUF} status=${situacao} />`;
+  else if (ufSel) esq = html`<${Placar} cargo=${cargo} r=${linha(cargo, fonte.uf?.[ufSel], lista(ufSel))} pst=${pstUF(ufSel)} of=${oficial(situacao, cargo, ufSel, lista(ufSel))} kicker=${`${CARGO_NOME[cargo]} · ${UF_NOME[ufSel]}`} onVoltar=${voltar} />`;
+  else esq = html`<${ResumoUFs} cargo=${cargo} res=${fonte} meta=${meta} onUF=${escolherUF} status=${situacao} pst=${turno === 1 ? 100 : fonte?.pst} />`;
 
   const linhaAtiva = cargo === "presidente" && (turno === 1 ? serie.length > 1 : serie2.length > 1);
   const motivoLinha = turno === 2 ? "A linha do tempo do 2º turno começa com as primeiras leituras do TSE" : "Linha do tempo: só para presidente (o TSE não publica a noite dos outros cargos)";
@@ -502,7 +509,7 @@ function App() {
   // tabela alternativa (leitor de tela)
   const tabela = useMemo(() => {
     if (!fonte || !meta) return null;
-    const linhas = UFS.map((uf) => ({ uf, r: resultadoUF(uf) })).filter((x) => x.r);
+    const linhas = UFS.map((uf) => ({ uf, r: resultadoUF(uf) })).filter((x) => x.r && (x.r.dep || x.r.lider));
     return html`<table class="sr-only"><caption>${CARGO_NOME[cargo]}, ${turno}º turno: resultado por estado${ponto ? ` às ${ponto.ht}` : ""}</caption>
       <thead><tr><th scope="col">Estado</th><th scope="col">${ehDep(cargo) ? "Partido mais votado" : "1º colocado"}</th><th scope="col">% dos válidos</th><th scope="col">${ehDep(cargo) ? "Candidato mais votado" : "2º colocado"}</th></tr></thead>
       <tbody>${linhas.map(({ uf, r }) => html`<tr><th scope="row">${UF_NOME[uf]}</th>
@@ -531,7 +538,7 @@ function App() {
         </section>
         <aside class="dir painel" aria-label="Regiões e atualizações">
           <section class="bloco"><div class="cab"><h2 class="kicker">Por região</h2><span class="sub">${cargo === "presidente" ? "quem lidera" : "partido na frente"}${ponto ? ` · aprox. ${ponto.d ? ponto.d + " " : ""}${ponto.ht}` : ""}</span></div>
-            <${Seguro}><${PorRegiao} cargo=${cargo} res=${meta ? fonte : null} meta=${meta} lista=${listaPres} ponto=${pontoUF} geo=${geo} turno=${turno} /><//></section>
+            <${Seguro}><${PorRegiao} cargo=${cargo} res=${meta ? fonte : null} meta=${meta} lista=${listaPres} ponto=${pontoUF} geo=${geo} turno=${turno} msg=${f2.erro ? `Sem a leitura das ${tSel}.` : f2.carregando && tSel ? `Carregando a leitura das ${tSel}…` : null} /><//></section>
           <section class="bloco feed-b"><div class="cab"><h2 class="kicker">Últimas atualizações</h2></div>
             ${turno === 2 ? (feed2?.length ? html`<${Feed} itens=${feed2} onUF=${(uf) => { escolherUF(uf); }} />` : html`<p class="vazio-txt">O feed do 2º turno começa quando o TSE publicar as primeiras seções.</p>`) : html`<${Feed} itens=${feed} onUF=${(uf) => { escolherUF(uf); }} />`}</section>
           <p class="fonte">Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do IBGE. Não é site oficial da Justiça Eleitoral. <a href="/">Resultado final</a> · <a href="/apuracao/">Histórico</a> · <a href="/#metodo">Método</a> · <a href="https://vitorpereira.ia.br/privacidade">Privacidade</a> · <button type="button" class="link" onClick=${() => window.dispatchEvent(new CustomEvent("consent:reopen"))}>Cookies</button></p>

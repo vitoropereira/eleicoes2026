@@ -111,13 +111,35 @@ export async function vivoExtra(nome, F = (...a) => fetch(...a)) {
 
 /** agora.json de um minuto da noite (/vivo/serie/HHMM.json), com cache LRU de 16 */
 const lru = new Map();
-export async function vivoMinuto(t, F = (...a) => fetch(...a)) {
+export async function vivoMinuto(t, F = (...a) => fetch(...a), signal) {
   const k = String(t).replace(":", "");
   if (lru.has(k)) { const v = lru.get(k); lru.delete(k); lru.set(k, v); return v; }
-  const r = await F(`/vivo/serie/${k}.json`);
+  const r = await F(`/vivo/serie/${k}.json`, signal ? { signal } : undefined);
   if (!r.ok) { const e = new Error(`serie/${k}: HTTP ${r.status}`); e.status = r.status; e.vazio = SEM_DADO.has(r.status); throw e; }
   const d = await r.json();
   if (corpoVazio(d)) { const e = new Error(`serie/${k}: sem dado ainda`); e.vazio = true; throw e; }
   lru.set(k, d); if (lru.size > 16) lru.delete(lru.keys().next().value);
   return d;
+}
+
+/**
+ * Leitor do minuto da linha do tempo: cada pedido novo cancela o anterior (AbortController) e resposta velha é
+ * descartada (devolve null). Falha devolve {t, erro}: quem chama mantém o minuto escolhido e avisa, sem cair no ao vivo.
+ */
+export function criarMinuto(F = (...a) => fetch(...a)) {
+  let n = 0, ctl = null;
+  return {
+    async ler(t) {
+      const id = ++n;
+      ctl?.abort();
+      ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      try {
+        const dados = await vivoMinuto(t, F, ctl?.signal);
+        return id === n ? { t, dados } : null;
+      } catch (erro) {
+        return id === n ? { t, erro } : null;
+      }
+    },
+    cancelar() { n++; ctl?.abort(); ctl = null; },
+  };
 }

@@ -63,10 +63,12 @@ export function linha(cargo, row, lista) {
   const base = (vv + vansj) || cands.reduce((s, c) => s + c.v, 0) || 1;
   cands.forEach((c) => { c.p = c.v / base; });
   cands.sort((a, b) => b.v - a.v);
-  const [a, b] = cands;
+  // nenhum voto apurado ainda (2º turno antes das primeiras seções): ninguém lidera, sem cor no mapa
+  const vazio = !cands.some((c) => c.v > 0);
+  const [a, b] = vazio ? [] : cands;
   return {
     eleitores: el, comparecimento: comp, validos: vv, brancos: vb, nulos: vn, vansj, total: base, cands, val: cands,
-    lider: a, segundo: b, p1: a ? a.p : 0, margem: a ? a.p - (b ? b.p : 0) : 0,
+    lider: a || null, segundo: b || null, p1: a ? a.p : 0, margem: a ? a.p - (b ? b.p : 0) : 0, vazio,
     pc: el ? comp / el : 0, pbn: comp ? (vb + vn) / comp : 0,
   };
 }
@@ -83,8 +85,9 @@ export function intensidade(modo, r, cargo) {
 
 /** cor de preenchimento de canvas para um resultado */
 export function corPara(modo, r, cargo, pstFrac = 1) {
-  const bg = token("--bg");
   if (!r) return null;
+  if (modo !== "apurado" && !r.lider) return null; // sem voto: cor de "sem dado", não a do 1º da lista
+  const bg = token("--bg");
   if (modo === "apurado") return misturar(token("--ink2"), bg, 0.12 + 0.75 * lim(pstFrac));
   return misturar(corRGB(r.lider?.sg), bg, intensidade(modo, r, cargo));
 }
@@ -131,4 +134,66 @@ export function oficial(status, cargo, uf, lista) {
   if (!e || !lista) return null;
   const por = (n) => lista.find((c) => String(c.n) === String(n)) || null;
   return { status: e.status || null, a: por(e.a), b: por(e.b), eleitos: (e.eleitos || []).map(por).filter(Boolean) };
+}
+
+/**
+ * Senado: "eleito(s)" só com a situação oficial (status.json) E a apuração em 100%. Devolve a lista de eleitos ou null.
+ * Leitura parcial nunca anuncia eleito, mesmo que o status.json diga.
+ */
+export function senadoEleitos(of, pst) {
+  return of?.eleitos?.length && pst === 100 ? of.eleitos : null;
+}
+
+/** 2º turno: o modo Apurado depende do `pm` (% por município); leitura sem `pm` volta para Municípios. */
+export function modoValido(modo, turno, fonte) {
+  return modo === "apurado" && turno === 2 && fonte && !fonte.pm ? "municipios" : modo;
+}
+
+/**
+ * 2º turno, presidente: de onde vem o dado do recorte.
+ * Sem minuto escolhido (idx null): o ao vivo. Com minuto: só o agora.json DAQUELE minuto; enquanto carrega ou se
+ * falhou, nada (nunca o ao vivo disfarçado de minuto passado). `erro` = o minuto escolhido não carregou.
+ */
+export function fonteTurno2(idx, tSel, minuto, vivoDados) {
+  if (idx == null) return { fonte: vivoDados || null, erro: false, carregando: false };
+  const deste = minuto && minuto.t === tSel;
+  if (deste && minuto.dados) return { fonte: minuto.dados, erro: false, carregando: false };
+  if (deste && minuto.erro) return { fonte: null, erro: true, carregando: false };
+  return { fonte: null, erro: false, carregando: true };
+}
+
+/** texto do aviso para leitor de tela (aria-live): segue a UF escolhida, inclusive na linha do tempo */
+export function resumoLeitor({ turno, temVivo, fonte, meta, cargo, ponto, pontoUF, ufSel, lista }) {
+  if (turno === 2 && !temVivo) return "2º turno: aguardando o TSE, 25 de outubro a partir das 17h.";
+  if (!fonte || !meta) return "Carregando resultados.";
+  if (cargo !== "presidente") {
+    return `${CARGO_NOME[cargo]}${ufSel ? " em " + UF_NOME[ufSel] : ""}. Mapa colorido pelo ${ehDep(cargo) ? "partido mais votado" : "partido do 1º colocado"} em cada município.`;
+  }
+  const onde = ufSel ? ` em ${UF_NOME[ufSel]}` : "";
+  if (ponto) {
+    const d = ponto.d ? ponto.d + " " : "";
+    if (!ufSel) return `Presidente em ${d}${ponto.ht}, ${pct(ponto.pst, 1)}% das seções: Flávio ${pct(ponto.f, 2)}%, Lula ${pct(ponto.l, 2)}%.`;
+    const u = pontoUF?.uf?.[ufSel];
+    if (!u) return `Presidente${onde}: o TSE não tinha publicado esta UF às ${ponto.ht}.`;
+    return `Presidente${onde} em ${d}${pontoUF.ufDe || ponto.ht}, ${pct(u[0], 1)}% das seções: Flávio ${pct(u[1], 2)}%, Lula ${pct(u[2], 2)}%.`;
+  }
+  const r = linha("presidente", ufSel ? fonte.uf?.[ufSel] : fonte.br, lista);
+  const apurado = turno === 2 ? `, ${fonte.t ? "às " + fonte.t + ", " : ""}${pct((ufSel ? fonte.pu?.[ufSel] : null) ?? fonte.pst ?? 0, 1)}% das seções` : "";
+  if (!r) return `Presidente${onde}: sem dados.`;
+  if (r.vazio) return `Presidente, ${turno}º turno${onde}${apurado}: nenhum voto apurado ainda.`;
+  return `Presidente, ${turno}º turno${onde}${apurado}: ${r.cands.slice(0, 2).map((c) => `${c.nome} ${pct(c.p * 100, 2)}%`).join(", ")}.`;
+}
+
+/**
+ * Pontos da linha do tempo do 2º turno a partir de /vivo/serie/index.json ({t, pst, br}). Leitura sem voto válido
+ * (abertura, 0% das seções) fica de fora: não há % para desenhar e ela achataria o gráfico em 0%.
+ */
+export function serieTurno2(indice, cand) {
+  const c = cand || [], { F, L } = duelo(c);
+  const pos = (x) => c.findIndex((k) => String(k.n) === String(x.n));
+  return (Array.isArray(indice) ? indice : []).filter((e) => (e?.br?.[2] || 0) > 0).map((e) => {
+    const tot = (e.br[2] || 0) + (e.br[6] || 0);
+    const v = (x) => { const i = pos(x); return i >= 0 ? (e.br[5]?.[i] || 0) : 0; };
+    return { ht: e.t, pst: e.pst, f: (100 * v(F)) / tot, l: (100 * v(L)) / tot };
+  });
 }

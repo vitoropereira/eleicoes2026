@@ -118,3 +118,30 @@ Deno.test("produção hoje: HTTP 400 + NoSuchKey (bucket existe, agora.json não
   const F200 = async () => ({ ok: true, status: 200, json: async () => corpo });
   ok((await vivoExtra("feed.json", F200)) === null, "feed 200+NoSuchKey → null");
 });
+
+Deno.test("b. minuto: pedido novo cancela o anterior e resposta velha é descartada; falha devolve erro", async () => {
+  const { criarMinuto } = await import("./dados.js");
+  const pendentes = [];
+  const F = (url, opts) => new Promise((ok_, falha) => {
+    pendentes.push({ url, ok_, falha });
+    opts?.signal?.addEventListener("abort", () => falha(new DOMException("abortado", "AbortError")));
+  });
+  const m = criarMinuto(F);
+  const a = m.ler("17:01"), b = m.ler("17:02");
+  ok(pendentes.length === 2 && pendentes[1].url.includes("1702"), "dois pedidos");
+  pendentes[1].ok_({ ok: true, status: 200, json: async () => ({ idg: "2" }) });
+  ok((await a) === null, "o primeiro (cancelado/velho) volta null");
+  const rb = await b;
+  ok(rb.t === "17:02" && rb.dados.idg === "2", "o último vale");
+  // falha: devolve erro com o minuto escolhido
+  const c = m.ler("17:03");
+  pendentes[2].ok_({ ok: false, status: 503, json: async () => ({}) });
+  const rc = await c;
+  ok(rc.t === "17:03" && rc.erro && !rc.dados, "erro sem dado");
+  // resposta que chega depois de um pedido mais novo é ignorada mesmo sem abort
+  const semAbort = criarMinuto((url) => new Promise((ok_) => pendentes.push({ url, ok_ })));
+  const d1 = semAbort.ler("17:04"), d2 = semAbort.ler("17:05");
+  pendentes.at(-1).ok_({ ok: true, status: 200, json: async () => ({ idg: "5" }) });
+  pendentes.at(-2).ok_({ ok: true, status: 200, json: async () => ({ idg: "4" }) });
+  ok((await d1) === null && (await d2).dados.idg === "5", "resposta velha descartada");
+});
