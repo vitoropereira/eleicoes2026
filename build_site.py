@@ -240,14 +240,16 @@ ELEICAO = {"@type": "Event", "name": "Eleições Gerais 2026 no Brasil — 1º t
            "organizer": FONTE_TSE}
 
 
-def montar_pagina(raw_html, title, desc, path, og_img, ld, published, modified, atual, extra_top=""):
+def montar_pagina(raw_html, title, desc, path, og_img, ld, published, modified, atual, extra_top="", moldura=True):
+    """moldura=False: página de tela cheia (HUD) com cabeçalho e rodapé próprios"""
     h = raw_html
     h = re.sub(r"<title>.*?</title>", "", h, count=1, flags=re.S)
     h = h.replace('<meta name="viewport" content="width=device-width, initial-scale=1">',
                   '<meta name="viewport" content="width=device-width, initial-scale=1">\n' + head(title, desc, path, og_img, ld, published, modified), 1)
-    h = h.replace("<body>", "<body>" + sitebar(atual) + extra_top, 1)
-    h = h.replace("<main>", '<main id="conteudo">', 1)
-    h = h.replace("</body>", rodape() + "</body>", 1)
+    if moldura:
+        h = h.replace("<body>", "<body>" + sitebar(atual) + extra_top, 1)
+        h = h.replace("<main>", '<main id="conteudo">', 1)
+        h = h.replace("</body>", rodape() + "</body>", 1)
     # Chart.js: tira do <head> (bloqueante) e carrega logo antes do script da página
     m = re.search(r'<script src="https://cdnjs[^"]+chart[^"]+"[^>]*></script>\n?', h)
     if m:
@@ -255,6 +257,42 @@ def montar_pagina(raw_html, title, desc, path, og_img, ld, published, modified, 
         h = h.replace(m.group(0), "", 1)
         h = h.replace("<script>\nconst D=", tag + "\n<script>\nconst D=", 1)
     return h
+
+
+# ---------------- Vercel (gravado em site/vercel.json e na raiz)
+VERCEL = {
+    "cleanUrls": True, "trailingSlash": True,
+    "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"}],
+    "headers": [{"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
+                {"source": "/fonts/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
+                {"source": "/og/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=86400"}]},
+                {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
+                {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
+                {"source": "/geo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
+                {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]}]}
+
+
+# ---------------- HUD (/ao-vivo/)
+def copiar_hud(dest):
+    """hud/ → /hud/, assets/vendor/ → /vendor/, municipios/geo/ → /geo/ (se existir; vem do build dos dados)"""
+    shutil.copytree(R / "hud", dest / "hud", dirs_exist_ok=True)
+    shutil.copytree(R / "assets" / "vendor", dest / "vendor", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
+    geo = R / "municipios" / "geo"
+    if geo.is_dir():
+        shutil.copytree(geo, dest / "geo", dirs_exist_ok=True)
+
+
+def resumo_hud():
+    """texto pré-renderizado para buscadores e leitores de tela (o HUD em si é desenhado no navegador)"""
+    linhas = "".join(f"<tr><th scope=row>{u['uf']}</th><td>{fmt(u['f'], 2)}%</td><td>{fmt(u['l'], 2)}%</td></tr>"
+                     for u in sorted(rel["pres_uf"], key=lambda u: u["uf"]) if u["uf"] != "ZZ")
+    return (f'<section class="crawl" id="resumo" aria-label="Resumo do resultado"><h1>Mapa da apuração por município · Eleições 2026</h1>'
+            f'<p>1º turno, {fmt(N["pst"], 2)}% das seções apuradas (TSE, {N["dg"]} {N["ht"]}): Flávio Bolsonaro (PL) {fmt(cF["p"], 2)}% '
+            f'e Lula (PT) {fmt(cL["p"], 2)}% dos votos válidos. Os dois disputam o 2º turno em 25 de outubro de 2026. '
+            f'Flávio venceu em {len(ufF)} unidades da federação e Lula em {len(ufL)}.</p>'
+            f'<table><caption>Presidente, 1º turno, por estado (% dos votos válidos)</caption><thead><tr><th scope=col>UF</th>'
+            f'<th scope=col>Flávio Bolsonaro</th><th scope=col>Lula</th></tr></thead><tbody>{linhas}</tbody></table>'
+            f'<p><a href="/">Resultado final completo</a> · <a href="/apuracao/">Apuração leitura a leitura</a></p></section>')
 
 
 # ---------------- FAQ (visível + FAQPage) — respostas geradas dos dados
@@ -442,19 +480,20 @@ def main():
                                                               '<nav class="crumbs" aria-label="Trilha"><a href="/">Início</a> › Apuração</nav>'))
     paginas.append(("/apuracao/", modificado, "0.8"))
 
-    # ---- ao vivo (busca o TSE no navegador; o pré-render guarda a leitura do momento do build)
-    mapa = (R / "relatorio" / "dados" / "mapa.json").read_text()
-    raw = brand.aplicar((R / "template_aovivo.html").read_text().replace("/*__MAPA__*/null", mapa))
-    titulo = "Apuração ao vivo das Eleições 2026 | Resultados do TSE"
-    desc = "Resultado das Eleições 2026 em tempo real: presidente e governadores por estado, lidos dos arquivos públicos do TSE e atualizados a cada minuto. Pronto para o 2º turno em 25/10."
+    # ---- ao vivo = HUD (mapa por município). Os dados vêm de /geo/ (municipios/geo/, gerado por municipios/montar.py)
+    # e, no 2º turno, de /vivo/agora.json. O template antigo está arquivado em docs/old/template_aovivo.html.
+    copiar_hud(BUILD); copiar_hud(OUT)
+    raw = brand.aplicar((R / "template_hud.html").read_text()).replace("<!--__RESUMO__-->", resumo_hud(), 1)
+    titulo = "Mapa da apuração por município | Eleições 2026"
+    desc = ("Mapa da apuração por município: presidente, governadores, Senado e deputados nos 5.570 municípios, "
+            "com a linha do tempo da noite do 1º turno. No 2º turno (25/10), atualizado ao vivo com os dados do TSE.")
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "name": titulo, "description": desc, "url": BASE + "/ao-vivo/", "inLanguage": "pt-BR",
            "author": PESSOA, "about": ELEICAO, "isBasedOn": "https://resultados.tse.jus.br/oficial/app/index.html", "dateModified": modificado},
           {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
               {"@type": "ListItem", "position": 1, "name": "Início", "item": BASE + "/"},
               {"@type": "ListItem", "position": 2, "name": "Ao vivo", "item": BASE + "/ao-vivo/"}]}]
     (BUILD / "ao-vivo").mkdir(exist_ok=True)
-    (BUILD / "ao-vivo" / "index.html").write_text(montar_pagina(raw, titulo, desc, "/ao-vivo/", "/og/ao-vivo.png", ld, publicado, modificado, "/ao-vivo/",
-                                                             '<nav class="crumbs" aria-label="Trilha"><a href="/">Início</a> › Ao vivo</nav>'))
+    (BUILD / "ao-vivo" / "index.html").write_text(montar_pagina(raw, titulo, desc, "/ao-vivo/", "/og/ao-vivo.png", ld, publicado, modificado, "/ao-vivo/", moldura=False))
     paginas.append(("/ao-vivo/", modificado, "0.9"))
 
     # ---- 404
@@ -476,7 +515,7 @@ def main():
     # ---- imagens OG
     (BUILD / "og").mkdir(exist_ok=True); (OUT / "og").mkdir(exist_ok=True)
     cards = [("index", "Resultado do 1º turno", f"Eleições 2026 · {fmt(N['pst'], 2)}% apurado (TSE)", cF["p"], cL["p"], "2º turno em 25 de outubro")]
-    cards += [("ao-vivo", "Apuração ao vivo", "Eleições 2026 · dados do TSE a cada minuto", cF["p"], cL["p"], "Presidente e governadores por estado")]
+    cards += [("ao-vivo", "Mapa da apuração por município", "Eleições 2026 · dados do TSE", cF["p"], cL["p"], "5.570 municípios · 2º turno ao vivo em 25/10")]
     cards += [(f"apuracao-{r['slug']}", f"Apuração com {fmt(r['d']['pst'], 1)}% das urnas", f"Eleições 2026 · 04/10 às {r['d']['ht'][:5]}", r["d"]["f"], r["d"]["l"], "Leitura parcial do TSE") for r in rodadas]
     for nome, t, s, f, l, rp in cards:
         (BUILD / "og" / f"{nome}.html").write_text(og_card(t, s, f, l, rp))
@@ -513,21 +552,13 @@ def main():
 
 ## Páginas
 - [Resultado final completo]({BASE}/): mapa por estado, governadores, Senado, Câmara, Assembleias, perguntas frequentes
-- [Apuração ao vivo]({BASE}/ao-vivo/): presidente e governadores, lidos do TSE a cada minuto
+- [Mapa da apuração por município]({BASE}/ao-vivo/): presidente, governadores, Senado e deputados nos 5.570 municípios; 2º turno ao vivo em 25/10
 - [Apuração leitura a leitura]({BASE}/apuracao/)
 """ + "".join(f"- [Apuração com {fmt(r['d']['pst'], 1)}% das urnas]({BASE}{r['url']})\n" for r in rodadas) +
 f"- [Dados consolidados em JSON]({BASE}/dados/relatorio.json)\n", encoding="utf-8")
-    vercel = {
-        "cleanUrls": True, "trailingSlash": True,
-        "rewrites": [{"source": "/tse/:path*", "destination": "https://resultados.tse.jus.br/oficial/:path*"}],
-        "headers": [{"source": "/(.*)", "headers": [{"key": "X-Content-Type-Options", "value": "nosniff"}, {"key": "Referrer-Policy", "value": "strict-origin-when-cross-origin"}]},
-                    {"source": "/fonts/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]},
-                    {"source": "/og/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=86400"}]},
-                    {"source": "/tse/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=20, stale-while-revalidate=40"}]},
-                    {"source": "/ao-vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]}]}
-    (OUT / "vercel.json").write_text(json.dumps(vercel, indent=1))  # deploy pela CLI, de dentro de site/
+    (OUT / "vercel.json").write_text(json.dumps(VERCEL, indent=1))  # deploy pela CLI, de dentro de site/
     # deploy pelo git (integração GitHub) parte da raiz do repo: sem isto a Vercel publica a raiz e o site dá 404
-    (R / "vercel.json").write_text(json.dumps({"outputDirectory": "site", **vercel}, indent=1))
+    (R / "vercel.json").write_text(json.dumps({"outputDirectory": "site", **VERCEL}, indent=1))
     shutil.rmtree(BUILD)
     tot = sum(f.stat().st_size for f in OUT.rglob("*") if f.is_file())
     print(f"site/ ok · {len(list(OUT.rglob('*.html')))} páginas · {len(list((OUT / 'og').glob('*.png')))} imagens OG · {tot // 1024} KB")
