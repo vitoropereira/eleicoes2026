@@ -8,3 +8,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# municípios: dados brutos do TSE/IBGE (~1,5 GB), nunca commitar
+municipios/brutos/
