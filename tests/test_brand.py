@@ -34,6 +34,14 @@ class Brand(unittest.TestCase):
         e, c = tema("escuro"), tema("claro")
         self.assertEqual((e["--bg"], e["--card"], e["--brand"]), ("#070B12", "#0C121D", "#24C8FF"))
         self.assertEqual((c["--bg"], c["--card"], c["--brand"]), ("#FBFCFE", "#FFFFFF", "#0A76AD"))
+        self.assertEqual((e["--line"], e["--ink"], e["--muted"], e["--flavio"]), ("#1E2A3D", "#E9EEF7", "#8593AB", "#5B7FE8"))
+        self.assertEqual((c["--line"], c["--ink"], c["--muted"], c["--flavio"]), ("#E2E8F1", "#0B1220", "#566072", "#2F5BD3"))
+
+    def test_claro_do_sistema_igual_ao_claro_manual(self):
+        m = re.search(r'@media \(prefers-color-scheme: light\)\{:root:not\(\[data-theme="dark"\]\)\{([^}]*)\}', brand.CSS)
+        self.assertTrue(m, "bloco do tema claro pelo sistema não encontrado")
+        auto = dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+);", m.group(1)))
+        self.assertEqual(auto, bloco(r":root\[data-theme=\"light\"\]"))
 
     def test_contraste_aa_nos_dois_temas(self):
         for nome in ("escuro", "claro"):
@@ -41,6 +49,7 @@ class Brand(unittest.TestCase):
             for fg in ("--ink", "--ink2", "--muted"):
                 for bg in ("--bg", "--card"):
                     self.assertGreaterEqual(contraste(t[fg], t[bg]), 4.5, f"{nome}: {fg} sobre {bg}")
+            self.assertGreaterEqual(contraste(t["--bg"], t["--brand"]), 4.5, f"{nome}: --bg sobre --brand (botão)")
             # cores de partido aparecem em números grandes: AA para texto grande
             for fg in ("--flavio", "--lula"):
                 self.assertGreaterEqual(contraste(t[fg], t["--card"]), 3.0, f"{nome}: {fg} sobre --card")

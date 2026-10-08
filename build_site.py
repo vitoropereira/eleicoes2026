@@ -97,14 +97,13 @@ footer.site button:focus-visible{outline:2px solid var(--brand);outline-offset:2
 .faq details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 8px}
 .faq summary{cursor:pointer;font-weight:600;color:var(--ink);font-size:15px}
 .faq p{margin:8px 0 0;color:var(--ink2)}
-header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
+header p.kicker{margin:0 0 4px;font-size:13px;font-weight:600;text-transform:uppercase;color:var(--ink2)}
 .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;z-index:50;background:var(--card);padding:6px 10px;border-radius:8px}
 a:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
 .grid>*{min-width:0}.ch canvas{max-width:100%}
 </style>"""
 
 
-FAVICON_INLINE = FAVICON.replace("<svg ", '<svg aria-hidden="true" ')
 
 # ---------------- medições (entram depois do pré-render, para o banner não ficar congelado no HTML)
 # Vercel Web Analytics/Speed Insights ficam de fora: não estão ativados no projeto, e os scripts dariam 404.
@@ -115,7 +114,7 @@ MEDICAO_BODY = """<style id="consent-css">
 .consent p a{color:var(--ink)}
 .consent .bt{display:flex;gap:8px}
 .consent button{font:inherit;font-size:14px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-.consent button.ok{background:var(--brand);color:#04121B;border-color:var(--brand)}
+.consent button.ok{background:var(--brand);color:var(--bg);border-color:var(--brand)}
 .consent button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 @media (max-width:520px){.consent .bt{width:100%}.consent button{flex:1}}
 </style>
@@ -354,6 +353,7 @@ def main():
     # ---- página principal = relatório final
     faq_vis, faq_ld, qa = faq()
     raw = (R / "relatorio" / "relatorio_final.html").read_text()
+    assert brand.CSS in raw, "relatorio_final.html desatualizado: rode relatorio/montar.py"
     raw = raw.replace('<section id="metodo">', faq_vis + '\n<section id="metodo">', 1)
     raw = raw.replace('<a href="#metodo">Método e fontes</a>', '<a href="#perguntas">Perguntas</a><a href="#metodo">Método e fontes</a>', 1)
     # H1 com a resposta (AEO); o título antigo vira subtítulo
@@ -480,9 +480,9 @@ def main():
     cards += [(f"apuracao-{r['slug']}", f"Apuração com {fmt(r['d']['pst'], 1)}% das urnas", f"Eleições 2026 · 04/10 às {r['d']['ht'][:5]}", r["d"]["f"], r["d"]["l"], "Leitura parcial do TSE") for r in rodadas]
     for nome, t, s, f, l, rp in cards:
         (BUILD / "og" / f"{nome}.html").write_text(og_card(t, s, f, l, rp))
-        chrome("--window-size=1200,630", f"--screenshot={OUT / 'og' / (nome + '.png')}", f"{base_url}/og/{nome}.html")
+        chrome("--window-size=1200,630", "--virtual-time-budget=3000", f"--screenshot={OUT / 'og' / (nome + '.png')}", f"{base_url}/og/{nome}.html")
     (BUILD / "og" / "touch.html").write_text(f'<!doctype html><html><body style="margin:0">{FAVICON.replace("<svg ", "<svg width=180 height=180 ")}</body></html>')
-    chrome("--window-size=180,180", f"--screenshot={OUT / 'apple-touch-icon.png'}", f"{base_url}/og/touch.html")
+    chrome("--window-size=180,180", "--virtual-time-budget=3000", f"--screenshot={OUT / 'apple-touch-icon.png'}", f"{base_url}/og/touch.html")
     srv.shutdown()
 
     # ---- arquivos estáticos

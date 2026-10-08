@@ -22,6 +22,7 @@ class Repo(unittest.TestCase):
     def test_agents_md_sem_segredo(self):
         texto = (R / "AGENTS.md").read_text()
         self.assertNotIn("sbp_", texto)
+        self.assertNotIn("eyJhbGci", texto)
         self.assertNotIn("service_role\":", texto)
         self.assertIn("qzczyicspbizosjogmlq", texto)
 

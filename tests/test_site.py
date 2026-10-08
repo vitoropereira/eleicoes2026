@@ -1,8 +1,9 @@
-import re, sys, unittest
+import sys, unittest
 from pathlib import Path
 
 R = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(R))
+import brand
 import build_site as B
 
 PALETA_ANTIGA = ["#f7f6f3", "#1b1c1e", "#1a1a19", "#232322", "#2563c9", "#5b8def"]
@@ -34,7 +35,8 @@ class Saida(unittest.TestCase):
     def test_paginas_com_brand_e_sem_segredo(self):
         for p in self.SITE.rglob("*.html"):
             h = p.read_text()
-            self.assertIn("--bg:#070B12", h, p)
+            self.assertIn(brand.CSS, h, p)
+            self.assertNotIn("eyJhbGci", h, p)
             self.assertNotIn("sbp_", h, p)
         self.assertFalse(any(self.SITE.rglob(".env*")))
 
