@@ -98,7 +98,7 @@ for uf in UFS:
 sen, sen_part = [], collections.Counter()
 for uf in UFS:
     d, k, c = load(uf, 5)
-    vv = int(d["v"]["vv"]); n = int(k["nv"])
+    vv = int(d["v"]["vv"]) + int(d["v"]["vansj"]); n = int(k["nv"])  # % como o TSE: válidos + anulados sub judice
     val = sorted([x for x in c if x["dvt"] == "Válido"], key=lambda x: -x["vap"])
     if d.get("tf") == "s":  # eleitos oficiais primeiro, na ordem de votos
         el = [x for x in val if x["e"] == "s"]
