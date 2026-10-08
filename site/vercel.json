@@ -5,6 +5,10 @@
   {
    "source": "/tse/:path*",
    "destination": "https://resultados.tse.jus.br/oficial/:path*"
+  },
+  {
+   "source": "/vivo/:path*",
+   "destination": "https://qzczyicspbizosjogmlq.supabase.co/storage/v1/object/public/vivo/:path*"
   }
  ],
  "headers": [
@@ -54,6 +58,33 @@
     {
      "key": "Cache-Control",
      "value": "public, max-age=0, must-revalidate"
+    }
+   ]
+  },
+  {
+   "source": "/geo/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=3600"
+    }
+   ]
+  },
+  {
+   "source": "/hud/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, max-age=3600"
+    }
+   ]
+  },
+  {
+   "source": "/vivo/(.*)",
+   "headers": [
+    {
+     "key": "Cache-Control",
+     "value": "public, s-maxage=15, stale-while-revalidate=30"
     }
    ]
   }
