@@ -193,18 +193,19 @@ function Cenarios({ s, D }) {
       { rotulo: "Flávio precisa", v: s.pf, cor: corL("F"), dica: html`<${Dk} t="Flávio" linhas=${[[corL("F"), "Precisa dos eliminados", pct(s.pf)]]} />` }]} />`}
     ${s.eliminados.length > 0 && html`<h3 class="h3">Votos dos eliminados no 1º turno (${mi(s.totalElim)})</h3>
       <${LegendaLados} itens=${[[corL("F"), "apoio declarado do candidato a Flávio"], [corL("L"), "… a Lula"], [corL("C"), "neutro ou sem declaração"]]} />
-      <${Barras} titulo="Votos dos candidatos eliminados, pela cor do apoio declarado do candidato" rotW=${170} fmt=${(v) => mi(v)}
+      <${Barras} titulo="Votos dos candidatos eliminados, pela cor do apoio declarado do candidato" rotW="auto" fmt=${(v) => mi(v)}
         itens=${s.eliminados.map((e) => { const ap = e.apoio_candidato || "C", lp = e.lado_partido || ladoDe({ lados }, e.partido);
-          return { rotulo: e.partido === "vários" ? e.nome.replace(/ \(.*\)$/, "") : `${e.nome} (${e.partido})`, v: e.votos, cor: corL(ap), dica: html`<${Dk} t=${`${e.nome} · ${e.partido}`} linhas=${[[null, "Votos", int(e.votos)], [corL(ap), "Apoio declarado do candidato", e.apoio_candidato ? LADO_NOME[ap] : "sem declaração verificada"], [corL(lp), "Partido em 2026", LADO_NOME[lp]]]} />` }; })} />
+          const varios = e.partido === "vários", n = varios ? (e.nome.match(/\d+/) || [""])[0] : "";
+          return { rotulo: varios ? `Outros ${n} candidatos` : `${e.nome} (${e.partido})`, v: e.votos, cor: corL(ap), dica: html`<${Dk} t=${varios ? e.nome.replace(/^Demais/, "Outros") : `${e.nome} · ${e.partido}`} linhas=${[[null, "Votos", int(e.votos)], [corL(ap), "Apoio declarado do candidato", e.apoio_candidato ? LADO_NOME[ap] : "sem declaração verificada"], [corL(lp), "Partido em 2026", LADO_NOME[lp]]]} />` }; })} />
       <p class="nota">A cor é o apoio declarado do próprio candidato, não o do partido: o PSD de Caiado, por exemplo, ficou neutro. Apoio de candidato não garante o voto do eleitor.</p>`}
     ${s.cenarios.length > 0 && html`<h3 class="h3">Cenários (não são previsão)</h3>
-      <${Empilhadas} titulo="Cenários do 2º turno" linhas=${s.cenarios.map((c) => ({ rotulo: c.nome, partes: [
+      <${Empilhadas} titulo="Cenários do 2º turno" rotW="auto" linhas=${s.cenarios.map((c) => ({ rotulo: c.nome, partes: [
         { k: "L", p: c.lula / (c.lula + c.flavio), cor: corL("L"), nome: "Lula", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)]]} />` },
         { k: "F", p: c.flavio / (c.lula + c.flavio), cor: corL("F"), nome: "Flávio", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)]]} />` }] }))} />
       <${TabelaSR} cap="Cenários do 2º turno (votos válidos)" cab=${["Cenário", "Lula", "Flávio", "Flávio leva dos eliminados"]} linhas=${s.cenarios.map((c) => [c.nome, pct(c.lula, 2), pct(c.flavio, 2), pct(c.flavio_pct_eliminados)])} />`}
     ${s.pesquisas.length > 0 && html`<h3 class="h3">Pesquisas de 2º turno publicadas</h3>
       <div class="tab-w"><table class="tab"><thead><tr><th scope="col">Instituto</th><th scope="col">Data</th><th scope="col" class="n">Lula</th><th scope="col" class="n">Flávio</th><th scope="col">Registro</th></tr></thead>
-      <tbody>${s.pesquisas.map((p) => html`<tr><th scope="row"><a href=${p.url} rel="noopener" target="_blank">${p.instituto}</a></th><td>${p.data}</td><td class="n">${pct(p.lula, 0)}</td><td class="n">${pct(p.flavio, 0)}</td><td><small>${p.registro_tse || "–"}</small></td></tr>`)}</tbody></table></div>`}`;
+      <tbody>${s.pesquisas.map((p) => html`<tr class=${p.antes_1t ? "antes" : ""}><th scope="row"><a href=${p.url} rel="noopener" target="_blank">${p.instituto}</a></th><td>${p.data}${p.antes_1t && html` <small class="antes-t">antes do 1º turno</small>`}</td><td class="n">${pct(p.lula, 0)}</td><td class="n">${pct(p.flavio, 0)}</td><td><small>${p.registro_tse || "–"}</small></td></tr>`)}</tbody></table></div>`}`;
 }
 
 function Brancos({ s }) {

@@ -1,5 +1,5 @@
 """Página /analise/ e integração com o painel: brand, scripts locais, cores, SEO, compartilhamento e saída do build."""
-import json, re, shutil, sys, tempfile, unittest
+import json, re, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -232,6 +232,28 @@ class Painel(unittest.TestCase):
     def test_mapa_embutido_nao_sequestra_a_rolagem(self):
         self.assertIn("rolagemLivre", (R / "hud" / "mapa.js").read_text())
         self.assertIn("rolagemLivre: true", (JS / "mapas.js").read_text())
+
+
+@unittest.skipUnless(shutil.which("deno") and (R / "analise" / "dados" / "divergencias.json").exists(), "precisa de deno e dos dados")
+class MesmoDenominador(unittest.TestCase):
+    """O painel (hud/calc.js contaDivergencia) e a /analise/ (analise/js/calc.js secDivergencias) mostram o mesmo
+    "N de T municípios": roda a lógica real de cada um sobre analise/dados/divergencias.json."""
+
+    def test_hud_igual_analise(self):
+        js = (f'import {{ contaDivergencia }} from "{(R / "hud" / "calc.js").as_uri()}";'
+              f'import {{ secDivergencias }} from "{(JS / "calc.js").as_uri()}";'
+              f'const dv = JSON.parse(Deno.readTextFileSync("{R / "analise" / "dados" / "divergencias.json"}"));'
+              'const out = {};'
+              'for (const c of ["depfed", "depest", "senador", "governador"]) {'
+              ' const h = contaDivergencia(dv.mu, c === "depfed" ? "presidente" : c), a = secDivergencias({ divergencias: dv }, "BR", c);'
+              ' out[c] = { hud: [h.n, h.t, h.empates], analise: [a.div, a.tot] }; }'
+              'console.log(JSON.stringify(out));')
+        r = subprocess.run(["deno", "eval", "--ext=js", js], capture_output=True, text=True, timeout=120)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        out = json.loads(r.stdout)
+        for c, x in out.items():
+            self.assertEqual(x["hud"][:2], x["analise"], c)
+        self.assertEqual(out["depfed"]["hud"], [2283, 5571, 2])
 
 
 @unittest.skipUnless((R / "site" / "analise" / "index.html").exists(), "rode python3 build_site.py antes")

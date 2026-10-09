@@ -54,9 +54,16 @@ const Dk = ({ t, linhas }) => html`<p class="dk-t">${t}</p>${linhas.map(([sw, a,
 export { Dk };
 
 // ---------------- barras empilhadas 100% (uma linha por categoria)
+/** largura da coluna de rótulos: rotW fixo, ou "auto" = cabe o rótulo mais longo (12,5px; ~7px por caractere), até 45% */
+export function larguraRot(rotW, rotulos, w) {
+  if (rotW !== "auto") return rotW;
+  const n = Math.max(0, ...rotulos.map((r) => String(r ?? "").length));
+  return Math.min(Math.round(w * 0.45), Math.ceil(n * 7 + 18));
+}
+
 export function Empilhadas({ linhas, titulo, rotW = 128, bh = 26 }) {
   const [ref, w] = useLargura();
-  const estreito = w < 520, lw = estreito ? 0 : rotW, gap = estreito ? 34 : 12;
+  const estreito = w < 520, lw = estreito ? 0 : larguraRot(rotW, linhas.map((l) => l.rotulo), w), gap = estreito ? 34 : 12;
   const x = escala([0, 1], [lw, w - 4]);
   const alt = linhas.length * (bh + gap) + (estreito ? 0 : 4) + 18;
   let y = estreito ? 18 : 4;
@@ -81,7 +88,7 @@ export function Empilhadas({ linhas, titulo, rotW = 128, bh = 26 }) {
 export function Barras({ itens, max, fmt: fmt0, fmtEixo, titulo, rotW = 150, eixo = true, bh = 18 }) {
   const fmt = fmt0 || ((v) => pct(v)), fe = fmtEixo || (fmt0 ? (v) => fmt0(v, true) : (v) => pct(v, 0));
   const [ref, w] = useLargura();
-  const estreito = w < 520, lw = estreito ? 0 : rotW, gap = estreito ? 30 : Math.round(bh * 0.55);
+  const estreito = w < 520, lw = estreito ? 0 : larguraRot(rotW, itens.map((i) => i.rotulo), w), gap = estreito ? 30 : Math.round(bh * 0.55);
   const m = max ?? teto(Math.max(...itens.map((i) => Math.max(i.v || 0, i.int?.[1] || 0, i.marca?.v || 0)), 1e-9), 4);
   const vw = 64;
   const x = escala([0, m], [lw, w - vw]);

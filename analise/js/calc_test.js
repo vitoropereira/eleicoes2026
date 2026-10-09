@@ -2,7 +2,7 @@
 const assert = (c, m) => { if (!c) throw new Error(m || "falhou"); };
 const assertEquals = (a, b, m) => assert(JSON.stringify(a) === JSON.stringify(b), `${m ? m + ": " : ""}${JSON.stringify(a)} != ${JSON.stringify(b)}`);
 const assertAlmostEquals = (a, b, eps = 1e-9) => assert(Math.abs(a - b) < eps, `${a} != ${b}`);
-import { ladoDe, escala, passo, marcas, teto, pct, pp, mi, int, num, votosTxt, partes, intervaloPct, intervaloV, recorte, ufDoCodigo, noRecorte, deRecorte, secDivergencias, secComparacao, secBrancos, secDividido, secCenarios, SECOES } from "./calc.js";
+import { ladoDe, escala, passo, marcas, teto, pct, pp, mi, int, num, votosTxt, partes, intervaloPct, intervaloV, recorte, ufDoCodigo, noRecorte, deRecorte, secDivergencias, secComparacao, secBrancos, secDividido, secCenarios, ordenaPesquisas, SECOES } from "./calc.js";
 
 Deno.test("escala linear e inversa", () => {
   const x = escala([0, 1], [10, 210]);
@@ -169,4 +169,11 @@ Deno.test("cenários: contrato em proporção (0–1)", () => {
   const s = secCenarios({ cenarios: { precisa: { lula_pct_dos_eliminados: 0.6194, flavio_pct_dos_eliminados: 0.3806 }, eliminados: [], cenarios: [], pesquisas: [] } });
   assertEquals(s.numero, "62%");
   assert(s.titulo.includes("62%") && s.titulo.includes("38%"), s.titulo);
+});
+
+Deno.test("pesquisas: depois do 1º turno em cima, a mais recente primeiro", () => {
+  const ps = [{ instituto: "A", data: "01/10", antes_1t: true }, { instituto: "B", data: "06/10", antes_1t: false }, { instituto: "C", data: "08/10", antes_1t: false }, { instituto: "D", data: "28/09", antes_1t: true }];
+  assertEquals(ordenaPesquisas(ps).map((p) => p.instituto), ["C", "B", "A", "D"]);
+  const s = secCenarios({ cenarios: { precisa: {}, pesquisas: ps } });
+  assertEquals(s.pesquisas[0].instituto, "C");
 });

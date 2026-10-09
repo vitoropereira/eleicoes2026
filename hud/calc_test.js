@@ -180,3 +180,10 @@ Deno.test("modo Divergência: só no 1º turno, compara presidente com o cargo l
   ok(divergencia(m, "depest") === null && divergencia(null, "depfed") === null, "sem dado");
   ok(divergencia({ pres: "C", depfed: "F" }, "presidente") === null, "empate para presidente fica fora");
 });
+
+Deno.test("contaDivergencia: empate para presidente conta no total e fica fora dos divergentes", async () => {
+  const { contaDivergencia } = await import("./calc.js");
+  const mu = { a: { pres: "L", depfed: "F" }, b: { pres: "C", depfed: "F" }, c: { pres: "F", depfed: "F" }, d: { pres: "L" } };
+  const r = contaDivergencia(mu, "presidente");
+  ok(r.n === 1 && r.t === 3 && r.empates === 1, JSON.stringify(r));
+});
