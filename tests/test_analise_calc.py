@@ -226,6 +226,29 @@ class TestContrato(unittest.TestCase):
                 self.assertIn(k, x)
 
 
+class TestBaseDaDispersao(unittest.TestCase):
+    """Dispersão do voto dividido: x tem de ser Lula / válidos (mesma base do y), não a fatia de 2 candidatos."""
+
+    def test_pontao_rs(self):
+        c = dado("comparacao2022")
+        mun = CALC.Base().mun if hasattr(CALC, "Base") else None
+        self.assertIsNotNone(mun)
+        cd = next(k for k, v in mun.items() if v[0].upper() == "PONTÃO" and v[1] == "RS")
+        m = c["mu"][cd]
+        self.assertAlmostEqual(m["pres26_validos_lula"], 0.389, delta=0.001)
+        self.assertAlmostEqual(m["pres26_pct_lula"], 0.412, delta=0.001)
+        self.assertLess(m["pres26_validos_lula"], m["pres26_pct_lula"])
+        for g in ["BR"] + UFS:
+            self.assertIn("pres26_validos_lula", c[g]); self.assertIn("pres22_validos_lula", c[g])
+            self.assertLess(c[g]["pres26_validos_lula"], c[g]["pres26_pct_lula"])
+
+    def test_scatter_usa_validos(self):
+        js = (AN / "js" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("x[i] = m.pres26_validos_lula", js)
+        self.assertNotIn("x[i] = m.pres26_pct_lula", js)
+        self.assertIn("% de Lula nos votos válidos (presidente)", js)
+
+
 class TestDivergencias(unittest.TestCase):
     """Uma definição só: divergente = presidente com vencedor L ou F e o cargo com outro lado (L, F ou C); empate
     para presidente fica fora. A mesma regra do HUD (hud/calc.js) e da página (analise/js/calc.js)."""

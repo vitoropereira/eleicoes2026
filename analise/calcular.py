@@ -568,6 +568,7 @@ def comparacao2022(b, cam, cad):
         s26 = lado_pres(l26, f26, "F")
         e = {"pres22": s22, "pres26": s26, "pres22_pct_lula": p4(l22 / (l22 + b22)),
              "pres26_pct_lula": p4(l26 / (l26 + f26)),
+             "pres22_validos_lula": p4(l22 / p22[2]), "pres26_validos_lula": p4(l26 / p26[2]),
              "depfed22": lados_pct(b.part22["depfed"], cd, uf, 2022), "depfed26": lados_pct(b.part["depfed"], cd, uf, 2026)}
         if q22 and (q22[5][L2] + q22[5][B2]):
             e["pres22_2t"] = lado_pres(q22[5][L2], q22[5][B2], "B")
@@ -590,7 +591,8 @@ def comparacao2022(b, cam, cad):
         l22, b22 = l22t1[5][L1], l22t1[5][B1]
         m22, n22 = l22t2[5][L2], l22t2[5][B2]
         lu, fl = l26[5][b.i_lula], l26[5][b.i_flavio]
-        return {"pres22": lado_pres(l22, b22, "B"), "pres26": lado_pres(lu, fl, "F"),
+        return {"pres22_validos_lula": p4(l22 / l22t1[2]), "pres26_validos_lula": p4(lu / l26[2]),
+                "pres22": lado_pres(l22, b22, "B"), "pres26": lado_pres(lu, fl, "F"),
                 "pres22_pct_lula": p4(l22 / (l22 + b22)), "pres26_pct_lula": p4(lu / (lu + fl)),
                 "depfed22": d22, "depfed26": d26,
                 "pres22_2t": lado_pres(m22, n22, "B"), "pres22_2t_pct_lula": p4(m22 / (m22 + n22))}
