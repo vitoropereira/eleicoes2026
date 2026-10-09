@@ -528,9 +528,15 @@ def comparacao2022(b, cam, cad):
     m22c = b.m22["cand"]
     i22 = {t: {c["nome"]: i for i, c in enumerate(m22c[f"presidente-{t}"])} for t in ("1t", "2t")}
     L2, B2 = i22["2t"]["Lula"], i22["2t"]["Jair Bolsonaro"]
+    L1, B1 = i22["1t"]["Lula"], i22["1t"]["Jair Bolsonaro"]
     mu, base = {}, []
     vir = {"lula_para_flavio": 0, "bolsonaro_para_lula": 0, "mantem_lula": 0, "mantem_direita": 0}
     vir_uf = {uf: dict.fromkeys(vir, 0) for uf in UFS}
+    vir2 = dict.fromkeys(vir, 0)  # secundário: 2º turno de 2022 x 1º turno de 2026
+    vir2_uf = {uf: dict.fromkeys(vir, 0) for uf in UFS}
+
+    def chave_virada(s22, s26):
+        return ("mantem_lula" if s26 == "L" else "lula_para_flavio") if s22 == "L" else ("bolsonaro_para_lula" if s26 == "L" else "mantem_direita")
 
     def lados_pct(d, cd, uf, ano):
         if cd not in d["mu"]: return None
@@ -543,9 +549,10 @@ def comparacao2022(b, cam, cad):
     for cd in sorted(b.mun):
         nm, uf = b.mun[cd]
         p26 = b.pres["mu"].get(cd)
-        p22 = b.p22["2t"]["mu"].get(cd)
+        p22 = b.p22["1t"]["mu"].get(cd)
+        q22 = b.p22["2t"]["mu"].get(cd)
         if not p26 or not p22: continue
-        l22, b22 = p22[5][L2], p22[5][B2]
+        l22, b22 = p22[5][L1], p22[5][B1]
         l26, f26 = p26[5][b.i_lula], p26[5][b.i_flavio]
         if not (l22 + b22) or not (l26 + f26): continue
         s22 = "L" if l22 > b22 else "B"
@@ -553,8 +560,13 @@ def comparacao2022(b, cam, cad):
         e = {"pres22": s22, "pres26": s26, "pres22_pct_lula": p4(l22 / (l22 + b22)),
              "pres26_pct_lula": p4(l26 / (l26 + f26)),
              "depfed22": lados_pct(b.part22["depfed"], cd, uf, 2022), "depfed26": lados_pct(b.part["depfed"], cd, uf, 2026)}
+        if q22 and (q22[5][L2] + q22[5][B2]):
+            e["pres22_2t"] = "L" if q22[5][L2] > q22[5][B2] else "B"
+            e["pres22_2t_pct_lula"] = p4(q22[5][L2] / (q22[5][L2] + q22[5][B2]))
+            k2 = chave_virada(e["pres22_2t"], s26)
+            vir2[k2] += 1; vir2_uf[uf][k2] += 1
         mu[cd] = e
-        k = ("mantem_lula" if s26 == "L" else "lula_para_flavio") if s22 == "L" else ("bolsonaro_para_lula" if s26 == "L" else "mantem_direita")
+        k = chave_virada(s22, s26)
         vir[k] += 1; vir_uf[uf][k] += 1
         base.append({"cd": cd, "nome": nm, "uf": uf, "eleitores": p26[0], "pres22_pct_lula": e["pres22_pct_lula"],
                      "pres26_pct_lula": e["pres26_pct_lula"], "delta": p4(e["pres26_pct_lula"] - e["pres22_pct_lula"]),
@@ -562,15 +574,17 @@ def comparacao2022(b, cam, cad):
     grandes = [x for x in base if x["eleitores"] >= MIN_ELEITORES_RANK22]
     ranking = sorted(grandes, key=lambda x: (-abs(x["delta"]), x["cd"]))[:100]
     ranking_criterio = (f"100 maiores variações (em módulo) entre municípios com {MIN_ELEITORES_RANK22} eleitores ou "
-                        "mais: fatia de Lula entre Lula e o adversário, 2º turno de 2022 x 1º turno de 2026.")
+                        "mais: fatia de Lula entre Lula e o adversário, 1º turno de 2022 x 1º turno de 2026.")
 
-    def forma_mu(l22a, l26, d22, d26):
+    def forma_mu(l22t1, l22t2, l26, d22, d26):
         """Mesmo formato de uma entrada de mu, agregado (d22/d26 = {L,F,C} em proporção do depfed)."""
-        l22, b22 = l22a[5][L2], l22a[5][B2]
+        l22, b22 = l22t1[5][L1], l22t1[5][B1]
+        m22, n22 = l22t2[5][L2], l22t2[5][B2]
         lu, fl = l26[5][b.i_lula], l26[5][b.i_flavio]
         return {"pres22": "L" if l22 > b22 else "B", "pres26": "L" if lu > fl else "F",
                 "pres22_pct_lula": p4(l22 / (l22 + b22)), "pres26_pct_lula": p4(lu / (lu + fl)),
-                "depfed22": d22, "depfed26": d26}
+                "depfed22": d22, "depfed26": d26,
+                "pres22_2t": "L" if m22 > n22 else "B", "pres22_2t_pct_lula": p4(m22 / (m22 + n22))}
 
     def pres_geo(l22a, l22t1, l26):
         x22 = l22a[5][L2] / (l22a[5][L2] + l22a[5][B2])
@@ -608,7 +622,8 @@ def comparacao2022(b, cam, cad):
             for k in LADOS: accc[c][k] += o[k]
             g["cadeiras"][c] = {"22": o, "26": cad[uf][c]["cadeiras"]}
         g["viradas"] = vir_uf[uf]
-        geos[uf] = {**forma_mu(b.p22["2t"]["uf"][uf], b.pres["uf"][uf], g["depfed"]["22"], g["depfed"]["26"]), **g}
+        g["viradas_vs_2t_2022"] = vir2_uf[uf]
+        geos[uf] = {**forma_mu(b.p22["1t"]["uf"][uf], b.p22["2t"]["uf"][uf], b.pres["uf"][uf], g["depfed"]["22"], g["depfed"]["26"]), **g}
     gbr = {"presidente": pres_geo(b.p22["2t"]["br"], b.p22["1t"]["br"], b.pres["br"])}
     for c in LEG:
         s, v = acc[c]
@@ -616,14 +631,17 @@ def comparacao2022(b, cam, cad):
         gbr[c] = {"22": {k: p4(s[k] / v[0]) for k in LADOS}, "26": {k: p4(x26[k] / x26["validos"]) for k in LADOS}}
     gbr["cadeiras"] = {c: {"22": accc[c], "26": cad["BR"][c]["cadeiras"]} for c in accc}
     gbr["viradas"] = vir
-    gbr = {**forma_mu(b.p22["2t"]["br"], b.pres["br"], gbr["depfed"]["22"], gbr["depfed"]["26"]), **gbr}
+    gbr["viradas_vs_2t_2022"] = vir2
+    gbr = {**forma_mu(b.p22["1t"]["br"], b.p22["2t"]["br"], b.pres["br"], gbr["depfed"]["22"], gbr["depfed"]["26"]), **gbr}
     pl22 = b.cad22["depfed"]["br"].get("PL", 0)
     gbr["pl_depfed"] = {"eleitos_2022": 99, "2022_tse_atual": pl22, "2026": b.cad["depfed"]["br"].get("PL", 0),
                         "nota": "99 eleitos em 2022 (98 após o recálculo das sobras de 2024). Dados de 2022 = TSE atual."}
     assert pl22 == 98, pl22
-    return {"mu": mu, "viradas": vir, "ranking": ranking, "ranking_criterio": ranking_criterio, "BR": gbr, **geos,
-            "nota": ("Em 2022 o lado F significa Jair Bolsonaro. Presidente: 2º turno de 2022 x 1º turno de 2026 "
-                     "(fatia de Lula entre os dois primeiros). Legislativo: lados pelo apoio no 2º turno de cada ano.")}
+    return {"mu": mu, "viradas": vir, "viradas_vs_2t_2022": vir2, "ranking": ranking, "ranking_criterio": ranking_criterio, "BR": gbr, **geos,
+            "nota": ("Em 2022 o lado F (ou B) significa Jair Bolsonaro. Presidente, comparação principal: 1º turno de "
+                     "2022 x 1º turno de 2026 (fatia de Lula entre Lula e o adversário principal). Secundário, só como "
+                     "referência: pres22_2t, pres22_2t_pct_lula e viradas_vs_2t_2022 (2º turno de 2022 x 1º turno de "
+                     "2026, comparação desigual). Legislativo: lados pelo apoio no 2º turno de cada ano.")}
 
 
 # ------------------------------------------------------------------ 10. cenários
@@ -737,10 +755,13 @@ def destaques(D):
 
     dv = ["dividido.json", ["BR", "depfed"]]
     num = t.n(dv[0], dv[1] + ["lula_para_F", "v"], "mi")
-    item("dividido-br", "Eleitor de Lula, deputado do lado de Flávio", num,
+    item("dividido-br", "Estimativa: eleitor de Lula, deputado do lado de Flávio", num,
          f"Estimativa: {t.n(dv[0], dv[1] + ['lula_para_F', 'pct'], 'pct')} dos eleitores de Lula votaram em deputado "
-         f"federal de partido que apoia Flávio (faixa de {t.n('dividido.json', ['intervalo'], 'pct0')}: {t.n(dv[0], dv[1] + ['lula_para_F', 'int', 0], 'pct')} a "
-         f"{t.n(dv[0], dv[1] + ['lula_para_F', 'int', 1], 'pct')}). Entre eleitores de Flávio, o caminho inverso foi "
+         f"federal de partido que apoia Flávio (faixa estatística de {t.n('dividido.json', ['intervalo'], 'pct0')}: {t.n(dv[0], dv[1] + ['lula_para_F', 'int', 0], 'pct')} a "
+         f"{t.n(dv[0], dv[1] + ['lula_para_F', 'int', 1], 'pct')}; o mínimo e o máximo possíveis, pelos limites de "
+         f"Duncan-Davis, vão de {t.n(dv[0], dv[1] + ['limites', 'lula_para_F', 0], 'pct')} a "
+         f"{t.n(dv[0], dv[1] + ['limites', 'lula_para_F', 1], 'pct')}; o método tem limitações explicadas abaixo). "
+         f"Entre eleitores de Flávio, o caminho inverso foi estimado em "
          f"{t.n(dv[0], dv[1] + ['flavio_para_L', 'pct'], 'pct')}.", True, "#voto-dividido")
     cd = ["cadeiras.json", ["BR", "depfed"]]
     num = t.n(cd[0], cd[1] + ["cadeiras", "L"], "int")
@@ -769,9 +790,10 @@ def destaques(D):
          f"colegas.", True, "#puxadores")
     vr = ["comparacao2022.json", ["viradas"]]
     item("viradas", "Viradas desde 2022", t.n(vr[0], vr[1] + ["lula_para_flavio"], "int"),
-         f"{t.n(vr[0], vr[1] + ['lula_para_flavio'], 'int')} municípios deram vitória a Lula no 2º turno de 2022 e "
-         f"agora deram mais votos a Flávio. No sentido contrário (Bolsonaro em 2022, Lula em 2026): "
-         f"{t.n(vr[0], vr[1] + ['bolsonaro_para_lula'], 'int')}.", False, "#comparacao-2022")
+         f"No 1º turno de 2022 × 1º turno de 2026: {t.n(vr[0], vr[1] + ['lula_para_flavio'], 'int')} municípios deram "
+         f"mais votos a Lula que a Bolsonaro em 2022 e agora deram mais votos a Flávio que a Lula. No sentido "
+         f"contrário (Bolsonaro em 2022, Lula em 2026): {t.n(vr[0], vr[1] + ['bolsonaro_para_lula'], 'int')}.",
+         False, "#comparacao-2022")
     ce = ["cenarios.json", ["precisa"]]
     item("precisa", "Quanto cada um precisa dos eliminados", t.n(ce[0], ce[1] + ["flavio_pct_dos_eliminados"], "pp2"),
          f"Para vencer, Flávio precisa de {t.n(ce[0], ce[1] + ['flavio_pct_dos_eliminados'], 'pp2')} dos "
@@ -812,11 +834,17 @@ def faq(D):
        f"{t.n(cd[0], cd[1] + ['cadeiras', 'L'], 'int')} cadeiras. Pela estimativa, "
        f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'pct'], 'pct')} dos eleitores de Lula escolheram deputado "
        f"de partido que apoia Flávio e {t.n('dividido.json', ['BR', 'depfed', 'lula_para_C', 'pct'], 'pct')}, de partido "
-       f"sem lado.")
+       f"sem lado. É estimativa (faixa estatística de "
+       f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'int', 0], 'pct')} a "
+       f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'int', 1], 'pct')} para o primeiro número; limites de "
+       f"Duncan-Davis de {t.n('dividido.json', ['BR', 'depfed', 'limites', 'lula_para_F', 0], 'pct')} a "
+       f"{t.n('dividido.json', ['BR', 'depfed', 'limites', 'lula_para_F', 1], 'pct')}).")
     qa("Como dá para saber em quem o eleitor de Lula votou para deputado se o voto é secreto?",
        f"Não dá para saber de cada eleitor. A estimativa usa inferência ecológica: compara a votação de "
        f"{t.n('dividido.json', ['BR', 'depfed', 'n_mun'], 'int')} municípios e calcula a taxa mais compatível com "
-       f"todos eles, com faixa de incerteza de {t.n('dividido.json', ['intervalo'], 'pct0')}. É estimativa, não contagem.")
+       f"todos eles. A faixa estatística de {t.n('dividido.json', ['intervalo'], 'pct0')} mede só o erro estatístico; "
+       f"os limites de Duncan-Davis dão o mínimo e o máximo possíveis. O método tem limitações explicadas na página. "
+       f"É estimativa, não contagem.")
     qa("Quantos deputados federais o PL elegeu?",
        f"O PL elegeu {t.n('comparacao2022.json', ['BR', 'pl_depfed', '2026'], 'int')} deputados federais em 2026. Em "
        f"2022 foram {t.n('comparacao2022.json', ['BR', 'pl_depfed', 'eleitos_2022'], 'int')} eleitos "
@@ -846,8 +874,9 @@ def faq(D):
        f"{t.n(lg[0], lg[1] + ['F'], 'pct')} no lado de Flávio.")
     vr = ["comparacao2022.json", ["viradas"]]
     qa("Em quantas cidades Lula perdeu a liderança desde 2022?",
-       f"Em {t.n(vr[0], vr[1] + ['lula_para_flavio'], 'int')} municípios Lula venceu o 2º turno de 2022 e ficou atrás "
-       f"de Flávio no 1º turno de 2026. Em {t.n(vr[0], vr[1] + ['bolsonaro_para_lula'], 'int')} aconteceu o contrário.")
+       f"Comparando o 1º turno de 2022 com o 1º turno de 2026: em {t.n(vr[0], vr[1] + ['lula_para_flavio'], 'int')} "
+       f"municípios Lula teve mais votos que Bolsonaro em 2022 e ficou atrás de Flávio em 2026. Em "
+       f"{t.n(vr[0], vr[1] + ['bolsonaro_para_lula'], 'int')} aconteceu o contrário.")
     qa("Quem apoia Lula e quem apoia Flávio no 2º turno?",
        "A classificação usa só prova pública: nota do partido, coligação registrada ou declaração do dirigente. "
        "Sem prova, o partido fica no centro. Diretórios estaduais podem ter posição própria. A lista completa, com "

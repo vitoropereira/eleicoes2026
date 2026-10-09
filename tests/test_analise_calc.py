@@ -200,6 +200,10 @@ class TestContrato(unittest.TestCase):
         chaves = set(next(iter(c["mu"].values())))
         for g in ["BR"] + UFS: self.assertTrue(chaves <= set(c[g]), g)
         self.assertIsInstance(c["ranking"], list)
+        # principal = 1º turno x 1º turno; 2º turno de 2022 só como campo secundário
+        self.assertEqual(c["BR"]["pres22_pct_lula"], round(57_259_504 / (57_259_504 + 51_072_345), 4))
+        self.assertEqual(c["BR"]["pres22_2t_pct_lula"], round(60_345_999 / (60_345_999 + 58_206_354), 4))
+        self.assertIn("viradas_vs_2t_2022", c)
         for x in c["ranking"]:
             for k in ("cd", "nome", "uf", "pres22", "pres26", "pres22_pct_lula", "pres26_pct_lula", "eleitores"):
                 self.assertIn(k, x)
