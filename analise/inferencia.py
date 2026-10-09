@@ -198,7 +198,8 @@ def simula(rng, n_mun=300, B=None, conc=60.0):
 
 
 def avalia(un, verdade, n_boot=200, semente="sintetico"):
-    """Estima e compara com a verdade. Devolve lista de (r, c, verdade, ponto, lo, hi) em proporções da linha."""
+    """Estima e compara com a verdade. Devolve lista de (r, c, verdade, ponto, lo, hi, ponto_dentro) em proporções da
+    linha. A faixa é só o percentil 5-95 das reamostragens: o ponto não é empurrado para dentro (relatado em ponto_dentro)."""
     B, tab = estima(un)
     boots = bootstrap(un, B, 0.0, n_boot, semente)
     out = []
@@ -207,24 +208,25 @@ def avalia(un, verdade, n_boot=200, semente="sintetico"):
         for c in range(len(tab[0])):
             dist = [bt[r][c] / sum(bt[r]) for bt in boots]
             p = tab[r][c] / tp
-            lo, hi = min(percentil(dist, 0.05), p), max(percentil(dist, 0.95), p)
-            out.append((r, c, verdade[r][c] / tv, p, lo, hi))
+            lo, hi = percentil(dist, 0.05), percentil(dist, 0.95)
+            out.append((r, c, verdade[r][c] / tv, p, lo, hi, lo <= p <= hi))
     return out
 
 
 def cobertura(reps=10, n_mun=300, n_boot=200, semente="cobertura"):
     """Fração de células (linhas Lula e Flávio) cujo intervalo de 90% contém a verdade, e erro máximo."""
     rng = random.Random(semente)
-    hits = tot = 0
+    hits = tot = fora = 0
     erro = 0.0
     por_linha = {}
     for i in range(reps):
         un, ver = simula(rng, n_mun)
-        for r, c, v, p, lo, hi in avalia(un, ver, n_boot, f"{semente}-{i}"):
+        for r, c, v, p, lo, hi, dentro in avalia(un, ver, n_boot, f"{semente}-{i}"):
             ok = lo - 1e-12 <= v <= hi + 1e-12
+            fora += not dentro
             por_linha.setdefault(r, [0, 0])
             por_linha[r][0] += ok; por_linha[r][1] += 1
             hits += ok; tot += 1
             erro = max(erro, abs(p - v))
-    return {"celulas": tot, "cobertura": hits / tot, "erro_max": erro,
+    return {"celulas": tot, "cobertura": hits / tot, "erro_max": erro, "ponto_fora": fora,
             "por_linha": {r: h / t for r, (h, t) in por_linha.items()}}

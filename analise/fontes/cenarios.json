@@ -21,7 +21,8 @@
    "apoio_2t": "neutro: não apoiará nenhum dos dois (A Gazeta e A Crítica, 05/10/2026)",
    "fonte_url": "https://acritica.net/eleicoes-2026/zema-cury-renan-caiado-segundo-turno/",
    "fonte_data": "2026-10-05",
-   "conferido": true
+   "conferido": true,
+   "apoio_candidato": "C"
   },
   {
    "nome": "Renan Santos",
@@ -31,17 +32,19 @@
    "apoio_2t": "neutro: não fará campanha por nenhum nem pedirá abstenção; eleitor livre",
    "fonte_url": "https://acritica.net/eleicoes-2026/zema-cury-renan-caiado-segundo-turno/",
    "fonte_data": "2026-10-05",
-   "conferido": true
+   "conferido": true,
+   "apoio_candidato": "C"
   },
   {
    "nome": "Ronaldo Caiado",
    "partido": "PSD",
    "votos": 2605148,
-   "lado_partido": "F",
+   "lado_partido": "C",
    "apoio_2t": "apoio pessoal a Flávio (06/10/2026): \"A mobilização para Flávio será em tempo integral\"; Kassab (PSD) liberou filiados, sem posição oficial",
    "fonte_url": "https://istoe.com.br/caiado-apoia-flavio-bolsonaro-segundo-turno",
    "fonte_data": "2026-10-06",
-   "conferido": true
+   "conferido": true,
+   "apoio_candidato": "F"
   },
   {
    "nome": "Zema",
@@ -51,7 +54,8 @@
    "apoio_2t": "apoio pessoal a Flávio em vídeo (05/10/2026): \"Voto contra o PT, voto no Flávio Bolsonaro\"",
    "fonte_url": "https://timesbrasil.com.br/brasil/decisao-2026-zema-declara-apoio-a-flavio-bolsonaro-no-2o-turno/",
    "fonte_data": "2026-10-05",
-   "conferido": true
+   "conferido": true,
+   "apoio_candidato": "F"
   },
   {
    "nome": "Demais 6 candidatos (UP, PSTU, DC, PCB, DEMOCRATA, PCO)",
@@ -62,7 +66,8 @@
    "fonte_url": "",
    "fonte_data": "",
    "conferido": false,
-   "obs": "Soma local dos votos (TSE apuração local, arquivo do repo); posições individuais não verificadas e removidas."
+   "obs": "Soma local dos votos (TSE apuração local, arquivo do repo); posições individuais não verificadas e removidas.",
+   "apoio_candidato": null
   }
  ],
  "pesquisas": [

@@ -67,12 +67,11 @@ def _milhar(n):
 
 def fmt(valor, tipo):
     """Formata um número para texto em pt-BR. Tipos: int, mi (milhões, 1 casa), pct (proporção 0-1, 1 casa),
-    pct2 (proporção, 2 casas), pct0 (proporção, inteiro), pp2 (já em %, 2 casas), x1 (1 casa)."""
+    pct2 (proporção, 2 casas), pct0 (proporção, inteiro), x1 (1 casa)."""
     if tipo == "int": return _milhar(round(valor))
     if tipo == "mi": return f"{valor / 1e6:.1f}".replace(".", ",") + " milhões"
     if tipo == "pct": return f"{valor * 100:.1f}".replace(".", ",") + "%"
     if tipo == "pct2": return f"{valor * 100:.2f}".replace(".", ",") + "%"
-    if tipo == "pp2": return f"{valor:.2f}".replace(".", ",") + "%"
     if tipo == "pct0": return f"{valor * 100:.0f}%"
     if tipo == "x1": return f"{valor:.1f}".replace(".", ",")
     raise ValueError(tipo)
@@ -378,21 +377,23 @@ def divergencias(b):
             top += sel[:100]
         ranking[c] = top
         for g in ["BR"] + UFS:
-            div = {"divergentes": 0, "lula_e_F": 0, "flavio_e_L": 0, "centro": 0, "total": 0}
+            div = {"divergentes": 0, "lula_e_F": 0, "flavio_e_L": 0, "lula_e_C": 0, "flavio_e_C": 0, "centro": 0, "total": 0}
             for cd, i in base.items():
                 if g != "BR" and i["uf"] != g: continue
                 if c not in i: continue
                 div["total"] += 1
                 leg = i[c][0]
                 if leg == "C": div["centro"] += 1
-                elif i["pres"] in ("L", "F") and leg != i["pres"]:
+                if i["pres"] in ("L", "F") and leg != i["pres"]:  # mesma regra do HUD (hud/calc.js)
                     div["divergentes"] += 1
-                    div["lula_e_F" if i["pres"] == "L" else "flavio_e_L"] += 1
+                    div[("lula" if i["pres"] == "L" else "flavio") + "_e_" + leg] += 1
             ufs[g][c] = div
     return {"mu": mu, "ranking": ranking, "uf": ufs,
             "criterio": ("Lado do município num cargo = lado com mais votos válidos (empate: C). Presidente: quem teve "
-                         "mais votos entre Lula e Flávio. Divergente = presidente de um lado e o cargo do outro "
-                         "(centro não conta). Ranking: maiores municípios por eleitores, 100 por direção."),
+                         "mais votos entre Lula e Flávio (empate: C, fica fora da contagem). Divergente = presidente "
+                         "com Lula ou Flávio e o cargo com outro lado, inclusive o centro (4 direções: lula_e_F, "
+                         "lula_e_C, flavio_e_L, flavio_e_C). centro = municípios em que o centro venceu no cargo. "
+                         "Ranking: só Lula x Flávio (sem centro), maiores municípios por eleitores, 100 por direção."),
             "gap_depfed": "% do vencedor para presidente menos % do mesmo lado para deputado federal (proporções)."}
 
 
@@ -524,6 +525,17 @@ def puxadores(b):
 
 
 # ------------------------------------------------------------------ 9. 2022 x 2026
+def lado_pres(lula, outro, k_outro):
+    """Vencedor entre Lula e o adversário: "L", k_outro ("B" em 2022, "F" em 2026) ou "E" (empate)."""
+    return "L" if lula > outro else (k_outro if outro > lula else "E")
+
+
+def chave_virada(s22, s26):
+    """Tipo de virada; None quando há empate em algum dos anos (fica fora das contagens)."""
+    if "E" in (s22, s26): return None
+    return ("mantem_lula" if s26 == "L" else "lula_para_flavio") if s22 == "L" else ("bolsonaro_para_lula" if s26 == "L" else "mantem_direita")
+
+
 def comparacao2022(b, cam, cad):
     m22c = b.m22["cand"]
     i22 = {t: {c["nome"]: i for i, c in enumerate(m22c[f"presidente-{t}"])} for t in ("1t", "2t")}
@@ -534,9 +546,6 @@ def comparacao2022(b, cam, cad):
     vir_uf = {uf: dict.fromkeys(vir, 0) for uf in UFS}
     vir2 = dict.fromkeys(vir, 0)  # secundário: 2º turno de 2022 x 1º turno de 2026
     vir2_uf = {uf: dict.fromkeys(vir, 0) for uf in UFS}
-
-    def chave_virada(s22, s26):
-        return ("mantem_lula" if s26 == "L" else "lula_para_flavio") if s22 == "L" else ("bolsonaro_para_lula" if s26 == "L" else "mantem_direita")
 
     def lados_pct(d, cd, uf, ano):
         if cd not in d["mu"]: return None
@@ -555,19 +564,19 @@ def comparacao2022(b, cam, cad):
         l22, b22 = p22[5][L1], p22[5][B1]
         l26, f26 = p26[5][b.i_lula], p26[5][b.i_flavio]
         if not (l22 + b22) or not (l26 + f26): continue
-        s22 = "L" if l22 > b22 else "B"
-        s26 = "L" if l26 > f26 else "F"
+        s22 = lado_pres(l22, b22, "B")
+        s26 = lado_pres(l26, f26, "F")
         e = {"pres22": s22, "pres26": s26, "pres22_pct_lula": p4(l22 / (l22 + b22)),
              "pres26_pct_lula": p4(l26 / (l26 + f26)),
              "depfed22": lados_pct(b.part22["depfed"], cd, uf, 2022), "depfed26": lados_pct(b.part["depfed"], cd, uf, 2026)}
         if q22 and (q22[5][L2] + q22[5][B2]):
-            e["pres22_2t"] = "L" if q22[5][L2] > q22[5][B2] else "B"
+            e["pres22_2t"] = lado_pres(q22[5][L2], q22[5][B2], "B")
             e["pres22_2t_pct_lula"] = p4(q22[5][L2] / (q22[5][L2] + q22[5][B2]))
             k2 = chave_virada(e["pres22_2t"], s26)
-            vir2[k2] += 1; vir2_uf[uf][k2] += 1
+            if k2: vir2[k2] += 1; vir2_uf[uf][k2] += 1
         mu[cd] = e
         k = chave_virada(s22, s26)
-        vir[k] += 1; vir_uf[uf][k] += 1
+        if k: vir[k] += 1; vir_uf[uf][k] += 1
         base.append({"cd": cd, "nome": nm, "uf": uf, "eleitores": p26[0], "pres22_pct_lula": e["pres22_pct_lula"],
                      "pres26_pct_lula": e["pres26_pct_lula"], "delta": p4(e["pres26_pct_lula"] - e["pres22_pct_lula"]),
                      "pres22": s22, "pres26": s26})
@@ -581,10 +590,10 @@ def comparacao2022(b, cam, cad):
         l22, b22 = l22t1[5][L1], l22t1[5][B1]
         m22, n22 = l22t2[5][L2], l22t2[5][B2]
         lu, fl = l26[5][b.i_lula], l26[5][b.i_flavio]
-        return {"pres22": "L" if l22 > b22 else "B", "pres26": "L" if lu > fl else "F",
+        return {"pres22": lado_pres(l22, b22, "B"), "pres26": lado_pres(lu, fl, "F"),
                 "pres22_pct_lula": p4(l22 / (l22 + b22)), "pres26_pct_lula": p4(lu / (lu + fl)),
                 "depfed22": d22, "depfed26": d26,
-                "pres22_2t": "L" if m22 > n22 else "B", "pres22_2t_pct_lula": p4(m22 / (m22 + n22))}
+                "pres22_2t": lado_pres(m22, n22, "B"), "pres22_2t_pct_lula": p4(m22 / (m22 + n22))}
 
     def pres_geo(l22a, l22t1, l26):
         x22 = l22a[5][L2] / (l22a[5][L2] + l22a[5][B2])
@@ -635,13 +644,14 @@ def comparacao2022(b, cam, cad):
     gbr = {**forma_mu(b.p22["1t"]["br"], b.p22["2t"]["br"], b.pres["br"], gbr["depfed"]["22"], gbr["depfed"]["26"]), **gbr}
     pl22 = b.cad22["depfed"]["br"].get("PL", 0)
     gbr["pl_depfed"] = {"eleitos_2022": 99, "2022_tse_atual": pl22, "2026": b.cad["depfed"]["br"].get("PL", 0),
-                        "nota": "99 eleitos em 2022 (98 após o recálculo das sobras de 2024). Dados de 2022 = TSE atual."}
+                        "nota": "99 eleitos em 2022 (98 após o recálculo das sobras determinado pelo STF). Dados de 2022 = TSE atual."}
     assert pl22 == 98, pl22
     return {"mu": mu, "viradas": vir, "viradas_vs_2t_2022": vir2, "ranking": ranking, "ranking_criterio": ranking_criterio, "BR": gbr, **geos,
             "nota": ("Em 2022 o lado F (ou B) significa Jair Bolsonaro. Presidente, comparação principal: 1º turno de "
                      "2022 x 1º turno de 2026 (fatia de Lula entre Lula e o adversário principal). Secundário, só como "
                      "referência: pres22_2t, pres22_2t_pct_lula e viradas_vs_2t_2022 (2º turno de 2022 x 1º turno de "
-                     "2026, comparação desigual). Legislativo: lados pelo apoio no 2º turno de cada ano.")}
+                     "2026, comparação desigual). Empate entre Lula e o adversário = E, fora das contagens de viradas. "
+                     "Legislativo: lados pelo apoio no 2º turno de cada ano.")}
 
 
 # ------------------------------------------------------------------ 10. cenários
@@ -663,56 +673,63 @@ def cenarios(b):
     precisa = {"votos_validos": V, "minimo_para_vencer": minimo, "eliminados_votos": elim,
                "lula_votos_1t": lu, "flavio_votos_1t": fl,
                "flavio_precisa_votos": minimo - fl, "lula_precisa_votos": minimo - lu,
-               "flavio_pct_dos_eliminados": round((minimo - fl) / elim * 100, 2),
-               "lula_pct_dos_eliminados": round((minimo - lu) / elim * 100, 2)}
-    for k in ("votos_validos", "minimo_para_vencer", "eliminados_votos", "flavio_precisa_votos", "lula_precisa_votos",
-              "flavio_pct_dos_eliminados", "lula_pct_dos_eliminados"):
+               "flavio_pct_dos_eliminados": round((minimo - fl) / elim, 4),
+               "lula_pct_dos_eliminados": round((minimo - lu) / elim, 4)}
+    # contrato: proporções 0-1 (a fonte checada traz em %)
+    for k in ("votos_validos", "minimo_para_vencer", "eliminados_votos", "flavio_precisa_votos", "lula_precisa_votos"):
         assert precisa[k] == f["precisa"][k], (k, precisa[k], f["precisa"][k])
+    for k in ("flavio_pct_dos_eliminados", "lula_pct_dos_eliminados"):
+        assert round(precisa[k] * 100, 2) == f["precisa"][k], (k, precisa[k], f["precisa"][k])
     # eliminados: votos do arquivo do TSE; posições da fonte checada
     votos = {c["nome"]: br[5][i] for i, c in enumerate(cp)}
     eliminados, resto = [], 0
     for e in f["eliminados"]:
         if e["nome"] in votos:
             assert votos[e["nome"]] == e["votos"], e["nome"]
-            eliminados.append({k: e[k] for k in ("nome", "partido", "votos", "lado_partido", "apoio_2t", "fonte_url", "fonte_data", "conferido")})
+            x = {k: e[k] for k in ("nome", "partido", "votos", "apoio_2t", "fonte_url", "fonte_data", "conferido")}
+            x["lado_partido"] = b.lado(e["partido"], None)  # lado do partido = analise/lados-2026.json (nacional)
+            x["apoio_candidato"] = e.get("apoio_candidato")  # apoio declarado do próprio candidato, com fonte
+            assert x["apoio_candidato"] in ("L", "F", "C", None), e["nome"]
+            if x["apoio_candidato"] in ("L", "F"): assert x["fonte_url"].startswith("https://") and x["fonte_data"], e["nome"]
+            eliminados.append(x)
         else:
             resto = e
     nomeados = {e["nome"] for e in eliminados}
     outros = sum(v for n, v in votos.items() if n not in nomeados and cp[[c["nome"] for c in cp].index(n)]["sg"] not in ("PT", "PL"))
     assert outros == resto["votos"], (outros, resto["votos"])
     eliminados.append({"nome": resto["nome"], "partido": resto["partido"], "votos": outros, "lado_partido": "C",
-                       "apoio_2t": resto["apoio_2t"], "fonte_url": "", "fonte_data": "", "conferido": False})
+                       "apoio_candidato": None, "apoio_2t": resto["apoio_2t"], "fonte_url": "", "fonte_data": "",
+                       "conferido": False})
     # pesquisas
     pesq, desc = [], []
     for p in f["pesquisas"]:
         ok, motivo = regra_pesquisa(p)
-        x = {k: p[k] for k in ("instituto", "campo", "data", "amostra", "margem_pp", "registro_tse", "lula", "flavio",
-                               "url", "antes_1t") if k in p}
+        x = {k: p[k] for k in ("instituto", "campo", "data", "amostra", "margem_pp", "registro_tse", "url", "antes_1t") if k in p}
         if "url_alt" in p: x["url_alt"] = p["url_alt"]
-        for k in ("lula_validos", "flavio_validos"):
-            if k in p: x[k] = p[k]
+        for k in ("lula", "flavio", "lula_validos", "flavio_validos"):  # a fonte traz em %; contrato em proporção
+            if k in p: x[k] = round(p[k] / 100, 4)
         if ok:
             x["criterio"] = motivo
             pesq.append(x)
         else:
             desc.append({"instituto": p["instituto"], "campo": p["campo"], "motivo": motivo})
     pos = [p for p in pesq if not p["antes_1t"] and "lula_validos" in p]
-    media = {"n": len(pos), "lula_validos": round(sum(p["lula_validos"] for p in pos) / len(pos), 2) if pos else None,
-             "flavio_validos": round(sum(p["flavio_validos"] for p in pos) / len(pos), 2) if pos else None,
+    media = {"n": len(pos), "lula_validos": round(sum(p["lula_validos"] for p in pos) / len(pos), 4) if pos else None,
+             "flavio_validos": round(sum(p["flavio_validos"] for p in pos) / len(pos), 4) if pos else None,
              "pesquisas": [f"{p['instituto']} {p['campo']}" for p in pos]}
     # cenários (aritmética refeita aqui)
-    def res(gl, gf):  # votos ganhos -> % de válidos
-        return round((lu + gl) / V * 100, 2), round((fl + gf) / V * 100, 2)
+    def res(gl, gf):  # votos ganhos -> proporção dos válidos
+        return round((lu + gl) / V, 4), round((fl + gf) / V, 4)
 
     cen = []
     l, fv = res(elim / 2, elim / 2)
     cen.append({"id": "neutro", "nome": "Neutro: eliminados se dividem 50/50", "lula": l, "flavio": fv,
-                "flavio_pct_eliminados": 50.0})
-    apoio_f = sum(e["votos"] for e in eliminados if e["nome"] in ("Ronaldo Caiado", "Zema"))
+                "flavio_pct_eliminados": 0.5})
+    apoio_f = sum(e["votos"] for e in eliminados if e["apoio_candidato"] == "F")
     rest = elim - apoio_f
     l, fv = res(rest / 2, apoio_f + rest / 2)
     cen.append({"id": "lado_declarado", "nome": "Apoios declarados: quem apoiou Flávio leva seus eleitores",
-                "lula": l, "flavio": fv, "flavio_pct_eliminados": round((apoio_f + rest / 2) / elim * 100, 2),
+                "lula": l, "flavio": fv, "flavio_pct_eliminados": round((apoio_f + rest / 2) / elim, 4),
                 "votos_apoiadores_flavio": apoio_f})
     if media["n"]:
         fp = media["flavio_validos"]
@@ -720,7 +737,7 @@ def cenarios(b):
                 f"Como a pesquisa {pos[0]['instituto']} após o 1º turno (votos válidos)")
         cen.append({"id": "pesquisa", "nome": nome,
                     "lula": media["lula_validos"], "flavio": fp,
-                    "flavio_pct_eliminados": round((fp / 100 * V - fl) / elim * 100, 2)})
+                    "flavio_pct_eliminados": round((fp * V - fl) / elim, 4)})
     p1, p2 = b.p22["1t"]["br"], b.p22["2t"]["br"]
     i1 = {c["nome"]: i for i, c in enumerate(b.m22["cand"]["presidente-1t"])}
     i2 = {c["nome"]: i for i, c in enumerate(b.m22["cand"]["presidente-2t"])}
@@ -730,17 +747,18 @@ def cenarios(b):
     tl = (l2 - l1) / el22
     l, fv = res(elim * tl, elim * (1 - tl))
     cen.append({"id": "como_2022", "nome": "Transferência como em 2022", "lula": l, "flavio": fv,
-                "flavio_pct_eliminados": round((1 - tl) * 100, 2),
-                "base_2022": {"lula_1t": round(l1 * 100, 2), "bolsonaro_1t": round(b1 * 100, 2),
-                              "lula_2t": round(l2 * 100, 2), "bolsonaro_2t": round(b2 * 100, 2),
-                              "eliminados_pct": round(el22 * 100, 2), "lula_pct_dos_eliminados": round(tl * 100, 2)}})
+                "flavio_pct_eliminados": round(1 - tl, 4),
+                "base_2022": {"lula_1t": round(l1, 4), "bolsonaro_1t": round(b1, 4),
+                              "lula_2t": round(l2, 4), "bolsonaro_2t": round(b2, 4),
+                              "eliminados_pct": round(el22, 4), "lula_pct_dos_eliminados": round(tl, 4)}})
     return {"precisa": precisa, "eliminados": eliminados, "pesquisas": pesq, "pesquisas_descartadas": desc,
             "media_pos_1t": media, "cenarios": cen, "fontes_2022": f["fontes_2022"],
             "metodo": ("Cenários são aritmética transparente, não previsão. Base: votos válidos do 1º turno (TSE) com o "
                        "mesmo total no 2º. Os votos dos eliminados são repartidos pela regra de cada cenário. Apoios "
                        "vêm da imprensa (links); apoio de candidato não garante voto do eleitor. Pesquisas: só as "
                        "confirmadas por 2 fontes independentes ou com registro conferido no TSE; as anteriores ao "
-                       "1º turno são só contexto."),
+                       "1º turno são só contexto. Números em proporção (0 a 1). lado_partido = lado do partido em "
+                       "analise/lados-2026.json; apoio_candidato = apoio declarado do próprio candidato (com fonte)."),
             "verificado_em": f.get("verificado_em")}
 
 
@@ -795,11 +813,11 @@ def destaques(D):
          f"contrário (Bolsonaro em 2022, Lula em 2026): {t.n(vr[0], vr[1] + ['bolsonaro_para_lula'], 'int')}.",
          False, "#comparacao-2022")
     ce = ["cenarios.json", ["precisa"]]
-    item("precisa", "Quanto cada um precisa dos eliminados", t.n(ce[0], ce[1] + ["flavio_pct_dos_eliminados"], "pp2"),
-         f"Para vencer, Flávio precisa de {t.n(ce[0], ce[1] + ['flavio_pct_dos_eliminados'], 'pp2')} dos "
+    item("precisa", "Quanto cada um precisa dos eliminados", t.n(ce[0], ce[1] + ["flavio_pct_dos_eliminados"], "pct2"),
+         f"Para vencer, Flávio precisa de {t.n(ce[0], ce[1] + ['flavio_pct_dos_eliminados'], 'pct2')} dos "
          f"{t.n(ce[0], ce[1] + ['eliminados_votos'], 'mi')} de votos dos candidatos eliminados; Lula, de "
-         f"{t.n(ce[0], ce[1] + ['lula_pct_dos_eliminados'], 'pp2')}. Conta sobre votos válidos, sem prever abstenção.",
-         False, "#cenarios")
+         f"{t.n(ce[0], ce[1] + ['lula_pct_dos_eliminados'], 'pct2')}. Conta sobre votos válidos, sem prever abstenção.",
+         False, "#cenarios-2-turno")
     fr = ["fragmentacao.json", ["BR", "depfed"]]
     item("fragmentacao", "Uma Câmara de muitos partidos", t.n(fr[0], fr[1] + ["partidos_com_cadeira"], "int"),
          f"{t.n(fr[0], fr[1] + ['partidos_com_cadeira'], 'int')} partidos elegeram deputado federal. O número efetivo "
@@ -824,17 +842,16 @@ def faq(D):
     qa("Quantos votos Flávio e Lula precisam para vencer o 2º turno?",
        f"Mantido o total de {t.n(ce[0], ce[1] + ['votos_validos'], 'int')} votos válidos, vence quem passar de "
        f"{t.n(ce[0], ce[1] + ['minimo_para_vencer'], 'int')}. Flávio precisa de mais "
-       f"{t.n(ce[0], ce[1] + ['flavio_precisa_votos'], 'int')} ({t.n(ce[0], ce[1] + ['flavio_pct_dos_eliminados'], 'pp2')} "
+       f"{t.n(ce[0], ce[1] + ['flavio_precisa_votos'], 'int')} ({t.n(ce[0], ce[1] + ['flavio_pct_dos_eliminados'], 'pct2')} "
        f"dos votos dos eliminados) e Lula, de mais {t.n(ce[0], ce[1] + ['lula_precisa_votos'], 'int')} "
-       f"({t.n(ce[0], ce[1] + ['lula_pct_dos_eliminados'], 'pp2')}). É aritmética, não previsão.")
+       f"({t.n(ce[0], ce[1] + ['lula_pct_dos_eliminados'], 'pct2')}). É aritmética, não previsão.")
     cd = ["cadeiras.json", ["BR", "depfed"]]
-    qa("Por que Lula tem tantos votos e o lado dele elege poucos deputados?",
-       f"Muitos eleitores de Lula votaram em deputado de outro lado. Os partidos que apoiam Lula fizeram "
-       f"{t.n(cd[0], cd[1] + ['votos', 'L'], 'pct')} dos votos para deputado federal e ficaram com "
-       f"{t.n(cd[0], cd[1] + ['cadeiras', 'L'], 'int')} cadeiras. Pela estimativa, "
-       f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'pct'], 'pct')} dos eleitores de Lula escolheram deputado "
-       f"de partido que apoia Flávio e {t.n('dividido.json', ['BR', 'depfed', 'lula_para_C', 'pct'], 'pct')}, de partido "
-       f"sem lado. É estimativa (faixa estatística de "
+    qa("Por que Lula tem tantos votos e a esquerda elegeu poucos deputados?",
+       f"Pela estimativa, {t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'pct'], 'pct')} dos eleitores de Lula "
+       f"escolheram deputado de partido que apoia Flávio e "
+       f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_C', 'pct'], 'pct')}, de partido sem lado. Os partidos do "
+       f"campo de Lula fizeram {t.n(cd[0], cd[1] + ['votos', 'L'], 'pct')} dos votos para deputado federal e ficaram "
+       f"com {t.n(cd[0], cd[1] + ['cadeiras', 'L'], 'int')} cadeiras. É estimativa (faixa estatística de "
        f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'int', 0], 'pct')} a "
        f"{t.n('dividido.json', ['BR', 'depfed', 'lula_para_F', 'int', 1], 'pct')} para o primeiro número; limites de "
        f"Duncan-Davis de {t.n('dividido.json', ['BR', 'depfed', 'limites', 'lula_para_F', 0], 'pct')} a "
@@ -848,8 +865,8 @@ def faq(D):
     qa("Quantos deputados federais o PL elegeu?",
        f"O PL elegeu {t.n('comparacao2022.json', ['BR', 'pl_depfed', '2026'], 'int')} deputados federais em 2026. Em "
        f"2022 foram {t.n('comparacao2022.json', ['BR', 'pl_depfed', 'eleitos_2022'], 'int')} eleitos "
-       f"({t.n('comparacao2022.json', ['BR', 'pl_depfed', '2022_tse_atual'], 'int')} após o recálculo das sobras de "
-       f"2024).")
+       f"({t.n('comparacao2022.json', ['BR', 'pl_depfed', '2022_tse_atual'], 'int')} após o recálculo das sobras "
+       f"determinado pelo STF).")
     pq = ["puxadores.json", ["depfed", 0]]
     qa("O que é quociente eleitoral?",
        f"É o número de votos válidos de um estado dividido pelo número de vagas. Cada vez que um partido ou "
@@ -887,7 +904,7 @@ def faq(D):
 # ------------------------------------------------------------------ lados (cópia resolvida)
 def lados(b):
     def conv(doc):
-        return {sg: {"lado": p["lado"], "uf": p["uf"], "provas": [{k: pr[k] for k in ("tipo", "url", "data", "titulo")} for pr in p["provas"]],
+        return {sg: {"lado": p["lado"], "uf": p["uf"], "provas": [{k: pr[k] for k in ("tipo", "url", "data", "titulo", "uf") if k in pr} for pr in p["provas"]],
                      "obs": p.get("obs", "")} for sg, p in doc["partidos"].items()}
     return {"posicao_em": b.l26["posicao_em"], "2026": conv(b.l26), "2022": conv(b.l22),
             "mapa_siglas_2026": b.l22.get("mapa_siglas_2026", {})}

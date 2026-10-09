@@ -128,13 +128,30 @@ class TestSintetico(unittest.TestCase):
     def test_recupera_matriz(self):
         import random
         un, ver = EI.simula(random.Random("um"), 300)
-        for r, c, v, p, lo, hi in EI.avalia(un, ver, 100, "um"):
+        for r, c, v, p, lo, hi, _ in EI.avalia(un, ver, 100, "um"):
             if r < 2: self.assertLess(abs(p - v), 0.03, (r, c, v, p))
 
     def test_cobertura(self):
         res = EI.cobertura(reps=5, n_mun=250, n_boot=150, semente="teste")
-        self.assertGreaterEqual(res["cobertura"], 0.75, res)
+        self.assertGreaterEqual(res["cobertura"], 0.85, res)
         self.assertLess(res["erro_max"], 0.06, res)
+        self.assertIn("ponto_fora", res)  # ponto fora da faixa é relatado, não escondido
+
+    def test_avalia_nao_forca_o_ponto_na_faixa(self):
+        import random
+        un, ver = EI.simula(random.Random("dois"), 200)
+        for r, c, v, p, lo, hi, dentro in EI.avalia(un, ver, 60, "dois"):
+            self.assertEqual(dentro, lo <= p <= hi)
+
+    def test_bootstrap_deterministico(self):
+        import random
+        un, _ = EI.simula(random.Random("tres"), 80)
+        B, _ = EI.estima(un)
+        a = EI.bootstrap(un, B, 0.0, 15, "mesma")
+        b = EI.bootstrap(un, B, 0.0, 15, "mesma")
+        c = EI.bootstrap(un, B, 0.0, 15, "outra")
+        self.assertEqual(a, b)
+        self.assertNotEqual(a, c)
 
     def test_duncan_davis(self):
         un = [(100.0, [60.0, 30.0, 10.0], [50.0, 30.0, 15.0, 5.0])]
@@ -209,7 +226,105 @@ class TestContrato(unittest.TestCase):
                 self.assertIn(k, x)
 
 
+class TestDivergencias(unittest.TestCase):
+    """Uma definição só: divergente = presidente com vencedor L ou F e o cargo com outro lado (L, F ou C); empate
+    para presidente fica fora. A mesma regra do HUD (hud/calc.js) e da página (analise/js/calc.js)."""
+
+    def test_quatro_direcoes_e_regra_do_hud(self):
+        d = dado("divergencias")
+        for c in CALC.LEG:
+            x = d["uf"]["BR"][c]
+            self.assertEqual(x["divergentes"], x["lula_e_F"] + x["flavio_e_L"] + x["lula_e_C"] + x["flavio_e_C"], c)
+            hud = sum(1 for m in d["mu"].values() if c in m and m["pres"] in ("L", "F") and m[c] != m["pres"])
+            self.assertEqual(x["divergentes"], hud, c)
+            for g in UFS:
+                y = d["uf"][g][c]
+                self.assertEqual(y["divergentes"], y["lula_e_F"] + y["flavio_e_L"] + y["lula_e_C"] + y["flavio_e_C"], (g, c))
+
+    def test_brasil_depfed(self):
+        x = dado("divergencias")["uf"]["BR"]["depfed"]
+        # 2.280 com os lados de antes; 2.283 depois de sair as exceções PSD-SC e PSDB-RS (sem prova verificável)
+        self.assertEqual((x["divergentes"], x["total"]), (2283, 5571))
+
+    def test_empate_presidente_fora(self):
+        d = dado("divergencias")
+        for cd in ("1706258", "3554755"):
+            self.assertEqual(d["mu"][cd]["pres"], "C")
+        self.assertIn("centro", d["criterio"])
+        self.assertIn("empate", d["criterio"])
+
+
+class TestViradas(unittest.TestCase):
+    EMPATES_2026 = ("1706258", "3554755")
+
+    def test_empate_vira_E_e_fica_fora(self):
+        c = dado("comparacao2022")
+        for cd in self.EMPATES_2026:
+            self.assertEqual(c["mu"][cd]["pres26"], "E", cd)
+        v = c["viradas"]
+        self.assertEqual(v["lula_para_flavio"], 711)
+        self.assertEqual(v["mantem_direita"], 2191)
+        self.assertEqual(v["mantem_lula"], 2663)
+        n_e = sum(1 for m in c["mu"].values() if "E" in (m["pres22"], m["pres26"]))
+        self.assertEqual(sum(v.values()) + n_e, len(c["mu"]))
+        self.assertEqual(sum(c[u]["viradas"]["lula_para_flavio"] for u in UFS), v["lula_para_flavio"])
+
+    def test_empate_sintetico(self):
+        self.assertIsNone(CALC.chave_virada("L", "E"))
+        self.assertIsNone(CALC.chave_virada("E", "F"))
+        self.assertEqual(CALC.chave_virada("L", "F"), "lula_para_flavio")
+        self.assertEqual(CALC.lado_pres(10, 10, "F"), "E")
+        self.assertEqual(CALC.lado_pres(11, 10, "F"), "L")
+        self.assertEqual(CALC.lado_pres(9, 10, "B"), "B")
+
+
 class TestCenarios(unittest.TestCase):
+    PROP = {"lula", "flavio", "lula_validos", "flavio_validos", "flavio_pct_eliminados", "flavio_pct_dos_eliminados",
+            "lula_pct_dos_eliminados", "lula_1t", "bolsonaro_1t", "lula_2t", "bolsonaro_2t", "eliminados_pct"}
+
+    def test_proporcoes_0_1(self):
+        achou = []
+
+        def anda(o, cam):
+            if isinstance(o, dict):
+                for k, v in o.items():
+                    if k in self.PROP and isinstance(v, (int, float)):
+                        achou.append(k)
+                        self.assertTrue(0 <= v <= 1, (cam + [k], v))
+                    anda(v, cam + [k])
+            elif isinstance(o, list):
+                for i, v in enumerate(o): anda(v, cam + [i])
+        anda(dado("cenarios"), [])
+        self.assertGreaterEqual(len(achou), 20)
+
+    def test_texto_em_porcentagem(self):
+        txt = json.dumps(dado("faq"), ensure_ascii=False) + json.dumps(dado("destaques"), ensure_ascii=False)
+        self.assertIn("61,94%", txt)
+        self.assertNotIn("6.194%", txt)
+        self.assertNotIn("0,62%", txt)
+
+    def test_eliminados_seguem_lados_2026(self):
+        l26 = dado("lados")["2026"]
+        for e in dado("cenarios")["eliminados"]:
+            self.assertIn("apoio_candidato", e)
+            if e["partido"] in l26: self.assertEqual(e["lado_partido"], l26[e["partido"]]["lado"], e["nome"])
+        el = {e["nome"]: e for e in dado("cenarios")["eliminados"]}
+        self.assertEqual(el["Ronaldo Caiado"]["lado_partido"], "C")
+        for n in ("Ronaldo Caiado", "Zema"):
+            self.assertEqual(el[n]["apoio_candidato"], "F")
+            self.assertTrue(el[n]["fonte_url"].startswith("https://") and el[n]["fonte_data"], n)
+
+
+class TestTextosNeutros(unittest.TestCase):
+    def test_sem_frases_vetadas(self):
+        txt = json.dumps([dado("faq"), dado("destaques"), dado("comparacao2022")["BR"]["pl_depfed"]], ensure_ascii=False)
+        self.assertNotIn("sobras de 2024", txt)
+        self.assertIn("recálculo das sobras determinado pelo STF", txt)
+        q = next(x for x in dado("faq") if x["q"].startswith("Por que Lula tem tantos votos"))
+        self.assertTrue(q["a"].startswith("Pela estimativa, "), q["a"])
+
+
+class TestCenariosAntigo(unittest.TestCase):
     def test_pesquisas(self):
         c = dado("cenarios")
         inst = [(p["instituto"], p["campo"]) for p in c["pesquisas"]]
@@ -221,7 +336,7 @@ class TestCenarios(unittest.TestCase):
 
     def test_precisa(self):
         p = dado("cenarios")["precisa"]
-        self.assertAlmostEqual(p["lula_pct_dos_eliminados"] + p["flavio_pct_dos_eliminados"], 100.0, places=1)
+        self.assertAlmostEqual(p["lula_pct_dos_eliminados"] + p["flavio_pct_dos_eliminados"], 1.0, places=3)
         self.assertEqual(p["minimo_para_vencer"], p["votos_validos"] // 2 + 1)
 
 
