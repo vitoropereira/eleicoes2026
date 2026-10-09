@@ -241,6 +241,12 @@ export function secComparacao(D, uf) {
   };
 }
 
+/** pesquisas: as depois do 1º turno primeiro; dentro de cada grupo, a mais recente primeiro (data "DD/MM") */
+export function ordenaPesquisas(ps) {
+  const k = (p) => { const [d, m] = String(p.data || "").split("/").map(Number); return (m || 0) * 100 + (d || 0); };
+  return [...(ps || [])].sort((a, b) => (!!a.antes_1t - !!b.antes_1t) || k(b) - k(a));
+}
+
 export function secCenarios(D) {
   const c = D.cenarios;
   if (!c) return vazio("BR");
@@ -248,7 +254,7 @@ export function secCenarios(D) {
   const elim = [...(c.eliminados || [])].sort((a, b) => b.votos - a.votos);
   const total = elim.reduce((s, e) => s + (e.votos || 0), 0);
   return {
-    ok: true, uf: "BR", est: true, pl, pf, eliminados: elim, totalElim: total, pesquisas: c.pesquisas || [], cenarios: c.cenarios || [],
+    ok: true, uf: "BR", est: true, pl, pf, eliminados: elim, totalElim: total, pesquisas: ordenaPesquisas(c.pesquisas), cenarios: c.cenarios || [],
     titulo: Number.isFinite(pl) ? `Cenário: Lula precisa de ${pct(pl, 0)} dos votos dos eliminados para virar; Flávio, de ${pct(pf, 0)} para manter a frente` : "Cenários do 2º turno",
     numero: Number.isFinite(pl) ? pct(pl, 0) : "–",
     rotulo: `dos votos dos candidatos eliminados (${mi(total)}) é o que Lula precisa para virar, se os eleitores dos dois repetirem o voto`,

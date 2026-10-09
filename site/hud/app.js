@@ -9,7 +9,7 @@ import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
 import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2, eleitoTurno2, situacaoVivo, exteriorCidades } from "./calc.js";
-import { divergencia, cargoDivergencia, LADO_TOKEN, LADO_NOME } from "./calc.js";
+import { divergencia, cargoDivergencia, contaDivergencia, LADO_TOKEN, LADO_NOME } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -481,9 +481,8 @@ function App() {
     if (modo === "divergencia" && !(modo === "estados" || pontoUF || geo.soUF)) {
       if (!diverg) return "Carregando a divergência…";
       if (!diverg.mu) return "Divergência indisponível: os dados da Análise ainda não foram publicados";
-      const c = cargoDivergencia(cargo); let n = 0, t = 0;
-      for (const m of Object.values(diverg.mu)) { const d = divergencia(m, cargo); if (d) { t++; if (d.diverge) n++; } }
-      return html`<span><b>${int(n)}</b> de ${int(t)} municípios com lados diferentes: presidente × ${CARGO_NOME[c]}</span>
+      const c = cargoDivergencia(cargo), { n, t, empates } = contaDivergencia(diverg.mu, cargo);
+      return html`<span><b>${int(n)}</b> de ${int(t)} municípios com lados diferentes: presidente × ${CARGO_NOME[c]}${empates ? ` (${int(empates)} ${empates === 1 ? "empate" : "empates"} para presidente ${empates === 1 ? "fica" : "ficam"} de fora)` : ""}</span>
         ${["L", "F", "C"].map((l) => html`<span class="lg"><i class="sw" style=${{ "--c": `var(${LADO_TOKEN[l]})` }} aria-hidden="true"></i>${CARGO_NOME[c]} no ${LADO_NOME[l]}</span>`)}
         <span class="und">apagado = mesmo lado · <a href="/analise/#divergencias">entenda</a></span>`;
     }

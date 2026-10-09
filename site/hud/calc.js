@@ -36,6 +36,19 @@ export function divergencia(m, cargo) {
   return { pres: m.pres, leg: m[c], diverge: m[c] !== m.pres };
 }
 
+/** contagem do modo Divergência: n divergentes de t municípios com dado no cargo (mesma base da /analise/);
+ *  empates = municípios com empate para presidente (contam no total, nunca como divergentes) */
+export function contaDivergencia(mu, cargo) {
+  const c = cargoDivergencia(cargo); let n = 0, t = 0, empates = 0;
+  for (const m of Object.values(mu || {})) {
+    if (!m || !m.pres || !m[c]) continue;
+    t++;
+    if (m.pres === "C") { empates++; continue; }
+    if (m[c] !== m.pres) n++;
+  }
+  return { n, t, empates };
+}
+
 // ---------- formatação pt-BR
 export const pct = (x, d = 1) => (Number.isFinite(x) ? x.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–");
 export const int = (x) => (Number.isFinite(x) ? Math.round(x).toLocaleString("pt-BR") : "–");
