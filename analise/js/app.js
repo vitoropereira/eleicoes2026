@@ -96,18 +96,18 @@ function Dividido({ s, cargo, setCargo, D, uf }) {
   })));
   const pts = useMemo(() => {
     const mu = D.comparacao2022?.mu; if (!mu) return null;
-    const cds = Object.keys(mu).filter((cd) => mu[cd].depfed26 && Number.isFinite(mu[cd].pres26_pct_lula));
+    const cds = Object.keys(mu).filter((cd) => mu[cd].depfed26 && Number.isFinite(mu[cd].pres26_validos_lula));
     const x = new Float32Array(cds.length), y = new Float32Array(cds.length), lado = [];
-    cds.forEach((cd, i) => { const m = mu[cd], d = m.depfed26, t = (d.L + d.F + d.C) || 1; x[i] = m.pres26_pct_lula; y[i] = d.L / t; lado.push(m.pres26 === "F" ? "F" : "L"); });
+    cds.forEach((cd, i) => { const m = mu[cd], d = m.depfed26, t = (d.L + d.F + d.C) || 1; x[i] = m.pres26_validos_lula; y[i] = d.L / t; lado.push(m.pres26 === "F" ? "F" : "L"); });
     return { x, y, lado, cds, on: uf === "BR" ? null : (i) => ufDoCodigo(cds[i]) === uf };
   }, [D.comparacao2022, uf]);
   return html`<${Seg} rotulo="Cargo da estimativa" valor=${cargo} onTroca=${setCargo} opcoes=${["depfed", "depest", "senador", "governador"].map((k) => [k, CARGO_NOME[k]])} />
     ${s.poucos ? html`<p class="vazio-txt">${s.nota}</p>` : s.ok ? html`<${Barras} itens=${itens} max=${1} titulo="Para onde foram os votos de cada candidato (estimativa)" rotW=${210} />
       <p class="nota">Barra = estimativa central; faixa clara com traço = intervalo de 90%.</p>` : html`<p class="vazio-txt">Sem estimativa para ${CARGO_LONGO[cargo]} neste recorte.</p>`}
     ${pts && html`<h3 class="h3">Cada ponto é um município: voto em Lula × voto no campo de Lula para deputado federal</h3>
-      <${Dispersao} pts=${pts} rotX="% de Lula para presidente" rotY="% do campo de Lula para dep. federal" titulo="Dispersão por município"
+      <${Dispersao} pts=${pts} rotX="% de Lula nos votos válidos (presidente)" rotY="% do campo de Lula nos votos válidos (dep. federal)" titulo="Dispersão por município"
         resumo="Pontos abaixo da diagonal: Lula teve mais votos que o campo dele para deputado federal."
-        dica=${(i) => { const cd = pts.cds[i]; return html`<${Dk} t=${`${D.mun?.[cd]?.[0] || cd} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula (presidente)", pct(pts.x[i])], [corL("L"), "Campo de Lula (dep. federal)", pct(pts.y[i])]]} />`; }} />`}
+        dica=${(i) => { const cd = pts.cds[i]; return html`<${Dk} t=${`${D.mun?.[cd]?.[0] || cd} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula · % dos válidos (presidente)", pct(pts.x[i])], [corL("L"), "Campo de Lula · % dos válidos (dep. federal)", pct(pts.y[i])]]} />`; }} />`}
     ${s.ok && !s.poucos && html`<${TabelaSR} cap=${`Voto dividido estimado, ${CARGO_LONGO[cargo]}`} cab=${["Fluxo", "Estimativa", "Faixa de 90%", "Eleitores"]} linhas=${(s.grupos || []).flatMap((g) => g.itens.map((it) => [`${g.nome} → ${LADO_NOME[it.dst]}`, pct(it.p), it.int ? `${pct(it.int[0])} a ${pct(it.int[1])}` : "–", int(it.v)]))} />`}
 `;
 }
@@ -160,7 +160,7 @@ function Comparacao({ s, D, uf }) {
   const dica = (cd) => {
     const m = mu[cd]; const nome = D.mun?.[cd]?.[0] || s.ranking.find((x) => x.cd === cd)?.nome || cd;
     if (!m) return html`<${Dk} t=${nome} linhas=${[[null, "Sem dados", ""]]} />`;
-    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula em 2022", pct(m.pres22_pct_lula)], [corL("L"), "Lula em 2026", pct(m.pres26_pct_lula)], [null, "Vencedor", `${{ L: "Lula", B: "Bolsonaro", E: "empate" }[m.pres22]} → ${{ L: "Lula", F: "Flávio", E: "empate" }[m.pres26]}`]]} />`;
+    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula entre Lula e Bolsonaro (2022)", pct(m.pres22_pct_lula)], [corL("L"), "Lula entre Lula e Flávio (2026)", pct(m.pres26_pct_lula)], [null, "Vencedor", `${{ L: "Lula", B: "Bolsonaro", E: "empate" }[m.pres22]} → ${{ L: "Lula", F: "Flávio", E: "empate" }[m.pres26]}`]]} />`;
   };
   const pts = useMemo(() => {
     const cds = Object.keys(mu).filter((cd) => Number.isFinite(mu[cd].pres22_pct_lula) && Number.isFinite(mu[cd].pres26_pct_lula));
@@ -175,15 +175,16 @@ function Comparacao({ s, D, uf }) {
     <${LegendaLados} itens=${[[corL("F"), "virou para Flávio"], [corL("L"), "virou para Lula"], ["var(--neutral)", "mesmo lado ou empate"]]} />
     ${(s.leg || s.pres) && html`<h3 class="h3">Mudança por campo ${uf === "BR" ? "no Brasil" : "· " + nomeRecorte(uf)}</h3>
       <${Halteres} rotA="2022" rotB="2026" titulo="Campos em 2022 e 2026" linhas=${[
-        ...(s.pres ? [{ rotulo: "Presidente · Lula", a: s.pres.a, b: s.pres.b, cor: corL("L"), dica: html`<${Dk} t="Lula para presidente" linhas=${[[corL("L"), "2022", pct(s.pres.a)], [corL("L"), "2026", pct(s.pres.b)], [null, "Variação", pp(s.pres.b - s.pres.a)]]} />` }] : []),
+        ...(s.pres ? [{ rotulo: "Presidente · Lula (entre os 2 primeiros)", a: s.pres.a, b: s.pres.b, cor: corL("L"), dica: html`<${Dk} t="Lula para presidente" linhas=${[[corL("L"), "2022", pct(s.pres.a)], [corL("L"), "2026", pct(s.pres.b)], [null, "Variação", pp(s.pres.b - s.pres.a)]]} />` }] : []),
         ...(s.leg || []).map((x) => ({ rotulo: `Dep. federal · ${LADO_CURTO[x.lado]}`, a: x.a, b: x.b, cor: corL(x.lado), dica: html`<${Dk} t=${`Deputado federal · ${LADO_NOME[x.lado]}`} linhas=${[[corL(x.lado), "2022", pct(x.a)], [corL(x.lado), "2026", pct(x.b)], [null, "Variação", pp(x.b - x.a)]]} />` })),
       ]} />`}
     ${pts && html`<h3 class="h3">Cada ponto é um município: Lula em 2022 × Lula em 2026</h3>
-      <${Dispersao} pts=${pts} rotX="% de Lula em 2022" rotY="% de Lula em 2026" titulo="Lula por município em 2022 e 2026" resumo="Pontos abaixo da diagonal: Lula perdeu votos em relação a 2022."
+      <${Dispersao} pts=${pts} rotX="% de Lula entre Lula e Bolsonaro (2022)" rotY="% de Lula entre Lula e Flávio (2026)" titulo="Lula por município em 2022 e 2026" resumo="Pontos abaixo da diagonal: Lula perdeu votos em relação a 2022."
         dica=${(i) => dica(pts.cds[i])} />`}
     ${rk.length > 0 && html`<h3 class="h3">Maiores variações</h3>
       <div class="tab-w"><table class="tab"><thead><tr><th scope="col">Município</th><th scope="col" class="n">Lula 2022</th><th scope="col" class="n">Lula 2026</th><th scope="col" class="n">Variação</th></tr></thead>
-      <tbody>${rk.map((x) => html`<tr><th scope="row">${x.nome} <small>${x.uf || ufDoCodigo(x.cd)}</small></th><td class="n">${pct(x.pres22_pct_lula)}</td><td class="n">${pct(x.pres26_pct_lula)}</td><td class="n">${pp(x.pres26_pct_lula - x.pres22_pct_lula)}</td></tr>`)}</tbody></table></div>`}`;
+      <tbody>${rk.map((x) => html`<tr><th scope="row">${x.nome} <small>${x.uf || ufDoCodigo(x.cd)}</small></th><td class="n">${pct(x.pres22_pct_lula)}</td><td class="n">${pct(x.pres26_pct_lula)}</td><td class="n">${pp(x.pres26_pct_lula - x.pres22_pct_lula)}</td></tr>`)}</tbody></table></div>
+      <p class="nota">Lula 2022 e Lula 2026: fatia de Lula entre Lula e o adversário (Bolsonaro em 2022, Flávio em 2026), não % dos votos válidos.</p>`}`;
 }
 
 function Cenarios({ s, D }) {
