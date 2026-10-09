@@ -285,8 +285,7 @@
   "PSD": {
    "lado": "C",
    "uf": {
-    "SC": "F",
-    "BA": "L"
+    "SC": "F"
    },
    "provas": [
     {
@@ -304,7 +303,7 @@
      "trecho": "Além do PSDB, o PSD também declarou neutralidade."
     }
    ],
-   "obs": "Nota de Gilberto Kassab (04/10): neutralidade e diretórios livres. Ronaldo Caiado (PSD, candidato no 1º turno) apoia Flávio a título pessoal; não muda o lado do partido. SC: carta aberta do presidente estadual Eron Giordani (06/10). BA: Otto Alencar, líder do PSD-BA, declarou o partido no palanque de Lula (28/01/2026; declaração anterior à campanha, não reconfirmada no 2º turno). RS: bancadas estadual e federal (não o diretório) declararam Flávio em 08/10; não conta como override."
+   "obs": "Nota de Gilberto Kassab (04/10): neutralidade e diretórios livres. Ronaldo Caiado (PSD, candidato no 1º turno) apoia Flávio a título pessoal; não muda o lado do partido. SC: carta aberta do presidente estadual Eron Giordani (06/10). BA: sem override; fica no lado nacional (C). A única prova (Otto Alencar, líder do PSD-BA, no palanque de Lula em 28/01/2026) é de janeiro, anterior à campanha, e não é apoio declarado no 2º turno. RS: bancadas estadual e federal (não o diretório) declararam Flávio em 08/10; não conta como override."
   },
   "MDB": {
    "lado": "C",
