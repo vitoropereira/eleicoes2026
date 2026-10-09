@@ -20,7 +20,34 @@ export const CARGOS = [
   ["depfed", "Dep. Federal"], ["depest", "Dep. Estadual"],
 ];
 export const CARGO_NOME = Object.fromEntries(CARGOS);
-export const MODOS = [["municipios", "Municípios"], ["estados", "Estados"], ["vantagem", "Vantagem"], ["apurado", "Apurado"]];
+export const MODOS = [["municipios", "Municípios"], ["estados", "Estados"], ["vantagem", "Vantagem"], ["apurado", "Apurado"], ["divergencia", "Divergência"]];
+
+// ---------- modo Divergência (dados da Análise: /analise/dados/divergencias.json)
+// Lados: L = campo de Lula, F = campo de Flávio, C = centro/sem lado. Cor só por token de campo.
+export const LADO_TOKEN = { L: "--lula", F: "--flavio", C: "--outros" };
+export const LADO_NOME = { L: "campo de Lula", F: "campo de Flávio", C: "centro" };
+/** cargo legislativo comparado com presidente: o do recorte, ou deputado federal quando o recorte é presidente */
+export const cargoDivergencia = (cargo) => (cargo === "presidente" ? "depfed" : cargo);
+/** {pres, leg, diverge} de um município (m = divergencias.mu[cod]); null sem dado ou com empate para presidente
+ *  (pres = "C"). Divergente = presidente com Lula ou Flávio e o cargo com outro lado, inclusive o centro. */
+export function divergencia(m, cargo) {
+  const c = cargoDivergencia(cargo);
+  if (!m || !m.pres || m.pres === "C" || !m[c]) return null;
+  return { pres: m.pres, leg: m[c], diverge: m[c] !== m.pres };
+}
+
+/** contagem do modo Divergência: n divergentes de t municípios com dado no cargo (mesma base da /analise/);
+ *  empates = municípios com empate para presidente (contam no total, nunca como divergentes) */
+export function contaDivergencia(mu, cargo) {
+  const c = cargoDivergencia(cargo); let n = 0, t = 0, empates = 0;
+  for (const m of Object.values(mu || {})) {
+    if (!m || !m.pres || !m[c]) continue;
+    t++;
+    if (m.pres === "C") { empates++; continue; }
+    if (m[c] !== m.pres) n++;
+  }
+  return { n, t, empates };
+}
 
 // ---------- formatação pt-BR
 export const pct = (x, d = 1) => (Number.isFinite(x) ? x.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–");
@@ -146,6 +173,7 @@ export function senadoEleitos(of, pst) {
 
 /** 2º turno: o modo Apurado depende do `pm` (% por município); leitura sem `pm` volta para Municípios. */
 export function modoValido(modo, turno, fonte) {
+  if (modo === "divergencia" && turno === 2) return "municipios"; // divergência é do 1º turno (presidente × legislativo)
   return modo === "apurado" && turno === 2 && fonte && !fonte.pm ? "municipios" : modo;
 }
 

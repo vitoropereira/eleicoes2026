@@ -1,4 +1,4 @@
-// Único lugar com fetch do HUD: arquivos do 1º turno (estáticos), malha e o ao vivo do 2º turno.
+// Único lugar com fetch do HUD: arquivos do 1º turno (estáticos), malha, dados da Análise e o ao vivo do 2º turno.
 
 const GEO = "/geo/";
 const cache = new Map();
@@ -12,6 +12,13 @@ async function json(url, opts) {
 /** arquivo estático do 1º turno (meta, presidente, governador, senador, depfed, depest, serie, feed) — cacheado */
 export function t1(nome) {
   const url = `${GEO}t1/${nome}.json`;
+  if (!cache.has(url)) cache.set(url, json(url).catch((e) => { cache.delete(url); throw e; }));
+  return cache.get(url);
+}
+
+/** dados da Análise (/analise/dados/<nome>.json): destaques e divergências; cacheado */
+export function analise(nome) {
+  const url = `/analise/dados/${nome}.json`;
   if (!cache.has(url)) cache.set(url, json(url).catch((e) => { cache.delete(url); throw e; }));
   return cache.get(url);
 }

@@ -345,6 +345,8 @@ export class Mapa {
     cv.addEventListener("pointercancel", fim);
     cv.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse" && !this.ponteiros.size) { this.setHover(-1); this.cb.onHover?.(-1); } });
     cv.addEventListener("wheel", (e) => {
+      // mapa dentro de página rolável (/analise/): a roda rola a página; zoom só com Ctrl/⌘ (ou pinça no trackpad)
+      if (this.cb.rolagemLivre && !e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       const p = this._ponto(e);
       const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0018));

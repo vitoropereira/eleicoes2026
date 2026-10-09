@@ -55,7 +55,7 @@ Deno.test("zero voto apurado: ninguém lidera e o mapa não pinta (2º turno ant
 });
 
 // ---------- 2º turno, itens da revisão (a–d)
-import { resumoLeitor, fonteTurno2, modoValido, senadoEleitos } from "./calc.js";
+import { resumoLeitor, fonteTurno2, modoValido, senadoEleitos, divergencia, cargoDivergencia, MODOS } from "./calc.js";
 
 const PRES = [{ n: "22", nome: "Flávio Bolsonaro", sg: "PL" }, { n: "13", nome: "Lula", sg: "PT" }];
 const META = { cand: { presidente: PRES } };
@@ -165,4 +165,25 @@ Deno.test("Exterior: cidade sem voto válido fica fora do ranking, mas é contad
   ok(itens.map((x) => x.nome).join() === "LISBOA,TÓQUIO", itens.map((x) => x.nome).join());
   ok(semVoto === 2, `Abuja (zero) e Nova (sem linha): ${semVoto}`);
   ok(exteriorCidades(meta, null, PRES).semVoto === 0, "sem dado nenhum: nada a contar");
+});
+
+Deno.test("modo Divergência: só no 1º turno, compara presidente com o cargo legislativo", () => {
+  ok(MODOS.some(([k]) => k === "divergencia"), "modo no seletor");
+  ok(modoValido("divergencia", 2, { pm: {} }) === "municipios", "2º turno volta para Municípios");
+  ok(modoValido("divergencia", 1, {}) === "divergencia", "1º turno mantém");
+  ok(cargoDivergencia("presidente") === "depfed" && cargoDivergencia("senador") === "senador", "cargo comparado");
+  const m = { pres: "L", depfed: "F", senador: "L", governador: "C" };
+  ok(divergencia(m, "presidente").diverge === true, "presidente → depfed");
+  ok(divergencia(m, "senador").diverge === false, "mesmo lado");
+  ok(divergencia(m, "governador").leg === "C", "centro conta como lado diferente");
+  ok(divergencia(m, "governador").diverge === true, "centro diverge");
+  ok(divergencia(m, "depest") === null && divergencia(null, "depfed") === null, "sem dado");
+  ok(divergencia({ pres: "C", depfed: "F" }, "presidente") === null, "empate para presidente fica fora");
+});
+
+Deno.test("contaDivergencia: empate para presidente conta no total e fica fora dos divergentes", async () => {
+  const { contaDivergencia } = await import("./calc.js");
+  const mu = { a: { pres: "L", depfed: "F" }, b: { pres: "C", depfed: "F" }, c: { pres: "F", depfed: "F" }, d: { pres: "L" } };
+  const r = contaDivergencia(mu, "presidente");
+  ok(r.n === 1 && r.t === 3 && r.empates === 1, JSON.stringify(r));
 });

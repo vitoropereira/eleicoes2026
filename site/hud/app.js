@@ -1,6 +1,6 @@
 // HUD da apuração: estado da página, cabeçalho, mapa, linha do tempo, busca, Exterior e acessibilidade.
 import { html, render, useState, useEffect, useMemo, useRef, useCallback, useErrorBoundary } from "/vendor/preact-htm.module.js";
-import { t1, malha, criarVivo, vivoExtra, criarMinuto } from "./dados.js";
+import { t1, malha, analise, criarVivo, vivoExtra, criarMinuto } from "./dados.js";
 import { decodificar, decodificarUFs } from "./topo.js";
 import { Mapa } from "./mapa.js";
 import { assinarPresenca } from "./presenca.js";
@@ -9,6 +9,7 @@ import {
   UF_NOME, UFS, CARGOS, CARGO_NOME, MODOS, pct, int, titulo, semAcento, linha, linhaSerie, corPara, cor, ehDep, primeiroNome, curta,
 } from "./calc.js";
 import { oficial, duelo, resumoLeitor, fonteTurno2, modoValido, serieTurno2, eleitoTurno2, situacaoVivo, exteriorCidades } from "./calc.js";
+import { divergencia, cargoDivergencia, contaDivergencia, LADO_TOKEN, LADO_NOME } from "./calc.js";
 import { Placar, ResumoUFs, ResumoDep, PorRegiao, Feed, Sw, Nome } from "./paineis.js";
 
 const DESKTOP = () => matchMedia("(min-width: 1024px)").matches;
@@ -66,6 +67,7 @@ function Topo({ turno, setTurno, cargo, setCargo, status, onBusca, onExterior, o
           const off = turno === 2 && k !== "presidente";
           return html`<button type="button" aria-pressed=${cargo === k} disabled=${off} title=${off ? "No 2º turno só há votação para presidente e, em alguns estados, governador" : null} onClick=${() => setCargo(k)}>${nome}</button>`;
         })}
+        <a class="aba" href="/analise/">Análise</a>
       </div>
       <div class="acoes">
         <button type="button" class="bt busca" onClick=${onBusca} aria-keyshortcuts="Meta+K Control+K">${Ic.busca}<span>Buscar</span><kbd>⌘K</kbd></button>
@@ -77,11 +79,16 @@ function Topo({ turno, setTurno, cargo, setCargo, status, onBusca, onExterior, o
 }
 
 // ---------------- barra de modos + legenda
-function Modos({ modo, setModo, legenda, travado, semApurado }) {
+function Modos({ modo, setModo, legenda, travado, semApurado, turno }) {
   return html`
     <div class="modos">
       <div class="seg" role="group" aria-label="Modo do mapa">
-        ${MODOS.map(([k, nome]) => html`<button type="button" aria-pressed=${modo === k} disabled=${k === "apurado" && semApurado} title=${k === "apurado" && semApurado ? "O % apurado por município ainda não veio nesta leitura" : null} onClick=${() => setModo(k)}>${nome}</button>`)}
+        ${MODOS.map(([k, nome]) => {
+          const off = (k === "apurado" && semApurado) || (k === "divergencia" && turno === 2);
+          const dica = k === "apurado" && semApurado ? "O % apurado por município ainda não veio nesta leitura"
+            : k === "divergencia" ? (turno === 2 ? "Divergência compara os cargos do 1º turno" : "Municípios onde presidente e o cargo escolhido foram para lados diferentes") : null;
+          return html`<button type="button" aria-pressed=${modo === k} disabled=${off} title=${dica} onClick=${() => setModo(k)}>${nome}</button>`;
+        })}
       </div>
       ${legenda && html`<p class="legenda">${legenda}</p>`}
       ${travado && html`<p class="legenda nota">${travado}</p>`}
@@ -185,8 +192,10 @@ function Exterior({ aberto, fechar, meta, res, lista, turno }) {
 // ---------------- app
 function App() {
   const [turno, setTurno] = useState(1);
-  const [cargo, setCargoS] = useState("presidente");
-  const [modo, setModoS] = useState(BAIXO ? "estados" : "municipios");
+  // /ao-vivo/?cargo=depfed abre direto no cargo (links da página /analise/)
+  const [cargo, setCargoS] = useState(() => { const c = new URLSearchParams(location.search).get("cargo"); return CARGO_NOME[c] ? c : "presidente"; });
+  // ?modo=divergencia (link da /analise/) abre direto no modo
+  const [modo, setModoS] = useState(() => { const m = new URLSearchParams(location.search).get("modo"); return MODOS.some(([k]) => k === m) && m !== "estados" ? m : BAIXO ? "estados" : "municipios"; });
   const [idx, setIdxS] = useState(null);
   const [ufSel, setUfSel] = useState(null);
   const [meta, setMeta] = useState(null);
@@ -201,6 +210,8 @@ function App() {
   const [busca, setBusca] = useState(false);
   const [ext, setExt] = useState(false);
   const [cheia, setCheia] = useState(false);
+  const [diverg, setDiverg] = useState(null); // /analise/dados/divergencias.json, só quando o modo Divergência é escolhido
+  const [destaques, setDestaques] = useState(null);
   const [zoom, setZoom] = useState(1);
   const mapaEl = useRef(), mapa = useRef(), vivoCtl = useRef(), minutoCtl = useRef(null), st = useRef({});
   if (!minutoCtl.current) minutoCtl.current = criarMinuto();
@@ -212,6 +223,8 @@ function App() {
     t1("serie").then(setSerie).catch(() => setSerie([]));
     fetch("/hud/status.json").then((r) => (r.ok ? r.json() : null)).then(setSituacao).catch(() => setSituacao(null));
     t1("feed").then(setFeed).catch(() => setFeed([]));
+    analise("destaques").then((d) => setDestaques(Array.isArray(d) ? d : null)).catch(() => setDestaques(null));
+    if (modo === "divergencia") analise("divergencias").then(setDiverg).catch(() => setDiverg({ erro: true }));
     if (BAIXO) fetch("/hud/ufs.json").then((r) => { if (!r.ok) throw new Error("ufs.json " + r.status); return r.json(); })
       .then((m) => setGeo(decodificarUFs(m))).catch(() => pedirMalha());
     else pedirMalha();
@@ -252,12 +265,16 @@ function App() {
 
   const setTurnoX = (t, auto) => { if (!auto) st.current.turnoEscolhido = true; setTurno(t); setIdxS(null); setUfSel(null); setDica(null); if (t === 2) { setCargoS("presidente"); if (modo !== "municipios" && modo !== "estados") setModoS("municipios"); } };
   const setCargo = (c) => { setCargoS(c); setDica(null); if (c !== "presidente") setIdxS(null); };
-  const setModo = (m) => { if (m !== "estados") pedirMalha(); setModoS(m); if (m === "municipios" && idx != null) setIdxS(null); };
+  const setModo = (m) => {
+    if (m !== "estados") pedirMalha();
+    if (m === "divergencia" && !diverg) analise("divergencias").then(setDiverg).catch(() => setDiverg({ erro: true }));
+    setModoS(m); if ((m === "municipios" || m === "divergencia") && idx != null) setIdxS(null);
+  };
   const setIdx = (i) => {
     setIdxS(i);
     if (turno === 2) return; // no 2º turno a linha do tempo troca o minuto, o mapa segue por município
     if (i == null) { if (modo === "estados" && st.current.modoAntes) setModoS(st.current.modoAntes); st.current.modoAntes = null; }
-    else if (modo === "municipios" || modo === "vantagem") { st.current.modoAntes = modo; setModoS("estados"); }
+    else if (modo === "municipios" || modo === "vantagem" || modo === "divergencia") { st.current.modoAntes = modo; setModoS("estados"); }
   };
 
   // 2º turno: feed, série (índice) e o minuto escolhido na linha do tempo
@@ -323,11 +340,17 @@ function App() {
       }
       return geo.muns.map((m) => porUF[m.uf]);
     }
+    if (modo === "divergencia") {
+      if (!diverg?.mu) { const n = misturar(token("--neutral"), bg, 0.3); return geo.muns.map(() => n); }
+      const igual = misturar(token("--neutral"), bg, 0.35);
+      const forte = Object.fromEntries(Object.entries(LADO_TOKEN).map(([l, t]) => [l, misturar(token(t), bg, 0.9)]));
+      return geo.muns.map((m) => { const d = divergencia(diverg.mu[m.cod], cargo); return d ? (d.diverge ? forte[d.leg] : igual) : null; });
+    }
     return geo.muns.map((m) => {
       const r = linha(cargo, fonte.mu?.[m.cod], lista(m.uf));
       return r ? corPara(modo, r, cargo, pstMun(m.cod) / 100) : null;
     });
-  }, [geo, fonte, cargo, modo, pontoUF, tema, turno, resultadoUF, lista, vivo.dados]);
+  }, [geo, fonte, cargo, modo, pontoUF, tema, turno, resultadoUF, lista, vivo.dados, diverg]);
 
   const rotulos = useMemo(() => {
     if (!geo) return [];
@@ -404,8 +427,14 @@ function App() {
     }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 30 : 450);
   }
 
-  // conteúdo da dica
+  // conteúdo da dica (no modo Divergência, com a linha "presidente × cargo" no fim)
   const conteudoDica = (d) => {
+    const c = conteudoBase(d);
+    const cod = d.cod || (d.i >= 0 ? geo?.muns[d.i]?.cod : null);
+    const dv = c && modo === "divergencia" && turno === 1 && !geo?.soUF ? divergencia(diverg?.mu?.[cod], cargo) : null;
+    return dv ? html`${c}<p class="dk-nota dk-dv">Presidente: ${LADO_NOME[dv.pres]} · ${CARGO_NOME[cargoDivergencia(cargo)]}: ${LADO_NOME[dv.leg]}${dv.diverge ? " · lados diferentes" : " · mesmo lado"}</p>` : c;
+  };
+  const conteudoBase = (d) => {
     const m = d.i >= 0 ? geo?.muns[d.i] : null;
     const cod = d.cod || m?.cod; if (!cod) return null;
     const uf = meta?.mun?.[cod]?.[1] || m?.uf;
@@ -449,6 +478,14 @@ function App() {
   const legenda = useMemo(() => {
     if (!geo || !fonte) return null;
     if (modo === "apurado") return "Mais escuro = menos seções apuradas";
+    if (modo === "divergencia" && !(modo === "estados" || pontoUF || geo.soUF)) {
+      if (!diverg) return "Carregando a divergência…";
+      if (!diverg.mu) return "Divergência indisponível: os dados da Análise ainda não foram publicados";
+      const c = cargoDivergencia(cargo), { n, t, empates } = contaDivergencia(diverg.mu, cargo);
+      return html`<span><b>${int(n)}</b> de ${int(t)} municípios com lados diferentes: presidente × ${CARGO_NOME[c]}${empates ? ` (${int(empates)} ${empates === 1 ? "empate" : "empates"} para presidente ${empates === 1 ? "fica" : "ficam"} de fora)` : ""}</span>
+        ${["L", "F", "C"].map((l) => html`<span class="lg"><i class="sw" style=${{ "--c": `var(${LADO_TOKEN[l]})` }} aria-hidden="true"></i>${CARGO_NOME[c]} no ${LADO_NOME[l]}</span>`)}
+        <span class="und">apagado = mesmo lado · <a href="/analise/#divergencias">entenda</a></span>`;
+    }
     const cont = {};
     if (modo === "estados" || pontoUF || geo.soUF) { for (const uf of UFS) { const r = resultadoUF(uf); if (r?.lider) cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; } }
     else geo.muns.forEach((m) => { const r = linha(cargo, fonte.mu?.[m.cod], lista(m.uf)); if (r?.lider) cont[r.lider.sg] = (cont[r.lider.sg] || 0) + 1; });
@@ -456,7 +493,7 @@ function App() {
     if (!rk.length) return null; // ninguém lidera em lugar nenhum (nenhum voto apurado): sem legenda vazia
     const und = modo === "estados" || pontoUF || geo.soUF ? "estados" : "municípios";
     return html`${rk.map(([sg, n]) => html`<span class="lg"><${Sw} sg=${sg} /><b>${sg}</b> ${int(n)}</span>`)}<span class="und">${und}${modo === "vantagem" ? " · cor forte = vantagem maior" : ""}</span>`;
-  }, [geo, fonte, modo, cargo, pontoUF, resultadoUF, lista]);
+  }, [geo, fonte, modo, cargo, pontoUF, resultadoUF, lista, diverg]);
 
   const resumo = useMemo(() => (f2.erro && turno === 2
     ? `Não deu para carregar a leitura das ${tSel}.`
@@ -520,7 +557,7 @@ function App() {
       <main id="conteudo" class="palco">
         <aside class="esq painel" aria-label="Resultado"><${Seguro}>${esq}<//></aside>
         <section class="centro" aria-label="Mapa">
-          <${Modos} modo=${modo} setModo=${setModo} semApurado=${turno === 2 && fonte && !fonte.pm} legenda=${legenda} travado=${travado} />
+          <${Modos} modo=${modo} setModo=${setModo} turno=${turno} semApurado=${turno === 2 && fonte && !fonte.pm} legenda=${legenda} travado=${travado} />
           <div class="mapa" ref=${mapaEl}>
             ${!geo && html`<p class="mapa-msg">${erro ? "Mapa indisponível no momento." : "Carregando o mapa dos 5.570 municípios…"}</p>`}
           </div>
@@ -534,6 +571,8 @@ function App() {
         <aside class="dir painel" aria-label="Regiões e atualizações">
           <section class="bloco"><div class="cab"><h2 class="kicker">Por região</h2><span class="sub">${cargo === "presidente" ? "quem lidera" : "partido na frente"}${ponto ? ` · aprox. ${ponto.d ? ponto.d + " " : ""}${ponto.ht}` : ""}</span></div>
             <${Seguro}><${PorRegiao} cargo=${cargo} res=${meta ? fonte : null} meta=${meta} lista=${listaPres} ponto=${pontoUF} geo=${geo} turno=${turno} msg=${f2.erro ? `Sem a leitura das ${tSel}.` : f2.carregando && tSel ? `Carregando a leitura das ${tSel}…` : null} /><//></section>
+          ${destaques?.length > 0 && html`<section class="bloco analise-b"><div class="cab"><h2 class="kicker">Análise</h2><a class="sub" href="/analise/">ver tudo →</a></div>
+            <ul class="dest">${destaques.slice(0, 3).map((c) => html`<li><a href=${"/analise/" + (c.ancora || "")}><b>${c.numero}</b><span>${c.titulo}${c.est ? html` <span class="tag-est">estimativa</span>` : null}</span></a></li>`)}</ul></section>`}
           <section class="bloco feed-b"><div class="cab"><h2 class="kicker">Últimas atualizações</h2></div>
             ${turno === 2 ? (feed2?.length ? html`<${Feed} itens=${feed2} onUF=${(uf) => { escolherUF(uf); }} />` : html`<p class="vazio-txt">O feed do 2º turno começa quando o TSE publicar as primeiras seções.</p>`) : html`<${Feed} itens=${feed} onUF=${(uf) => { escolherUF(uf); }} />`}</section>
           <p class="fonte">Dados públicos do <a href="https://resultados.tse.jus.br/oficial/app/index.html" rel="noopener">TSE</a> e malha do IBGE. Não é site oficial da Justiça Eleitoral. <a href="/">Resultado final</a> · <a href="/apuracao/">Histórico</a> · <a href="/#metodo">Método</a> · <a href="https://vitorpereira.ia.br/privacidade">Privacidade</a> · <button type="button" class="link" onClick=${() => window.dispatchEvent(new CustomEvent("consent:reopen"))}>Cookies</button></p>
