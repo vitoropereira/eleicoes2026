@@ -195,7 +195,7 @@ function Cenarios({ s, D }) {
       <${LegendaLados} itens=${[[corL("F"), "apoio declarado do candidato a Flávio"], [corL("L"), "… a Lula"], [corL("C"), "neutro ou sem declaração"]]} />
       <${Barras} titulo="Votos dos candidatos eliminados, pela cor do apoio declarado do candidato" rotW=${170} fmt=${(v) => mi(v)}
         itens=${s.eliminados.map((e) => { const ap = e.apoio_candidato || "C", lp = e.lado_partido || ladoDe({ lados }, e.partido);
-          return { rotulo: `${e.nome} (${e.partido})`, v: e.votos, cor: corL(ap), dica: html`<${Dk} t=${`${e.nome} · ${e.partido}`} linhas=${[[null, "Votos", int(e.votos)], [corL(ap), "Apoio declarado do candidato", e.apoio_candidato ? LADO_NOME[ap] : "sem declaração verificada"], [corL(lp), "Partido em 2026", LADO_NOME[lp]]]} />` }; })} />
+          return { rotulo: e.partido === "vários" ? e.nome.replace(/ \(.*\)$/, "") : `${e.nome} (${e.partido})`, v: e.votos, cor: corL(ap), dica: html`<${Dk} t=${`${e.nome} · ${e.partido}`} linhas=${[[null, "Votos", int(e.votos)], [corL(ap), "Apoio declarado do candidato", e.apoio_candidato ? LADO_NOME[ap] : "sem declaração verificada"], [corL(lp), "Partido em 2026", LADO_NOME[lp]]]} />` }; })} />
       <p class="nota">A cor é o apoio declarado do próprio candidato, não o do partido: o PSD de Caiado, por exemplo, ficou neutro. Apoio de candidato não garante o voto do eleitor.</p>`}
     ${s.cenarios.length > 0 && html`<h3 class="h3">Cenários (não são previsão)</h3>
       <${Empilhadas} titulo="Cenários do 2º turno" linhas=${s.cenarios.map((c) => ({ rotulo: c.nome, partes: [
