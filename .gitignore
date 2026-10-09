@@ -12,3 +12,6 @@ __pycache__/
 
 # municípios: dados brutos do TSE/IBGE (~1,5 GB), nunca commitar
 municipios/brutos/
+
+# municípios 2022: dados brutos do TSE (CSVs zipados), nunca commitar
+municipios/brutos2022/
