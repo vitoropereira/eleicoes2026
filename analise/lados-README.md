@@ -14,6 +14,8 @@ Posição em **08/10/2026** (2026) e **2º turno de 2022**. Arquivos: `lados-202
 - Declaração nacional define o lado do Brasil; diretório estadual cria override só para a UF (`"uf": {"SC": "F"}`).
 - Provas em conflito: vale a mais recente, e as duas ficam listadas.
 - Cada prova tem `tipo`, `url`, `data`, `titulo` e um `trecho` (até 15 palavras, copiado da página).
+- Exceção por UF exige ao menos uma prova com `url` e `data` marcada com a UF (`"uf": "PB"` ou lista).
+  Sem prova verificada da UF, a exceção sai (o partido fica no lado nacional).
 
 ## 2022
 
@@ -30,6 +32,8 @@ DEMOCRATA = PMB; MOBILIZA = PMN; MISSÃO não existia). Fontes da fusão/renomea
 
 ## Pendências na data
 
-- MDB: 17 diretórios acertaram apoio a Flávio, ato formal marcado para 13/10. Só os 6 citados pela imprensa
+- MDB: 17 diretórios acertaram apoio a Flávio, ato formal previsto para 13/10. Só os 6 citados pela imprensa
   (SP, MG, RJ, PR, RS, SC) estão como override. Revisar depois do ato.
 - PCO decide em Conferência Nacional. Solidariedade/PRD, Avante e DC sem nota do partido até 08/10.
+- Removidas em 08/10 por falta de prova verificável: PSD-SC (carta do presidente estadual não encontrada) e
+  PSDB-RS (nota do diretório não encontrada).

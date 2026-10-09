@@ -63,6 +63,17 @@ class Comum:
 class Lados2026(Comum, unittest.TestCase):
     doc = L26
 
+    def test_override_uf_tem_prova_da_uf(self):
+        """cada exceção estadual tem ao menos uma prova com url + data marcada com aquela UF ("uf": "PB" ou lista)"""
+        for sg, p in L26["partidos"].items():
+            for uf in p["uf"]:
+                ok = [pr for pr in p["provas"] if pr.get("url", "").startswith("https://") and DATA.match(pr.get("data", ""))
+                      and uf in ([pr["uf"]] if isinstance(pr.get("uf"), str) else pr.get("uf", []))]
+                self.assertTrue(ok, f"{sg}/{uf}: exceção sem prova da UF")
+
+    def test_mdb_aguarda_ato_formal(self):
+        self.assertIn("ato formal previsto para 13/10", L26["partidos"]["MDB"]["obs"])
+
     def test_todo_partido_tem_entrada(self):
         self.assertEqual(SIGLAS - set(L26["partidos"]), set())
 

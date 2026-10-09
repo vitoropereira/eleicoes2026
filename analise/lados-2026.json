@@ -236,9 +236,25 @@
      "data": "07/10/2026",
      "titulo": "Republicanos confirma apoio a Flávio Bolsonaro no 2º turno das eleições (CNN Brasil)",
      "trecho": "O Republicanos anunciou nesta quarta-feira (7) apoio ao senador Flávio Bolsonaro (PL-RJ)"
+    },
+    {
+     "tipo": "declaracao",
+     "url": "https://sbtnews.sbt.com.br/noticia/politica/pai-de-hugo-motta-declara-apoio-a-reeleicao-de-lula-na-paraiba",
+     "data": "10/04/2026",
+     "titulo": "Pai de Hugo Motta declara apoio à reeleição de Lula na Paraíba (SBT News)",
+     "trecho": "O nosso palanque é o palanque do presidente Lula, o palanque de Lucas",
+     "uf": "PB"
+    },
+    {
+     "tipo": "declaracao",
+     "url": "https://www.congressoemfoco.com.br/noticia/121149/republicanos-da-paraiba-apoiara-reeleicao-de-lula--diz-hugo-motta",
+     "data": "10/08/2026",
+     "titulo": "Republicanos da Paraíba apoiará reeleição de Lula, diz Hugo Motta (Congresso em Foco)",
+     "trecho": "A tendência nossa, aqui na Paraíba, é que caminhemos com o presidente Lula",
+     "uf": "PB"
     }
    ],
-   "obs": "Neutro no 1º turno. PB: Hugo Motta anunciou apoio a Lula em nome do Republicanos na Paraíba (10/08) e, segundo o Poder360 (07/10), deve manter; Marcos Pereira disse respeitar particularidades locais (cita PB e PE). PE sem declaração do diretório encontrada, fica com o lado nacional."
+   "obs": "Lado nacional F pela nota de 07/10. PB: Nabor Wanderley, ao assumir a presidência estadual do Republicanos (10/04), e Hugo Motta (10/08) declararam apoio à reeleição de Lula; sem declaração posterior em contrário encontrada. As duas provas são anteriores ao 1º turno. PE sem declaração do diretório encontrada, fica com o lado nacional."
   },
   "NOVO": {
    "lado": "F",
@@ -284,9 +300,7 @@
   },
   "PSD": {
    "lado": "C",
-   "uf": {
-    "SC": "F"
-   },
+   "uf": {},
    "provas": [
     {
      "tipo": "nota",
@@ -303,7 +317,7 @@
      "trecho": "Além do PSDB, o PSD também declarou neutralidade."
     }
    ],
-   "obs": "Nota de Gilberto Kassab (04/10): neutralidade e diretórios livres. Ronaldo Caiado (PSD, candidato no 1º turno) apoia Flávio a título pessoal; não muda o lado do partido. SC: carta aberta do presidente estadual Eron Giordani (06/10). BA: sem override; fica no lado nacional (C). A única prova (Otto Alencar, líder do PSD-BA, no palanque de Lula em 28/01/2026) é de janeiro, anterior à campanha, e não é apoio declarado no 2º turno. RS: bancadas estadual e federal (não o diretório) declararam Flávio em 08/10; não conta como override."
+   "obs": "Nota de Gilberto Kassab (04/10): neutralidade e diretórios livres. Ronaldo Caiado (PSD, candidato no 1º turno) apoia Flávio a título pessoal; não muda o lado do partido. SC: sem override. A carta do presidente estadual citada antes não foi encontrada; só há a fala do candidato a governador João Rodrigues (25/09), que não é declaração do diretório. BA: sem override (prova de janeiro, anterior à campanha). RS: bancadas, não o diretório, declararam Flávio em 08/10; não conta como override."
   },
   "MDB": {
    "lado": "C",
@@ -328,16 +342,22 @@
      "url": "https://timesbrasil.com.br/brasil/decisao-2026-17-diretorios-do-mdb-acertam-apoio-a-flavio-bolsonaro-no-segundo-turno/",
      "data": "08/10/2026",
      "titulo": "Ao menos 17 diretórios do MDB acertam apoio a Flávio Bolsonaro no segundo turno (Times Brasil/CNBC, com Estadão Conteúdo)",
-     "trecho": "Ao menos 17 diretórios regionais do MDB acertaram apoio à candidatura de Flávio Bolsonaro (PL)"
+     "trecho": "Ao menos 17 diretórios regionais do MDB acertaram apoio à candidatura de Flávio Bolsonaro (PL)",
+     "uf": [
+      "SP",
+      "MG",
+      "RJ",
+      "PR",
+      "RS",
+      "SC"
+     ]
     }
    ],
-   "obs": "Sem apoio nacional no 1º turno. Em 08/10, 17 diretórios estaduais acertaram apoio a Flávio, com anúncio formal previsto para 13/10; só 6 foram nomeados pela imprensa (SP, MG, RJ, PR, RS, SC), e só esses entram como override. Diretórios de AL e PA, alinhados a Lula, ficariam de fora, mas sem declaração pró-Lula encontrada. Revisar depois do ato de 13/10."
+   "obs": "Sem apoio nacional no 1º turno. Em 08/10, 17 diretórios estaduais acertaram apoio a Flávio (coligações em formação), com ato formal previsto para 13/10; só 6 foram nomeados pela imprensa (SP, MG, RJ, PR, RS, SC), e só esses entram como override. Diretórios de AL e PA, alinhados a Lula, sem declaração pró-Lula encontrada. Revisar depois do ato de 13/10."
   },
   "PSDB": {
    "lado": "C",
-   "uf": {
-    "RS": "F"
-   },
+   "uf": {},
    "provas": [
     {
      "tipo": "nota",
@@ -347,7 +367,7 @@
      "trecho": "pela liberação dos seus membros para se manifestarem da forma que considerarem mais adequada"
     }
    ],
-   "obs": "Nota de Aécio Neves (08/10): liberação. Federação PSDB CIDADANIA. RS: nota oficial do diretório estadual (08/10) com apoio a Flávio."
+   "obs": "Nota de Aécio Neves (08/10): liberação. Federação PSDB CIDADANIA. RS: sem override; a nota do diretório estadual com apoio a Flávio não foi encontrada em 08/10."
   },
   "CIDADANIA": {
    "lado": "C",
