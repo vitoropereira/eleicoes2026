@@ -178,4 +178,5 @@ Deno.test("modo Divergência: só no 1º turno, compara presidente com o cargo l
   ok(divergencia(m, "governador").leg === "C", "centro conta como lado diferente");
   ok(divergencia(m, "governador").diverge === true, "centro diverge");
   ok(divergencia(m, "depest") === null && divergencia(null, "depfed") === null, "sem dado");
+  ok(divergencia({ pres: "C", depfed: "F" }, "presidente") === null, "empate para presidente fica fora");
 });

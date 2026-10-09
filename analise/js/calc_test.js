@@ -2,7 +2,7 @@
 const assert = (c, m) => { if (!c) throw new Error(m || "falhou"); };
 const assertEquals = (a, b, m) => assert(JSON.stringify(a) === JSON.stringify(b), `${m ? m + ": " : ""}${JSON.stringify(a)} != ${JSON.stringify(b)}`);
 const assertAlmostEquals = (a, b, eps = 1e-9) => assert(Math.abs(a - b) < eps, `${a} != ${b}`);
-import { ladoDe, escala, passo, marcas, teto, pct, pp, mi, int, num, votosTxt, partes, intervaloPct, intervaloV, recorte, ufDoCodigo, noRecorte, deRecorte, secDivergencias, secComparacao, SECOES } from "./calc.js";
+import { ladoDe, escala, passo, marcas, teto, pct, pp, mi, int, num, votosTxt, partes, intervaloPct, intervaloV, recorte, ufDoCodigo, noRecorte, deRecorte, secDivergencias, secComparacao, secBrancos, secDividido, secCenarios, SECOES } from "./calc.js";
 
 Deno.test("escala linear e inversa", () => {
   const x = escala([0, 1], [10, 210]);
@@ -128,4 +128,45 @@ Deno.test("lado do partido com exceção por UF", () => {
   assertEquals(ladoDe(L, "PSD", "BA"), "C");
   assertEquals(ladoDe(L, "XYZ", "SP"), "C");
   assertEquals(ladoDe({}, "PT"), "C");
+});
+
+Deno.test("divergência: empate para presidente (C) fica fora das direções", () => {
+  const dv = { divergencias: { mu: { "4106902": { pres: "C", depfed: "F" }, "4100103": { pres: "L", depfed: "C" }, "4100202": { pres: "F", depfed: "C" } }, uf: { PR: { depfed: { divergentes: 2, total: 3 } } } } };
+  const s = secDivergencias(dv, "BR");
+  assertEquals(s.dir, { LF: 0, FL: 0, LC: 1, FC: 1 });
+  assertEquals(s.dir.CF, undefined);
+});
+
+Deno.test("brancos e nulos: Senado divide pelos 2 votos de cada eleitor", () => {
+  const B = { brancos: { BR: {
+    presidente: { brancos: 3, nulos: 2, comparecimento: 100 },
+    senador: { brancos: 20, nulos: 14, comparecimento: 100, votos_por_eleitor: 2 },
+    depfed: { brancos: 6, nulos: 6, comparecimento: 100 },
+  } } };
+  const s = secBrancos(B, "BR");
+  const sen = s.itens.find((i) => i.cargo === "senador");
+  assertAlmostEquals(sen.p, 0.17, 1e-12);
+  assertAlmostEquals(sen.pb, 0.10, 1e-12);
+  assertEquals(s.max.cargo, "senador"); // calculado, não digitado
+  assert(s.rotulo.includes("senador"), s.rotulo);
+  // sem votos_por_eleitor, deputado (12%) seria o maior só se o Senado estivesse inflado
+  const B1 = { brancos: { BR: { ...B.brancos.BR, senador: { ...B.brancos.BR.senador, brancos: 5, nulos: 5 } } } };
+  assertEquals(secBrancos(B1, "BR").max.cargo, "depfed");
+});
+
+Deno.test("voto dividido no DF (1 município): sem estimativa, avisa", () => {
+  const cel = { v: 1, pct: 0.1, int: [0, 1] };
+  const D1 = { dividido: { DF: { depfed: { poucos_municipios: true, n_mun: 1, lula_para_F: cel, lula_para_C: cel, lula_para_L: cel } } } };
+  const s = secDividido(D1, "DF");
+  assertEquals(s.ok, true);
+  assertEquals(s.poucos, true);
+  assertEquals(s.numero, "–");
+  assertEquals(s.titulo, "Voto dividido não pode ser estimado no DF (1 município)");
+  assert(s.nota && s.nota.length > 10, "nota explica");
+});
+
+Deno.test("cenários: contrato em proporção (0–1)", () => {
+  const s = secCenarios({ cenarios: { precisa: { lula_pct_dos_eliminados: 0.6194, flavio_pct_dos_eliminados: 0.3806 }, eliminados: [], cenarios: [], pesquisas: [] } });
+  assertEquals(s.numero, "62%");
+  assert(s.titulo.includes("62%") && s.titulo.includes("38%"), s.titulo);
 });

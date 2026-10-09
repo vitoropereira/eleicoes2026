@@ -24,6 +24,7 @@ const Ic = {
   zap: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.2A8.5 8.5 0 1 1 20 11.5z"/></svg>`,
   x: html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"/></svg>`,
   copiar: html`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>`,
+  img: html`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m4 16 5-5 4 4 2-2 5 5"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>`,
 };
 
 function Compartilhar({ id, titulo, uf }) {
@@ -38,6 +39,7 @@ function Compartilhar({ id, titulo, uf }) {
     <a class="bt" href=${`https://wa.me/?text=${encodeURIComponent(`${titulo} ${url}`)}`} target="_blank" rel="noopener">${Ic.zap}<span>WhatsApp</span></a>
     <a class="bt" href=${`https://x.com/intent/post?text=${encodeURIComponent(titulo)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener">${Ic.x}<span>X</span></a>
     <button type="button" class="bt" onClick=${copiar}>${Ic.copiar}<span>${ok ? "Link copiado" : "Copiar link"}</span></button>
+    ${uf === "BR" && html`<a class="bt" href=${`/og/social/analise-${id}.png`} download=${`analise-${id}.png`} title="Imagem 1080×1350 para redes sociais">${Ic.img}<span>Imagem</span></a>`}
     <span class="sr-only" aria-live="polite">${ok ? "Link copiado" : ""}</span>
   </div>`;
 }
@@ -100,13 +102,13 @@ function Dividido({ s, cargo, setCargo, D, uf }) {
     return { x, y, lado, cds, on: uf === "BR" ? null : (i) => ufDoCodigo(cds[i]) === uf };
   }, [D.comparacao2022, uf]);
   return html`<${Seg} rotulo="Cargo da estimativa" valor=${cargo} onTroca=${setCargo} opcoes=${["depfed", "depest", "senador", "governador"].map((k) => [k, CARGO_NOME[k]])} />
-    ${s.ok ? html`<${Barras} itens=${itens} max=${1} titulo="Para onde foram os votos de cada candidato (estimativa)" rotW=${210} />
+    ${s.poucos ? html`<p class="vazio-txt">${s.nota}</p>` : s.ok ? html`<${Barras} itens=${itens} max=${1} titulo="Para onde foram os votos de cada candidato (estimativa)" rotW=${210} />
       <p class="nota">Barra = estimativa central; faixa clara com traço = intervalo de 90%.</p>` : html`<p class="vazio-txt">Sem estimativa para ${CARGO_LONGO[cargo]} neste recorte.</p>`}
     ${pts && html`<h3 class="h3">Cada ponto é um município: voto em Lula × voto no campo de Lula para deputado federal</h3>
       <${Dispersao} pts=${pts} rotX="% de Lula para presidente" rotY="% do campo de Lula para dep. federal" titulo="Dispersão por município"
         resumo="Pontos abaixo da diagonal: Lula teve mais votos que o campo dele para deputado federal."
         dica=${(i) => { const cd = pts.cds[i]; return html`<${Dk} t=${`${D.mun?.[cd]?.[0] || cd} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula (presidente)", pct(pts.x[i])], [corL("L"), "Campo de Lula (dep. federal)", pct(pts.y[i])]]} />`; }} />`}
-    ${s.ok && html`<${TabelaSR} cap=${`Voto dividido estimado, ${CARGO_LONGO[cargo]}`} cab=${["Fluxo", "Estimativa", "Faixa de 90%", "Eleitores"]} linhas=${(s.grupos || []).flatMap((g) => g.itens.map((it) => [`${g.nome} → ${LADO_NOME[it.dst]}`, pct(it.p), it.int ? `${pct(it.int[0])} a ${pct(it.int[1])}` : "–", int(it.v)]))} />`}
+    ${s.ok && !s.poucos && html`<${TabelaSR} cap=${`Voto dividido estimado, ${CARGO_LONGO[cargo]}`} cab=${["Fluxo", "Estimativa", "Faixa de 90%", "Eleitores"]} linhas=${(s.grupos || []).flatMap((g) => g.itens.map((it) => [`${g.nome} → ${LADO_NOME[it.dst]}`, pct(it.p), it.int ? `${pct(it.int[0])} a ${pct(it.int[1])}` : "–", int(it.v)]))} />`}
 `;
 }
 
@@ -122,11 +124,13 @@ function Cadeiras({ s }) {
 function Divergencias({ s, D, uf, cargo, setCargo }) {
   const mu = D.divergencias?.mu || {};
   const [mais, setMais] = useState(false);
-  const corDe = (cd) => { const m = mu[cd]; if (!m || !m[cargo]) return null; return m[cargo] !== m.pres ? corLado(m[cargo]) : corApagada(); };
+  // divergente = presidente com Lula ou Flávio e o cargo com outro lado (inclusive centro); empate para presidente (C) fica fora
+  const diverge = (m) => m.pres !== "C" && m[cargo] !== m.pres;
+  const corDe = (cd) => { const m = mu[cd]; if (!m || !m[cargo]) return null; return diverge(m) ? corLado(m[cargo]) : corApagada(); };
   const dica = (cd) => {
     const m = mu[cd]; const nome = D.mun?.[cd]?.[0] || s.ranking.find((x) => x.cd === cd)?.nome || cd;
     if (!m) return html`<${Dk} t=${nome} linhas=${[[null, "Sem dados", ""]]} />`;
-    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL(m.pres), "Presidente", LADO_NOME[m.pres]], [corL(m[cargo]), CARGO_NOME[cargo], LADO_NOME[m[cargo]] || "–"], [null, m[cargo] !== m.pres ? "Divergente" : "Mesmo lado", ""]]} />`;
+    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL(m.pres), "Presidente", m.pres === "C" ? "empate Lula × Flávio" : LADO_NOME[m.pres]], [corL(m[cargo]), CARGO_NOME[cargo], LADO_NOME[m[cargo]] || "–"], [null, m.pres === "C" ? "Fora da contagem" : diverge(m) ? "Divergente" : "Mesmo lado", ""]]} />`;
   };
   const rk = s.ranking.slice(0, mais ? 50 : 10);
   const porUF = [...s.porUF].sort((a, b) => b.p - a.p);
@@ -135,7 +139,7 @@ function Divergencias({ s, D, uf, cargo, setCargo }) {
     <p class="nota">Presidente → ${CARGO_LONGO[cargo]}: lado que venceu em cada um, em número de municípios.</p>
     <${MapaMun} corDe=${corDe} dica=${dica} chave=${cargo + Object.keys(mu).length} uf=${uf} rotulo=${`Mapa dos municípios onde presidente e ${CARGO_LONGO[cargo]} foram para lados diferentes.`} />
     <${LegendaLados} itens=${[[corL("L"), `divergente, ${CARGO_LONGO[cargo]} com Lula`], [corL("F"), "… com Flávio"], [corL("C"), "… com o centro"], ["var(--neutral)", "mesmo lado"]]} />
-    ${rk.length > 0 && html`<h3 class="h3">Maiores municípios divergentes ${uf === "BR" ? "" : "· " + nomeRecorte(uf)}</h3>
+    ${rk.length > 0 && html`<h3 class="h3">Maiores municípios divergentes entre Lula e Flávio (sem os casos com centro) ${uf === "BR" ? "" : "· " + nomeRecorte(uf)}</h3>
       <div class="tab-w"><table class="tab"><thead><tr><th scope="col">Município</th><th scope="col">Presidente</th><th scope="col">${CARGO_NOME[cargo]}</th><th scope="col" class="n">Eleitores</th></tr></thead>
       <tbody>${rk.map((x) => html`<tr><th scope="row">${x.nome} <small>${x.uf}</small></th><td><i class="sw" style=${{ "--c": corL(x.pres) }}></i>${LADO_CURTO[x.pres]} ${pct(x.pres_pct, 0)}</td><td><i class="sw" style=${{ "--c": corL(x.leg) }}></i>${LADO_CURTO[x.leg]} ${pct(x.leg_pct, 0)}</td><td class="n">${int(x.eleitores)}</td></tr>`)}</tbody></table></div>
       ${s.ranking.length > 10 && html`<button type="button" class="link" onClick=${() => setMais(!mais)}>${mais ? "Mostrar menos" : `Mostrar ${Math.min(50, s.ranking.length)}`}</button>`}`}
@@ -148,6 +152,7 @@ function Comparacao({ s, D, uf }) {
   const mu = D.comparacao2022?.mu || {};
   const corDe = (cd) => {
     const m = mu[cd]; if (!m) return null;
+    if (m.pres22 === "E" || m.pres26 === "E") return corApagada(); // empate: fora das viradas, cor neutra
     if (m.pres22 === "L" && m.pres26 === "F") return corLado("F", 0.95);
     if (m.pres22 === "B" && m.pres26 === "L") return corLado("L", 0.95);
     return corApagada();
@@ -155,19 +160,19 @@ function Comparacao({ s, D, uf }) {
   const dica = (cd) => {
     const m = mu[cd]; const nome = D.mun?.[cd]?.[0] || s.ranking.find((x) => x.cd === cd)?.nome || cd;
     if (!m) return html`<${Dk} t=${nome} linhas=${[[null, "Sem dados", ""]]} />`;
-    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula em 2022", pct(m.pres22_pct_lula)], [corL("L"), "Lula em 2026", pct(m.pres26_pct_lula)], [null, "Vencedor", `${m.pres22 === "L" ? "Lula" : "Bolsonaro"} → ${m.pres26 === "L" ? "Lula" : "Flávio"}`]]} />`;
+    return html`<${Dk} t=${`${nome} · ${ufDoCodigo(cd)}`} linhas=${[[corL("L"), "Lula em 2022", pct(m.pres22_pct_lula)], [corL("L"), "Lula em 2026", pct(m.pres26_pct_lula)], [null, "Vencedor", `${{ L: "Lula", B: "Bolsonaro", E: "empate" }[m.pres22]} → ${{ L: "Lula", F: "Flávio", E: "empate" }[m.pres26]}`]]} />`;
   };
   const pts = useMemo(() => {
     const cds = Object.keys(mu).filter((cd) => Number.isFinite(mu[cd].pres22_pct_lula) && Number.isFinite(mu[cd].pres26_pct_lula));
     if (!cds.length) return null;
     const x = new Float32Array(cds.length), y = new Float32Array(cds.length), lado = [];
-    cds.forEach((cd, i) => { x[i] = mu[cd].pres22_pct_lula; y[i] = mu[cd].pres26_pct_lula; lado.push(mu[cd].pres26 === "F" ? "F" : "L"); });
+    cds.forEach((cd, i) => { x[i] = mu[cd].pres22_pct_lula; y[i] = mu[cd].pres26_pct_lula; lado.push({ F: "F", L: "L" }[mu[cd].pres26] || "C"); });
     return { x, y, lado, cds, on: uf === "BR" ? null : (i) => ufDoCodigo(cds[i]) === uf };
   }, [mu, uf]);
   const rk = s.ranking.slice(0, 10);
   return html`<ul class="chips"><li><i class="sw" style=${{ "--c": corL("F") }}></i>Lula (2022) → Flávio (2026): <b>${int(s.lf)}</b></li><li><i class="sw" style=${{ "--c": corL("L") }}></i>Bolsonaro (2022) → Lula (2026): <b>${int(s.bl)}</b></li></ul>
     <${MapaMun} corDe=${corDe} dica=${dica} chave=${"v" + Object.keys(mu).length} uf=${uf} rotulo="Mapa das viradas entre 2022 e 2026 por município." />
-    <${LegendaLados} itens=${[[corL("F"), "virou para Flávio"], [corL("L"), "virou para Lula"], ["var(--neutral)", "mesmo lado"]]} />
+    <${LegendaLados} itens=${[[corL("F"), "virou para Flávio"], [corL("L"), "virou para Lula"], ["var(--neutral)", "mesmo lado ou empate"]]} />
     ${(s.leg || s.pres) && html`<h3 class="h3">Mudança por campo ${uf === "BR" ? "no Brasil" : "· " + nomeRecorte(uf)}</h3>
       <${Halteres} rotA="2022" rotB="2026" titulo="Campos em 2022 e 2026" linhas=${[
         ...(s.pres ? [{ rotulo: "Presidente · Lula", a: s.pres.a, b: s.pres.b, cor: corL("L"), dica: html`<${Dk} t="Lula para presidente" linhas=${[[corL("L"), "2022", pct(s.pres.a)], [corL("L"), "2026", pct(s.pres.b)], [null, "Variação", pp(s.pres.b - s.pres.a)]]} />` }] : []),
@@ -187,25 +192,28 @@ function Cenarios({ s, D }) {
       { rotulo: "Lula precisa", v: s.pl, cor: corL("L"), dica: html`<${Dk} t="Lula" linhas=${[[corL("L"), "Precisa dos eliminados", pct(s.pl)]]} />` },
       { rotulo: "Flávio precisa", v: s.pf, cor: corL("F"), dica: html`<${Dk} t="Flávio" linhas=${[[corL("F"), "Precisa dos eliminados", pct(s.pf)]]} />` }]} />`}
     ${s.eliminados.length > 0 && html`<h3 class="h3">Votos dos eliminados no 1º turno (${mi(s.totalElim)})</h3>
-      <${LegendaLados} itens=${LADOS.map((k) => [corL(k), `partido no ${LADO_MIN[k]}`])} />
-      <${Barras} titulo="Votos dos candidatos eliminados" rotW=${170} fmt=${(v, eixo) => (eixo ? mi(v) : mi(v))}
-        itens=${s.eliminados.map((e) => ({ rotulo: `${e.nome} (${e.partido})`, v: e.votos, cor: corL(e.lado_partido || ladoDe({ lados }, e.partido)), dica: html`<${Dk} t=${`${e.nome} · ${e.partido}`} linhas=${[[corL(e.lado_partido), LADO_NOME[e.lado_partido] || "", int(e.votos) + " votos"]]} />` }))} />`}
+      <${LegendaLados} itens=${[[corL("F"), "apoio declarado do candidato a Flávio"], [corL("L"), "… a Lula"], [corL("C"), "neutro ou sem declaração"]]} />
+      <${Barras} titulo="Votos dos candidatos eliminados, pela cor do apoio declarado do candidato" rotW=${170} fmt=${(v) => mi(v)}
+        itens=${s.eliminados.map((e) => { const ap = e.apoio_candidato || "C", lp = e.lado_partido || ladoDe({ lados }, e.partido);
+          return { rotulo: `${e.nome} (${e.partido})`, v: e.votos, cor: corL(ap), dica: html`<${Dk} t=${`${e.nome} · ${e.partido}`} linhas=${[[null, "Votos", int(e.votos)], [corL(ap), "Apoio declarado do candidato", e.apoio_candidato ? LADO_NOME[ap] : "sem declaração verificada"], [corL(lp), "Partido em 2026", LADO_NOME[lp]]]} />` }; })} />
+      <p class="nota">A cor é o apoio declarado do próprio candidato, não o do partido: o PSD de Caiado, por exemplo, ficou neutro. Apoio de candidato não garante o voto do eleitor.</p>`}
     ${s.cenarios.length > 0 && html`<h3 class="h3">Cenários (não são previsão)</h3>
       <${Empilhadas} titulo="Cenários do 2º turno" linhas=${s.cenarios.map((c) => ({ rotulo: c.nome, partes: [
-        { k: "L", p: c.lula / (c.lula + c.flavio), cor: corL("L"), nome: "Lula", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)], [null, c.descricao, ""]]} />` },
-        { k: "F", p: c.flavio / (c.lula + c.flavio), cor: corL("F"), nome: "Flávio", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)], [null, c.descricao, ""]]} />` }] }))} />
-      <ul class="desc">${s.cenarios.map((c) => html`<li><b>${c.nome}:</b> ${c.descricao}</li>`)}</ul>`}
+        { k: "L", p: c.lula / (c.lula + c.flavio), cor: corL("L"), nome: "Lula", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)]]} />` },
+        { k: "F", p: c.flavio / (c.lula + c.flavio), cor: corL("F"), nome: "Flávio", dica: html`<${Dk} t=${c.nome} linhas=${[[corL("L"), "Lula", pct(c.lula)], [corL("F"), "Flávio", pct(c.flavio)]]} />` }] }))} />
+      <${TabelaSR} cap="Cenários do 2º turno (votos válidos)" cab=${["Cenário", "Lula", "Flávio", "Flávio leva dos eliminados"]} linhas=${s.cenarios.map((c) => [c.nome, pct(c.lula, 2), pct(c.flavio, 2), pct(c.flavio_pct_eliminados)])} />`}
     ${s.pesquisas.length > 0 && html`<h3 class="h3">Pesquisas de 2º turno publicadas</h3>
       <div class="tab-w"><table class="tab"><thead><tr><th scope="col">Instituto</th><th scope="col">Data</th><th scope="col" class="n">Lula</th><th scope="col" class="n">Flávio</th><th scope="col">Registro</th></tr></thead>
-      <tbody>${s.pesquisas.map((p) => html`<tr><th scope="row"><a href=${p.url} rel="noopener" target="_blank">${p.instituto}</a></th><td>${p.data}</td><td class="n">${pct(p.lula)}</td><td class="n">${pct(p.flavio)}</td><td><small>${p.registro_tse || "–"}</small></td></tr>`)}</tbody></table></div>`}`;
+      <tbody>${s.pesquisas.map((p) => html`<tr><th scope="row"><a href=${p.url} rel="noopener" target="_blank">${p.instituto}</a></th><td>${p.data}</td><td class="n">${pct(p.lula, 0)}</td><td class="n">${pct(p.flavio, 0)}</td><td><small>${p.registro_tse || "–"}</small></td></tr>`)}</tbody></table></div>`}`;
 }
 
 function Brancos({ s }) {
   const max = Math.max(...s.itens.map((i) => i.p), 1e-9);
   return html`<${LegendaLados} itens=${[["var(--outros)", "brancos"], ["var(--neutral)", "nulos"]]} />
     <${Pequenos} titulo="Brancos e nulos por cargo" max=${max * 1.1} itens=${s.itens.map((i) => ({ titulo: i.nome, valor: pct(i.p), partes: [{ v: i.pb, cor: "var(--outros)" }, { v: i.pn, cor: "var(--neutral)" }],
-      dica: html`<${Dk} t=${i.nome} linhas=${[["var(--outros)", "Brancos", `${pct(i.pb)} · ${int(i.brancos)}`], ["var(--neutral)", "Nulos", `${pct(i.pn)} · ${int(i.nulos)}`], [null, "Comparecimento", int(i.comp)]]} />` }))} />
-    <${TabelaSR} cap="Brancos e nulos por cargo" cab=${["Cargo", "Brancos", "Nulos", "% do comparecimento"]} linhas=${s.itens.map((i) => [i.nome, int(i.brancos), int(i.nulos), pct(i.p)])} />`;
+      dica: html`<${Dk} t=${i.nome} linhas=${[["var(--outros)", "Brancos", `${pct(i.pb)} · ${int(i.brancos)}`], ["var(--neutral)", "Nulos", `${pct(i.pn)} · ${int(i.nulos)}`], [null, i.porEleitor > 1 ? "Votos possíveis (2 por eleitor)" : "Comparecimento", int(i.base)]]} />` }))} />
+    <p class="nota">Base: comparecimento; no Senado, o dobro (2 votos por eleitor).</p>
+    <${TabelaSR} cap="Brancos e nulos por cargo" cab=${["Cargo", "Brancos", "Nulos", "% dos votos possíveis"]} linhas=${s.itens.map((i) => [i.nome, int(i.brancos), int(i.nulos), pct(i.p)])} />`;
 }
 
 function Fragmentacao({ s }) {
@@ -296,7 +304,7 @@ function App({ D0 }) {
     <div class="corpo">
       <header class="abre">
         <p class="kicker">Análise · 1º turno de 2026</p>
-        <h1>Voto dividido em 2026: por que Lula tem tantos votos e a esquerda elege poucos deputados</h1>
+        <h1>Voto dividido em 2026: por que Lula tem tantos votos e o campo de Lula elege poucos deputados</h1>
         <p class="lead">Os números do TSE por campo político, cargo e município. Contagens oficiais e estimativas aparecem juntas, e toda estimativa vem marcada. Escolha um estado no alto para recalcular tudo.</p>
         ${nada && html`<p class="vazio-txt">Os dados da análise ainda não foram publicados. Volte em breve.</p>`}
       </header>

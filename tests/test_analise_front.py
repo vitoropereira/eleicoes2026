@@ -111,6 +111,42 @@ class SEO(unittest.TestCase):
         self.assertIn('href="/analise/"', B.sitebar("/"))
 
 
+class Datas(unittest.TestCase):
+    def test_jsonld_com_data_da_geracao(self):
+        """/analise/ foi gerada em 08/10/2026: o Article não herda as datas do 1º turno (04/10)"""
+        art = next(x for x in B.ld_analise({"faq": FAQ}, PUB, MOD) if x["@type"] == "Article")
+        self.assertEqual(art["datePublished"], B.ANALISE_GERADA)
+        self.assertEqual(art["dateModified"], B.ANALISE_GERADA)
+        self.assertTrue(B.ANALISE_GERADA.startswith("2026-10-08"))
+
+
+class Textos(unittest.TestCase):
+    """neutralidade e precisão dos textos fixos"""
+    def test_titulo_neutro(self):
+        app = (JS / "app.js").read_text()
+        h1 = re.search(r"<h1>(.*?)</h1>", app).group(1)
+        for t in (h1, B.ANALISE_TITULO, B.ANALISE_DESC):
+            self.assertNotIn("esquerda", t)
+        self.assertIn("campo de Lula", h1)
+        self.assertIn("campo de Lula", B.ANALISE_DESC)
+
+    def test_sem_opiniao_sem_dado(self):
+        tx = (JS / "textos.js").read_text()
+        for f in ("costuma ter peso decisivo", "eleitorado mais fiel à sigla", "5.570", "sobras de 2024"):
+            self.assertNotIn(f, tx)
+        for f in ("5.571 municípios", "não cobre as limitações do método", "têm mais dificuldade de conseguir vaga",
+                  "1º turno × 1º turno", "quem teve mais votos entre Lula e o adversário"):
+            self.assertIn(f, tx)
+
+    def test_compartilhar_tem_imagem_social(self):
+        app = (JS / "app.js").read_text()
+        self.assertIn("/og/social/analise-${id}.png", app)
+        self.assertIn("<span>Imagem</span>", app)
+
+    def test_legenda_dos_eliminados(self):
+        self.assertIn("apoio declarado do candidato", (JS / "app.js").read_text())
+
+
 class Compartilhar(unittest.TestCase):
     def test_pagina_de_compartilhar(self):
         h = B.pagina_compartilhar("voto-dividido", {"titulo": "Estimativa: 4 em cada 10", "numero": "7,2 mi", "rotulo": "eleitores"}, PUB, MOD)
@@ -161,6 +197,18 @@ class Copia(unittest.TestCase):
                 B.copiar_analise(Path(t) / "out")
                 self.assertEqual(B.analise_dados(), {"faq": FAQ})
             self.assertTrue((Path(t) / "out" / "analise" / "dados" / "faq.json").exists())
+
+    def test_geo_sem_arquivos_que_o_front_nao_le(self):
+        """/geo/ vai ao ar sem t2022/, partidos-*.json e cadeiras.json (só o cálculo da Análise usa)"""
+        with tempfile.TemporaryDirectory() as t:
+            with mock.patch.object(B, "status_hud", return_value=None):
+                B.copiar_hud(Path(t))
+            g = Path(t) / "geo"
+            self.assertTrue((g / "t1" / "presidente.json").exists())
+            self.assertTrue((g / "t1" / "meta.json").exists())
+            self.assertFalse((g / "t2022").exists())
+            self.assertFalse(list((g / "t1").glob("partidos-*.json")))
+            self.assertFalse((g / "t1" / "cadeiras.json").exists())
 
     def test_cache_na_vercel(self):
         fontes = {h["source"]: h["headers"][0]["value"] for h in B.VERCEL["headers"]}

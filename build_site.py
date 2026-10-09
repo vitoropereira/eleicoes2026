@@ -296,7 +296,9 @@ def copiar_hud(dest):
         (dest / "hud" / "status.json").write_text(json.dumps(st, ensure_ascii=False, separators=(",", ":")))
     geo = R / "municipios" / "geo"
     if geo.is_dir():
-        shutil.copytree(geo, dest / "geo", dirs_exist_ok=True)
+        # só o que o front lê (hud/dados.js: t1/<cargo|meta|serie|feed>.json e a malha); t2022/, partidos-*.json e
+        # cadeiras.json servem só ao cálculo da Análise (analise/calcular.py) e ficam fora do site
+        shutil.copytree(geo, dest / "geo", dirs_exist_ok=True, ignore=shutil.ignore_patterns("t2022", "partidos-*.json", "cadeiras.json"))
 
 
 def injetar_presenca(h):
@@ -384,8 +386,10 @@ SECOES_ANALISE = [
     ("legenda", "Voto de legenda"), ("puxadores", "Puxadores de voto"), ("faq", "Perguntas frequentes"), ("metodo", "Método"),
 ]
 ANALISE_DADOS = R / "analise" / "dados"
+# a Análise foi gerada em 08/10/2026 (posição dos lados e analise/calcular.py); não herda as datas do 1º turno
+ANALISE_GERADA = ISO(datetime(2026, 10, 8, 12, 0))
 ANALISE_TITULO = "Voto dividido em 2026: Lula, Flávio e o Congresso | Análise"
-ANALISE_DESC = ("Por que Lula tem tantos votos e a esquerda elege poucos deputados? Voto dividido estimado, votos × cadeiras, "
+ANALISE_DESC = ("Por que Lula tem tantos votos e o campo de Lula elege poucos deputados? Voto dividido estimado, votos × cadeiras, "
                 "divergências por município e 2022 × 2026, com dados do TSE.")
 
 
@@ -403,7 +407,9 @@ def copiar_analise(dest):
         shutil.copytree(ANALISE_DADOS, dest / "analise" / "dados", dirs_exist_ok=True)
 
 
-def ld_analise(dados, publicado, modificado):
+def ld_analise(dados, publicado=None, modificado=None):
+    """JSON-LD da /analise/. Datas: sempre ANALISE_GERADA (os parâmetros ficam só por compatibilidade)."""
+    publicado = modificado = ANALISE_GERADA
     og = BASE + ("/og/analise-destaques.png" if dados else "/og/index.png")
     ld = [{"@context": "https://schema.org", "@type": "Article", "headline": ANALISE_TITULO[:110], "description": ANALISE_DESC,
            "inLanguage": "pt-BR", "datePublished": publicado, "dateModified": modificado, "author": PESSOA, "publisher": PESSOA,
@@ -666,8 +672,8 @@ def main():
     dados_an = analise_dados()
     copiar_analise(BUILD); copiar_analise(OUT)
     (BUILD / "analise").mkdir(exist_ok=True)
-    (BUILD / "analise" / "index.html").write_text(html_analise(dados_an, publicado, modificado))
-    paginas.append(("/analise/", modificado, "0.9"))
+    (BUILD / "analise" / "index.html").write_text(html_analise(dados_an, ANALISE_GERADA, ANALISE_GERADA))
+    paginas.append(("/analise/", ANALISE_GERADA, "0.9"))
 
     # ---- 404
     (BUILD / "404.html").write_text(montar_pagina(f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>x</title>{style}</head><body><main><header><h1>Página não encontrada</h1><p><a href="/">Voltar ao resultado do 1º turno</a> · <a href="/apuracao/">Ver a apuração</a></p></header></main></body></html>""",
@@ -697,7 +703,7 @@ def main():
     secs = secoes_do_dom((OUT / "analise" / "index.html").read_text())
     for sid, _ in SECOES_ANALISE:
         (OUT / "analise" / sid).mkdir(parents=True, exist_ok=True)
-        (OUT / "analise" / sid / "index.html").write_text(pagina_compartilhar(sid, secs.get(sid, {}), publicado, modificado, bool(dados_an)))
+        (OUT / "analise" / sid / "index.html").write_text(pagina_compartilhar(sid, secs.get(sid, {}), ANALISE_GERADA, ANALISE_GERADA, bool(dados_an)))
     if dados_an:
         (BUILD / "analise" / "og.html").write_text(og_analise_html())
         (OUT / "og" / "social").mkdir(exist_ok=True)
@@ -737,7 +743,7 @@ def main():
 ## Páginas
 - [Resultado final completo]({BASE}/): mapa por estado, governadores, Senado, Câmara, Assembleias, perguntas frequentes
 - [Mapa da apuração por município]({BASE}/ao-vivo/): presidente, governadores, Senado e deputados nos 5.570 municípios; 2º turno ao vivo em 25/10
-- [Análise: voto dividido, votos × cadeiras, divergências e 2022 × 2026]({BASE}/analise/): por que Lula tem tantos votos e a esquerda elege poucos deputados; estimativas marcadas, por estado
+- [Análise: voto dividido, votos × cadeiras, divergências e 2022 × 2026]({BASE}/analise/): por que Lula tem tantos votos e o campo de Lula elege poucos deputados; estimativas marcadas, por estado
 - [Apuração leitura a leitura]({BASE}/apuracao/)
 """ + "".join(f"- [Apuração com {fmt(r['d']['pst'], 1)}% das urnas]({BASE}{r['url']})\n" for r in rodadas) +
 f"- [Dados consolidados em JSON]({BASE}/dados/relatorio.json)\n", encoding="utf-8")

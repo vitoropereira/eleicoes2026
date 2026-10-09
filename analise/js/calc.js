@@ -150,6 +150,15 @@ const DESTINOS = { lula: ["F", "C", "L"], flavio: ["L", "C", "F"] };
 export function secDividido(D, uf, cargo = "depfed") {
   const d = D.dividido?.[uf]?.[cargo];
   if (!d) return vazio(uf);
+  if (d.poucos_municipios) {
+    const n = d.n_mun ?? 1;
+    return {
+      ok: true, uf, cargo, grupos: [], est: true, poucos: true, metodo: D.dividido?.metodo || "",
+      titulo: `Voto dividido não pode ser estimado ${uf === "DF" ? "no DF" : noRecorte(uf)} (${int(n)} ${n === 1 ? "município" : "municípios"})`,
+      numero: "–", rotulo: "",
+      nota: `A estimativa compara municípios entre si; com ${n === 1 ? "um município só" : "tão poucos municípios"} não há variação para medir. Os limites possíveis (Duncan-Davis) vão de quase nada a quase tudo, então o número não é mostrado.`,
+    };
+  }
   const grupos = ["lula", "flavio"].map((q) => ({
     quem: q, nome: q === "lula" ? "Eleitores de Lula" : "Eleitores de Flávio",
     itens: DESTINOS[q].map((dst) => {
@@ -198,7 +207,8 @@ export function secDivergencias(D, uf, cargo = "depfed") {
   const dir = { LF: 0, FL: 0, LC: 0, FC: 0 };
   if (dv.mu) for (const [cd, m] of Object.entries(dv.mu)) {
     if (uf !== "BR" && ufDoCodigo(cd) !== uf) continue;
-    if (m[cargo] && m[cargo] !== m.pres) dir[m.pres + m[cargo]] = (dir[m.pres + m[cargo]] || 0) + 1;
+    // mesma regra de analise/calcular.py e do HUD: presidente com Lula ou Flávio (empate = C fica fora)
+    if (m.pres !== "C" && m[cargo] && m[cargo] !== m.pres) dir[m.pres + m[cargo]] = (dir[m.pres + m[cargo]] || 0) + 1;
   }
   return {
     ok: tot > 0, uf, cargo, porUF, div, tot, p: tot ? div / tot : 0, ranking: rk, dir,
@@ -249,8 +259,9 @@ export function secBrancos(D, uf) {
   const b = D.brancos?.[uf];
   if (!b) return vazio(uf);
   const itens = CARGOS.filter(([k]) => b[k]).map(([k, nome]) => {
-    const x = b[k], comp = x.comparecimento || 1;
-    return { cargo: k, nome, brancos: x.brancos, nulos: x.nulos, comp: x.comparecimento, pb: x.brancos / comp, pn: x.nulos / comp, p: (x.brancos + x.nulos) / comp };
+    // base = votos possíveis: no Senado cada eleitor teve 2 votos (comparecimento × votos_por_eleitor)
+    const x = b[k], comp = (x.comparecimento || 1) * (x.votos_por_eleitor || 1);
+    return { cargo: k, nome, brancos: x.brancos, nulos: x.nulos, comp: x.comparecimento, base: comp, porEleitor: x.votos_por_eleitor || 1, pb: x.brancos / comp, pn: x.nulos / comp, p: (x.brancos + x.nulos) / comp };
   });
   const pres = itens.find((i) => i.cargo === "presidente"), dep = itens.find((i) => i.cargo === "depfed");
   const max = itens.reduce((m, i) => (i.p > (m?.p ?? -1) ? i : m), null);

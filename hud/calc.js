@@ -28,10 +28,11 @@ export const LADO_TOKEN = { L: "--lula", F: "--flavio", C: "--outros" };
 export const LADO_NOME = { L: "campo de Lula", F: "campo de Flávio", C: "centro" };
 /** cargo legislativo comparado com presidente: o do recorte, ou deputado federal quando o recorte é presidente */
 export const cargoDivergencia = (cargo) => (cargo === "presidente" ? "depfed" : cargo);
-/** {pres, leg, diverge} de um município (m = divergencias.mu[cod]); null sem dado */
+/** {pres, leg, diverge} de um município (m = divergencias.mu[cod]); null sem dado ou com empate para presidente
+ *  (pres = "C"). Divergente = presidente com Lula ou Flávio e o cargo com outro lado, inclusive o centro. */
 export function divergencia(m, cargo) {
   const c = cargoDivergencia(cargo);
-  if (!m || !m.pres || !m[c]) return null;
+  if (!m || !m.pres || m.pres === "C" || !m[c]) return null;
   return { pres: m.pres, leg: m[c], diverge: m[c] !== m.pres };
 }
 
