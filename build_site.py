@@ -161,7 +161,7 @@ def com_medicao(dom):
 
 
 def sitebar(atual):
-    links = [("/", "Resultado final"), ("/ao-vivo/", "Ao vivo"), ("/apuracao/", "Histórico da apuração"), ("/#metodo", "Método e fontes")]
+    links = [("/", "Resultado final"), ("/ao-vivo/", "Ao vivo"), ("/analise/", "Análise"), ("/apuracao/", "Histórico da apuração"), ("/#metodo", "Método e fontes")]
     nav = "".join(f'<a href="{u}"{" aria-current=page" if u == atual else ""}>{t}</a>' for u, t in links)
     return (f'<a class="skip" href="#conteudo">Pular para o conteúdo</a><header class="sitebar"><div class="in">'
             f'<a class="brand" href="/" aria-label="Eleições 2026, por Vitor Pereira">'
@@ -279,6 +279,8 @@ VERCEL = {
                 {"source": "/geo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
                 # módulos ES sem hash no nome: sempre revalidar, senão um deploy mistura versões
                 {"source": "/hud/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
+                {"source": "/analise/js/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
+                {"source": "/analise/dados/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]},
                 {"source": "/vivo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, s-maxage=15, stale-while-revalidate=30"}]}]}
 
 
@@ -371,6 +373,118 @@ def faq():
     ld = {"@context": "https://schema.org", "@type": "FAQPage",
           "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in qa]}
     return vis, ld, qa
+
+
+# ---------------- Análise (/analise/): página, páginas de compartilhamento por seção e cartões OG
+# Seções e âncoras: mesma lista de analise/js/calc.js (SECOES); tests/test_analise_front.py confere.
+SECOES_ANALISE = [
+    ("destaques", "Destaques"), ("campos", "Votos por campo e cargo"), ("voto-dividido", "Voto dividido"),
+    ("votos-cadeiras", "Votos × cadeiras"), ("divergencias", "Divergências"), ("comparacao-2022", "2022 × 2026"),
+    ("cenarios-2-turno", "Cenários do 2º turno"), ("brancos-nulos", "Brancos e nulos"), ("fragmentacao", "Fragmentação"),
+    ("legenda", "Voto de legenda"), ("puxadores", "Puxadores de voto"), ("faq", "Perguntas frequentes"), ("metodo", "Método"),
+]
+ANALISE_DADOS = R / "analise" / "dados"
+ANALISE_TITULO = "Voto dividido em 2026: Lula, Flávio e o Congresso | Análise"
+ANALISE_DESC = ("Por que Lula tem tantos votos e a esquerda elege poucos deputados? Voto dividido estimado, votos × cadeiras, "
+                "divergências por município e 2022 × 2026, com dados do TSE.")
+
+
+def analise_dados():
+    """analise/dados/*.json (gerados por analise/calcular.py); {} se ainda não existem"""
+    if not ANALISE_DADOS.is_dir():
+        return {}
+    return {p.stem: json.loads(p.read_text()) for p in sorted(ANALISE_DADOS.glob("*.json"))}
+
+
+def copiar_analise(dest):
+    """analise/js → /analise/js (sem testes Deno); analise/dados → /analise/dados (se existir)"""
+    shutil.copytree(R / "analise" / "js", dest / "analise" / "js", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*_test.js"))
+    if ANALISE_DADOS.is_dir():
+        shutil.copytree(ANALISE_DADOS, dest / "analise" / "dados", dirs_exist_ok=True)
+
+
+def ld_analise(dados, publicado, modificado):
+    og = BASE + ("/og/analise-destaques.png" if dados else "/og/index.png")
+    ld = [{"@context": "https://schema.org", "@type": "Article", "headline": ANALISE_TITULO[:110], "description": ANALISE_DESC,
+           "inLanguage": "pt-BR", "datePublished": publicado, "dateModified": modificado, "author": PESSOA, "publisher": PESSOA,
+           "image": [og], "mainEntityOfPage": BASE + "/analise/", "about": ELEICAO, "isBasedOn": "https://resultados.tse.jus.br/oficial/app/index.html",
+           "keywords": "voto dividido 2026, eleições 2026, Lula, Flávio Bolsonaro, deputados, Senado, quociente eleitoral, centrão, inferência ecológica"},
+          {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+              {"@type": "ListItem", "position": 1, "name": "Início", "item": BASE + "/"},
+              {"@type": "ListItem", "position": 2, "name": "Análise", "item": BASE + "/analise/"}]}]
+    faq_a = dados.get("faq") or []
+    if faq_a:
+        ld.append({"@context": "https://schema.org", "@type": "FAQPage",
+                   "mainEntity": [{"@type": "Question", "name": x["q"], "acceptedAnswer": {"@type": "Answer", "text": x["a"]}} for x in faq_a]})
+    return ld
+
+
+def html_analise(dados, publicado, modificado):
+    raw = brand.aplicar((R / "template_analise.html").read_text()).replace("<!--__RODAPE__-->", rodape(), 1)
+    og = "/og/analise-destaques.png" if dados else "/og/index.png"
+    return montar_pagina(raw, ANALISE_TITULO, ANALISE_DESC, "/analise/", og, ld_analise(dados, publicado, modificado), publicado, modificado, "/analise/", moldura=False)
+
+
+def secoes_do_dom(dom):
+    """{id: {titulo, numero, rotulo}} lidos do HTML pré-renderizado (data-* de cada <section>): o texto vem do JS, uma fonte só"""
+    out = {}
+    for tag in re.findall(r"<section\b[^>]*>", dom):
+        a = dict((k, html.unescape(v)) for k, v in re.findall(r'\s([\w-]+)="([^"]*)"', tag))
+        if a.get("id") in dict(SECOES_ANALISE):
+            out[a["id"]] = {"titulo": a.get("data-titulo", ""), "numero": a.get("data-numero", ""), "rotulo": a.get("data-rotulo", "")}
+    return out
+
+
+def pagina_compartilhar(sid, info, publicado, modificado, com_og=True):
+    """/analise/<id>/: carrega o OG daquela seção (WhatsApp/X leem daqui) e leva para /analise/#<id>"""
+    nome = dict(SECOES_ANALISE)[sid]
+    titulo = info.get("titulo") or nome
+    desc = " ".join(x for x in (info.get("numero"), info.get("rotulo")) if x) or ANALISE_DESC
+    alvo = f"/analise/#{sid}"
+    h = head(f"{titulo} | Análise · Eleições 2026", desc, f"/analise/{sid}/", f"/og/analise-{sid}.png" if com_og else "/og/index.png", [], publicado, modificado)
+    h = h.replace(f'<link rel="canonical" href="{BASE}/analise/{sid}/">', f'<link rel="canonical" href="{BASE}/analise/">', 1)
+    h = h.replace('<meta name="robots" content="index,follow', '<meta name="robots" content="noindex,follow', 1)
+    return (f'<!doctype html>\n<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">\n{h}'
+            f'<meta http-equiv="refresh" content="0;url={alvo}">'
+            f'<style>{brand.CSS}body{{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font-sans)}}main{{max-width:640px;margin:0 auto;padding:48px 16px}}</style>'
+            f'<script>location.replace("{alvo}")</script></head><body><main id="conteudo"><p class="kicker">Análise · {html.escape(nome)}</p>'
+            f'<h1>{html.escape(titulo)}</h1><p>{html.escape(desc)}</p><p><a href="{alvo}">Ver a análise completa →</a></p></main></body></html>')
+
+
+def og_analise_html():
+    """página só do build: o Chrome desenha o cartão de cada seção com os mesmos módulos da página"""
+    tpl = (R / "template_analise.html").read_text()
+    estilo = re.search(r"<style>(.*?)</style>", tpl, re.S).group(1).replace(brand.MARCADOR, brand.CSS, 1)
+    css = """body{margin:0;background:var(--bg)}
+.og{width:1200px;height:630px;padding:48px 64px 36px;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);position:relative;overflow:hidden}
+.og.social{width:1080px;height:1350px;padding:84px 72px 64px}
+.og::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--brand)}
+.og-k{margin:0;font:500 19px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:12px;align-items:center}
+.og-k .badge{font-size:15px;padding:1px 12px}
+.og h1{font:600 38px/1.14 var(--font-mono);letter-spacing:-.02em;margin:16px 0 0}
+.social h1{font-size:54px;margin-top:28px}
+.og-n{display:flex;align-items:baseline;gap:18px;margin:18px 0 0}
+.og-n b{font:600 76px/1 var(--font-mono);letter-spacing:-.03em}
+.social .og-n{flex-direction:column;gap:10px;margin-top:40px}.social .og-n b{font-size:120px}
+.og-n span{font-size:21px;color:var(--ink2);max-width:640px}
+.social .og-n span{font-size:28px;max-width:none}
+.og-g{flex:1;min-height:0;margin:18px 0 10px;overflow:hidden}
+.social .og-g{margin-top:44px}
+.og .ch text{font-size:16px}.og .ch .rl{font-size:17px}.og .ch .vl,.og .ch .vl2{font-size:16px}
+.og .leg-l,.og .leg-h{font-size:17px}
+.social .ch text{font-size:21px}.social .ch .rl{font-size:22px}.social .ch .vl,.social .ch .vl2{font-size:20px}.social .leg-l,.social .leg-h{font-size:22px}
+.og .pm li{padding:14px}.og .pm-t{font-size:17px}.og .pm-n{font-size:30px}
+.og-cards,.og-faq{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.og-cards{grid-template-columns:repeat(3,1fr)}.social .og-cards{grid-template-columns:1fr 1fr}
+.og-cards li{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.og-cards b{font:600 44px/1 var(--font-mono)}.og-cards span{font-size:18px;color:var(--ink2)}
+.og-faq li{font:600 26px/1.3 var(--font-sans);border-left:4px solid var(--line);padding-left:16px}
+.og-pe{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:0;font-size:19px;color:var(--muted)}
+.social .og-pe{font-size:24px;flex-wrap:wrap}
+.og-pe .og-m{color:var(--ink2)}
+.og-pe b{color:var(--ink);font:600 21px var(--font-mono)}.og-pe b i{display:inline-block;width:10px;height:22px;background:var(--brand);vertical-align:-4px;margin-left:3px}"""
+    return (f'<!doctype html><html lang="pt-BR" data-theme="dark"><head><meta charset="utf-8"><style>{estilo}\n{css}</style></head>'
+            f'<body><div id="og"></div><script type="module" src="/analise/js/og.js"></script></body></html>')
 
 
 # ---------------- servidor local + pré-render
@@ -548,12 +662,19 @@ def main():
     (BUILD / "ao-vivo" / "index.html").write_text(montar_pagina(raw, titulo, desc, "/ao-vivo/", "/og/ao-vivo.png", ld, publicado, modificado, "/ao-vivo/", moldura=False))
     paginas.append(("/ao-vivo/", modificado, "0.9"))
 
+    # ---- análise (/analise/): o texto e os números do Brasil saem do pré-render; dados em /analise/dados/
+    dados_an = analise_dados()
+    copiar_analise(BUILD); copiar_analise(OUT)
+    (BUILD / "analise").mkdir(exist_ok=True)
+    (BUILD / "analise" / "index.html").write_text(html_analise(dados_an, publicado, modificado))
+    paginas.append(("/analise/", modificado, "0.9"))
+
     # ---- 404
     (BUILD / "404.html").write_text(montar_pagina(f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>x</title>{style}</head><body><main><header><h1>Página não encontrada</h1><p><a href="/">Voltar ao resultado do 1º turno</a> · <a href="/apuracao/">Ver a apuração</a></p></header></main></body></html>""",
                                                   "Página não encontrada · Eleições 2026", "Página não encontrada.", "/404.html", "/og/index.png", [], publicado, modificado, ""))
 
     # ---- pré-render de todas as páginas
-    for p in ["index.html", "ao-vivo/index.html", "apuracao/index.html", "404.html"] + [r["url"].strip("/") + "/index.html" for r in rodadas]:
+    for p in ["index.html", "ao-vivo/index.html", "analise/index.html", "apuracao/index.html", "404.html"] + [r["url"].strip("/") + "/index.html" for r in rodadas]:
         url = base_url + "/" + p.replace("index.html", "")
         dom = prerender(url)
         # o mapa já está desenhado no HTML: tira os contornos duplicados dos dados embutidos
@@ -572,6 +693,17 @@ def main():
     for nome, t, s, f, l, rp in cards:
         (BUILD / "og" / f"{nome}.html").write_text(og_card(t, s, f, l, rp))
         chrome("--window-size=1200,630", "--virtual-time-budget=3000", f"--screenshot={OUT / 'og' / (nome + '.png')}", f"{base_url}/og/{nome}.html")
+    # análise: uma página de compartilhar e dois cartões (OG 1200×630, social 1080×1350) por seção
+    secs = secoes_do_dom((OUT / "analise" / "index.html").read_text())
+    for sid, _ in SECOES_ANALISE:
+        (OUT / "analise" / sid).mkdir(parents=True, exist_ok=True)
+        (OUT / "analise" / sid / "index.html").write_text(pagina_compartilhar(sid, secs.get(sid, {}), publicado, modificado, bool(dados_an)))
+    if dados_an:
+        (BUILD / "analise" / "og.html").write_text(og_analise_html())
+        (OUT / "og" / "social").mkdir(exist_ok=True)
+        for sid, _ in SECOES_ANALISE:
+            chrome("--window-size=1200,630", "--virtual-time-budget=9000", f"--screenshot={OUT / 'og' / f'analise-{sid}.png'}", f"{base_url}/analise/og.html?s={sid}&f=og")
+            chrome("--window-size=1080,1350", "--virtual-time-budget=9000", f"--screenshot={OUT / 'og' / 'social' / f'analise-{sid}.png'}", f"{base_url}/analise/og.html?s={sid}&f=social")
     (BUILD / "og" / "touch.html").write_text(f'<!doctype html><html><body style="margin:0">{FAVICON.replace("<svg ", "<svg width=180 height=180 ")}</body></html>')
     chrome("--window-size=180,180", "--virtual-time-budget=3000", f"--screenshot={OUT / 'apple-touch-icon.png'}", f"{base_url}/og/touch.html")
     srv.shutdown()
@@ -605,6 +737,7 @@ def main():
 ## Páginas
 - [Resultado final completo]({BASE}/): mapa por estado, governadores, Senado, Câmara, Assembleias, perguntas frequentes
 - [Mapa da apuração por município]({BASE}/ao-vivo/): presidente, governadores, Senado e deputados nos 5.570 municípios; 2º turno ao vivo em 25/10
+- [Análise: voto dividido, votos × cadeiras, divergências e 2022 × 2026]({BASE}/analise/): por que Lula tem tantos votos e a esquerda elege poucos deputados; estimativas marcadas, por estado
 - [Apuração leitura a leitura]({BASE}/apuracao/)
 """ + "".join(f"- [Apuração com {fmt(r['d']['pst'], 1)}% das urnas]({BASE}{r['url']})\n" for r in rodadas) +
 f"- [Dados consolidados em JSON]({BASE}/dados/relatorio.json)\n", encoding="utf-8")
