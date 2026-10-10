@@ -1,0 +1,9 @@
+# Só tooling (pytest/ruff) para o gate do dev-flow. O projeto continua só com a stdlib.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+exclude = ["site", "municipios/brutos", "municipios/brutos2022", "snapshots", ".build", ".ensaio"]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]
