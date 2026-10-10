@@ -28,7 +28,7 @@ class Repo(unittest.TestCase):
         self.assertIn("qzczyicspbizosjogmlq", texto)
 
     def test_link_do_repo_atualizado(self):
-        velho = "github.com/vitoropereira/eleicoes2026"
+        velho = "github.com/vitoropereira/" + "eleicoes2026"  # concatenado para o teste não casar consigo mesmo
         arquivos = subprocess.run(["git", "-C", str(R), "ls-files"], capture_output=True, text=True, check=True).stdout.splitlines()
         com_velho = []
         for nome in arquivos:
