@@ -28,12 +28,12 @@ class Repo(unittest.TestCase):
         self.assertIn("qzczyicspbizosjogmlq", texto)
 
     def test_link_do_repo_atualizado(self):
-        velho = "github.com/vitoropereira/" + "eleicoes2026"  # concatenado para o teste não casar consigo mesmo
+        velho = "github.com/vitoropereira/" + "eleicoes"  # prefixo dos nomes antigos (eleicoes2026, eleicoes-2026); concatenado para o teste não casar consigo mesmo
         arquivos = subprocess.run(["git", "-C", str(R), "ls-files"], capture_output=True, text=True, check=True).stdout.splitlines()
         com_velho = []
         for nome in arquivos:
             try:
-                if velho in (R / nome).read_text():
+                if velho in (R / nome).read_text(encoding="utf-8"):
                     com_velho.append(nome)
             except (UnicodeDecodeError, FileNotFoundError, IsADirectoryError):
                 pass

@@ -7,7 +7,7 @@ from pathlib import Path
 
 OUT = Path(__file__).parent / "brutos"
 TSE = "https://resultados.tse.jus.br/oficial/ele2026"
-UA = "eleicoes-2026-painel/1.0 (dados abertos; github.com/vitoropereira/eleicoes-2026)"
+UA = "eleicoes-2026-painel/1.0 (dados abertos; github.com/vitoropereira/vitorpereira.ia.br-eleicoes)"
 MALHA = ("https://servicodados.ibge.gov.br/api/v3/malhas/paises/BR?intrarregiao=municipio"
          "&formato=application/json&qualidade=minima")
 CONFIG = f"{TSE}/6257/config/mun-e006257-cm.json"

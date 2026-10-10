@@ -10,7 +10,7 @@ from pathlib import Path
 
 OUT = Path(__file__).parent / "brutos2022"
 CDN = "https://cdn.tse.jus.br/estatistica/sead/odsele"
-UA = "eleicoes-2026-painel/1.0 (dados abertos; github.com/vitoropereira/eleicoes-2026)"
+UA = "eleicoes-2026-painel/1.0 (dados abertos; github.com/vitoropereira/vitorpereira.ia.br-eleicoes)"
 CONFIG_MUN = "https://resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json"
 ZIPS = ["votacao_candidato_munzona", "votacao_partido_munzona", "detalhe_votacao_munzona"]
 
