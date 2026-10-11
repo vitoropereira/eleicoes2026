@@ -27,6 +27,20 @@ class Repo(unittest.TestCase):
         self.assertNotIn("service_role\":", texto)
         self.assertIn("qzczyicspbizosjogmlq", texto)
 
+    def test_link_do_repo_atualizado(self):
+        velho = "github.com/vitoropereira/" + "eleicoes"  # prefixo dos nomes antigos (eleicoes2026, eleicoes-2026); concatenado para o teste não casar consigo mesmo
+        arquivos = subprocess.run(["git", "-C", str(R), "ls-files"], capture_output=True, text=True, check=True).stdout.splitlines()
+        com_velho = []
+        for nome in arquivos:
+            try:
+                if velho in (R / nome).read_text(encoding="utf-8"):
+                    com_velho.append(nome)
+            except (UnicodeDecodeError, FileNotFoundError, IsADirectoryError):
+                pass
+        self.assertEqual(com_velho, [], "link do repo antigo ainda presente")
+        textos = (R / "analise/js/textos.js").read_text()
+        self.assertIn("github.com/vitoropereira/vitorpereira.ia.br-eleicoes/tree/main/analise", textos)
+
 
 if __name__ == "__main__":
     unittest.main()

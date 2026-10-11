@@ -23,7 +23,8 @@ Repo **público**: nada de segredo em commit.
 - Ensaio geral do 2º turno, todo local: `supabase/ensaio.md`.
 
 ## Comandos
-- Testes: `python3 -m unittest discover -s tests -v`
+- Gate (dev-flow): `python3 -m pytest -q` e `ruff check .` (config em `pyproject.toml`, só tooling)
+- Testes: `python3 -m unittest discover -s tests -v` (continua válido)
 - Testes do HUD (JS): `deno test hud/`
 - Testes do agregador: `cd supabase/functions/agregador-eleicoes && deno test --allow-read --allow-env .`
 - Testes do simulador: `deno test --allow-read supabase/simular_test.ts`
